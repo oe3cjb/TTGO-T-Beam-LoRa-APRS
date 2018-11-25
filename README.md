@@ -4,7 +4,6 @@
 // licensed under CC BY-NC-SA
 //
 // last update: 25.11.2018
-// modifications: select mode during compilation to select model
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // Your Callsign
