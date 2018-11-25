@@ -1,5 +1,5 @@
 
-// Arduino Tracker for LoRA APRS
+// Tracker for LoRA APRS
 //
 // TTGO T-Beam includes GPS module + optional DHT22 (not yet DONE)
 //
@@ -11,13 +11,13 @@
 //
 // licensed under CC BY-NC-SA
 //
-// last update: 24.11.2018
+// last update: 25.11.2018
 // modifications: select mode during compilation to select model
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // Your Callsign
-String Tcall="OE3CJB-7";     //your Call Sign for normal position reports
-String wxTcall="OE3CJB-7";   //your Call Sign for weather reports
+String Tcall="OE3OOO-7";     //your Call Sign for normal position reports
+String wxTcall="OE3OOO-7";   //your Call Sign for weather reports
 
 // Your symbol table and symbol for position reports incl. battery voltage
 String sTable="/";           //Primer
