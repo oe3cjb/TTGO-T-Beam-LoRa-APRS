@@ -6,8 +6,9 @@ All user settings can be found in TTGO_T-Beam_LoRa_APRS.h
 <b>CHANGE CALLSIGN BEFORE UPLOADING FIRMWARE</b> to your T-Beam!!!
 
 You can define two different callsigns and symbols dependend on the transmitted packet.
-<b>"Tcall" is the standard callsign used for traditional APRS packets as used for trackers
-<b>"wxTcall" is the callsign used for APRS packets including a weather report (when DHT22 is used).
+
+<b>"Tcall"</b> is the standard callsign used for traditional APRS packets as used for trackers
+<b>"wxTcall"</b> is the callsign used for APRS packets including a weather report (when DHT22 is used).
 So you can change the SSID and make it easier to differentiate between normal and wahter packets.
 
 <b>"sTable"</b> should contain the value for the primary or secondary symbol table
