@@ -18,3 +18,16 @@ So you can change the SSID and make it easier to differentiate between normal an
 
 "nextTX" is the transmit intervall in ms (milli seconds) - don't use to short intervalls as it overloads the APRS servers
 60000L is a could starting point and means a intervall of 60secs or 1 minute.
+
+Usage of the defines:
+#define SEND_WX false => no weather reports are sent
+#define SEND_WX true => weather reports are sent, but needs a connected DHT22 
+
+#define FIXED_POSITION false
+// set to true if you want to use fixed position (position defined below) instead, or to false if you want to use GPS data
+// also stops sending normal position reports when sending weather reports is active (SEND_WX true)
+
+the following lines are used to define the fixed position
+#define LATITUDE "4813.62N"  // please in APRS notation DDMM.mmN or DDMM.mmS used for FIXED_POSITION
+#define LONGITUDE "01539.85E"
+
