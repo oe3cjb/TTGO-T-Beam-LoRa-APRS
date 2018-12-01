@@ -18,7 +18,7 @@
 #define DEBUG false           // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
 
-#include <TTGO_T-Beam_LoRa_APRS.h>
+#include <TTGO_T-Beam_LoRa_APRS_config.h>
 #include <Arduino.h>
 #include <Adafruit_Sensor.h>
 #include <SPI.h>
@@ -28,7 +28,8 @@
 #include <TinyGPS++.h>
 // #include <SoftwareSerial.h>
 #include <math.h>
-#include <DHT.h>
+//#include <DHT.h>
+#include <DHTesp.h>
 #include <driver/adc.h>
 #include <Wire.h>
 
@@ -82,8 +83,8 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 
 // #define ModemConfig BG_RF95::Bw125Cr45Sf4096
 
-#define DHTPIN 34            // pin the DHT22 is connected to
-#define DHTTYPE DHT22        // DHT 22  (AM2302)
+#define DHTPIN 25            // pin the DHT22 is connected to Pin25
+//#define DHTTYPE DHT22        // DHT 22  (AM2302)
 
 // Variables and Constants
 
@@ -128,7 +129,8 @@ void writedisplaytext(String, String, String, String, String, int);
 
 
 // #if (SEND_WX)
-DHT dht(DHTPIN, DHTTYPE);    // Initialize DHT sensor for normal 16mhz Arduino
+// DHT dht(DHTPIN, DHTTYPE);    // Initialize DHT sensor for normal 16mhz Arduino
+DHTesp dht;
 // #endif
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
@@ -151,9 +153,7 @@ void setup()
 {
 
   pinMode(TXLED, OUTPUT);
-  //pinMode(ADC1_CHANNEL_7_GPIO_NUM, INPUT);
-  //adcAttachPin(ADC1_CHANNEL_7_GPIO_NUM);
-  digitalWrite(TXLED, LOW);
+  digitalWrite(TXLED, LOW);  // turn blue LED off
   Serial.begin(115200);
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
      for(;;); // Don't proceed, loop forever
@@ -199,14 +199,19 @@ void setup()
   //rf95.printRegisters();
   //rf95.setPromiscuousbg();
 
-#if (SEND_WX)
-  dht.begin();               // DHT22 initialisieren
-  writedisplaytext("","Init:","DHT OK!","","",1000);
-  Serial.println("Init: DHT OK!");
-#else                        //#if (SEND_WX)
-  writedisplaytext("","Init:","no DHT configuration","","",1000);
-  Serial.println("Init: no DHT configuration");
-#endif                       //#if (SEND_WX)
+//#if (SEND_WX)
+  //dht.begin();               // DHT22 initialisieren
+  dht.setup(DHTPIN,dht.AUTO_DETECT);
+  delay(250);
+  //temp = dht.readTemperature();
+  temp = dht.getTemperature();
+  writedisplaytext("","Init:","DHT OK!",String(temp),"",750);
+  Serial.print("Init: DHT OK! Temp=");
+  Serial.println(String(temp));
+//#else                        //#if (SEND_WX)
+//  writedisplaytext("","Init:","no DHT configuration","","",1000);
+//  Serial.println("Init: no DHT configuration");
+//#endif                       //#if (SEND_WX)
 
 digitalWrite(TXLED, HIGH);
 writedisplaytext("","Init:","All DONE OK!",":-D","",1000);
@@ -220,6 +225,12 @@ writedisplaytext("","","","","",0);
 
 void loop()
 {
+
+// temp = dht.readTemperature();
+temp = dht.getTemperature();
+Serial.print("Init: DHT OK! Temp=");
+Serial.println(String(temp));
+
 #if DEBUG
   writedisplaytext("","DEBUG",millis(),String(millis()),"",0);
 #endif
@@ -245,7 +256,7 @@ if (rf95.waitAvailableTimeout(100))
   }
 }
 
-writedisplaytext("     "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+(dht.readTemperature() * 9/5) +32,250);
+writedisplaytext("     "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
 smartDelay(1000);
 
 // digitalWrite(GPSLED, LOW);
@@ -258,7 +269,7 @@ smartDelay(1000);
 {
   digitalWrite(TXLED, HIGH);
   batt_read();
-  writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+(dht.readTemperature() * 9/5) +32,250);
+  writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
   sendpacket();
   //writedisplaytext("","State:","Packet sent!","","",250);
   Serial.println("State: Packet sent!");
@@ -268,7 +279,7 @@ smartDelay(1000);
   {
     digitalWrite(TXLED, HIGH);
     batt_read();
-    writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+(dht.readTemperature() * 9/5) +32,250);
+    writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
     sendpacket();
     //  writedisplaytext("","State:","Packet sent!","","",250);
     Serial.println("State: Packet sent!");
@@ -380,7 +391,8 @@ void recalcGPS(){
     hum = dht.readHumidity();
 // hum = 88.67;
 // temp = 50.23;
-    temp = (dht.readTemperature() * 9/5) +32;
+    temp = dht.getTemperature();
+//    temp = dht.readTemperature();
     outString = "";
     outString = (wxTcall);
     outString += ">APRS:!";

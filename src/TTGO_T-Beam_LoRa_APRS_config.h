@@ -1,3 +1,18 @@
+// Tracker for LoRA APRS Header for configuration
+//
+// TTGO T-Beam includes GPS module + optional DHT22 (not yet DONE)
+//
+// can be used as tracker only, tracker plus weather reports (temperature and humidity) or weather reports station only
+//
+// updated from OE1ACM sketch by OE3CJB to enable WX data to be sent via LoRa APRS.
+// one package is with position and battery voltage
+// the next is with weather data in APRS format
+//
+// licensed under CC BY-NC-SA
+//
+// last update: 01.12.2018
+// modifications: select mode during compilation to select model
+
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // Your Callsign
 String Tcall="OE3CJB-7";      //your Call Sign for normal position reports
