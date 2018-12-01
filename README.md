@@ -15,14 +15,14 @@ So you can change the SSID and make it easier to differentiate between normal an
 <b>"sSymbol"</b> contains finally the symbol to be sent with the position report
 
 <b>"wxTable"</b> should contain the value for the primary or secondary symbol table used for weather reports<br>
-<b>"wxSymbol"</b> contains finally the symbol to be sent with the weather report 
+<b>"wxSymbol"</b> contains finally the symbol to be sent with the weather report
 
 <b>"nextTX"</b> is the transmit intervall in ms (milli seconds) - don't use to short intervalls as it overloads the APRS servers<br>
 60000L is a could starting point and means a intervall of 60secs or 1 minute.
 
 Usage of the defines:<br>
 <b>#define SEND_WX false</b> => no weather reports are sent<br>
-#define SEND_WX true => weather reports are sent, but needs a connected DHT22 
+#define SEND_WX true => weather reports are sent, but needs a connected DHT22
 
 <b>#define FIXED_POSITION false</b><br>
 // set to true if you want to use fixed position (position defined below) instead, or to false if you want to use GPS data<br>
@@ -32,3 +32,4 @@ the following lines are used to define the fixed position<br>
 <b>#define LATITUDE "4813.62N"</b>  // please in APRS notation DDMM.mmN or DDMM.mmS used for FIXED_POSITION<br>
 <b>#define LONGITUDE "01539.85E"</b>
 
+for DHT22 I used the library from https://github.com/beegee-tokyo/DHTesp, as the standard library gives to many wrong readings

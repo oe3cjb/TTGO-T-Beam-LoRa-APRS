@@ -18,18 +18,18 @@
 #define DEBUG false           // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
 
-#include <TTGO_T-Beam_LoRa_APRS_config.h>
+#include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
 #include <Arduino.h>
 #include <Adafruit_Sensor.h>
 #include <SPI.h>
-#include <BG_RF95.h>
+#include <BG_RF95.h>         // library from OE1ACM
 // #include <string>
 
 #include <TinyGPS++.h>
 // #include <SoftwareSerial.h>
 #include <math.h>
 //#include <DHT.h>
-#include <DHTesp.h>
+#include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp
 #include <driver/adc.h>
 #include <Wire.h>
 
@@ -51,6 +51,7 @@
 
 //Variables for DHT22 temperature and humidity sensor
 int chk;
+boolean hum_temp = false;
 float hum=0;                  //Stores humidity value
 float temp=99.99;                 //Stores temperature value
 
@@ -205,9 +206,12 @@ void setup()
   delay(250);
   //temp = dht.readTemperature();
   temp = dht.getTemperature();
-  writedisplaytext("","Init:","DHT OK!",String(temp),"",750);
+  hum = dht.getHumidity();
+  writedisplaytext("","Init:","DHT OK!","TEMP: "+String(temp),"HUM: "+String(hum),750);
   Serial.print("Init: DHT OK! Temp=");
-  Serial.println(String(temp));
+  Serial.print(String(temp));
+  Serial.print(" Hum=");
+  Serial.println(String(hum));
 //#else                        //#if (SEND_WX)
 //  writedisplaytext("","Init:","no DHT configuration","","",1000);
 //  Serial.println("Init: no DHT configuration");
@@ -225,9 +229,16 @@ writedisplaytext("","","","","",0);
 
 void loop()
 {
-
+if (hum_temp)
+{
+  hum_temp=false;
+  temp = dht.getTemperature();
+} else
+{
+  hum_temp=true;
+  hum = dht.getHumidity();
+}
 // temp = dht.readTemperature();
-temp = dht.getTemperature();
 Serial.print("Init: DHT OK! Temp=");
 Serial.println(String(temp));
 
@@ -255,8 +266,13 @@ if (rf95.waitAvailableTimeout(100))
 
   }
 }
-
-writedisplaytext("     "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+if (hum_temp)
+{
+  writedisplaytext("     "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" HUM: "+String(hum),250);
+} else
+{
+  writedisplaytext("     "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+}
 smartDelay(1000);
 
 // digitalWrite(GPSLED, LOW);
@@ -269,7 +285,13 @@ smartDelay(1000);
 {
   digitalWrite(TXLED, HIGH);
   batt_read();
-  writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+  if (hum_temp)
+  {
+    writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" HUM: "+String(hum),250);
+  } else
+  {
+    writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+  }
   sendpacket();
   //writedisplaytext("","State:","Packet sent!","","",250);
   Serial.println("State: Packet sent!");
@@ -279,7 +301,13 @@ smartDelay(1000);
   {
     digitalWrite(TXLED, HIGH);
     batt_read();
-    writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAT: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+    if (hum_temp)
+    {
+      writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" HUM: "+String(hum),250);
+    } else
+    {
+      writedisplaytext("     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+" CRS: "+String(gps.course.deg(),0),"BAR: "+String(analogRead(35)*7.221/4096,2)+" TEMP: "+String(temp),250);
+    }
     sendpacket();
     //  writedisplaytext("","State:","Packet sent!","","",250);
     Serial.println("State: Packet sent!");
