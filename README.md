@@ -3,7 +3,7 @@ He is the author of BG_RF95!
 
 All user settings can be found in TTGO_T-Beam_LoRa_APRS.h
 
-CHANGE CALLSIGN BEFORE UPLOADING FIRMWARE to your T-Beam!!!
+<b>CHANGE CALLSIGN BEFORE UPLOADING FIRMWARE</b> to your T-Beam!!!
 
 You can define two different callsigns and symbols dependend on the transmitted packet.
 "Tcall" is the standard callsign used for traditional APRS packets as used for trackers
