@@ -191,7 +191,7 @@ void setup()
       Serial.println("Init: Mode WX only - fixed Pos");
       break;
     case WX_TRACKER:
-      writedisplaytext("LoRa-APRS","","Init:","Mode","WX & TRACKER","",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","WX&TRACKER","",1000);
       Serial.println("Init: Mode WX & TRACKER");
       break;
     default:

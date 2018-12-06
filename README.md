@@ -20,13 +20,12 @@ So you can change the SSID and make it easier to differentiate between normal an
 <b>"nextTX"</b> is the transmit intervall in ms (milli seconds) - don't use to short intervalls as it overloads the APRS servers<br>
 60000L is a could starting point and means a intervall of 60secs or 1 minute.
 
-Usage of the defines:<br>
-<b>#define SEND_WX false</b> => no weather reports are sent<br>
-#define SEND_WX true => weather reports are sent, but needs a connected DHT22
-
-<b>#define FIXED_POSITION false</b><br>
-// set to true if you want to use fixed position (position defined below) instead, or to false if you want to use GPS data<br>
-// also stops sending normal position reports when sending weather reports is active (SEND_WX true)
+The MODE of the tracker can now be changed by pressing button at <b>GPIO39 for 10secs</b>!<br>
+<b>The modes are</b><br>
+TRACKER ...     normal APRS tracker<br>
+WX&TRACKER ...  alternate transmission of normal position packet and WX packet (if DHT22 is mounted)<br>
+WX-MOVE ...     only WX packets are sent but with position from GPSLED<br>
+WX-FIXED ...    only WX packets are transmitted but with fixed position given in Header-File<br>
 
 the following lines are used to define the fixed position<br>
 <b>#define LATITUDE "4813.62N"</b>  // please in APRS notation DDMM.mmN or DDMM.mmS used for FIXED_POSITION<br>
