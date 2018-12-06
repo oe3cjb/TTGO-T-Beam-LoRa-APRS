@@ -173,29 +173,29 @@ void setup()
      for(;;); // Don't proceed, loop forever
   }
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa - APRS","","Init:","Display OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: Display OK!");
 
   switch(tracker_mode) {
     case TRACKER:
-      writedisplaytext("LoRa - APRS","","Init:","Mode","TRACKER","",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","TRACKER","",1000);
       Serial.println("Init: Mode TRACKER");
       break;
     case WX_MOVE:
-      writedisplaytext("LoRa - APRS","","Init:","Mode","WX_MOVE","",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","WX_MOVE","",1000);
       Serial.println("Init: Mode WX only - moving");
       break;
     case WX_FIXED:
-      writedisplaytext("LoRa - APRS","","Init:","Mode","WX_FIXED","(no GPS used)",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","WX_FIXED","(no GPS used)",1000);
       Serial.println("Init: Mode WX only - fixed Pos");
       break;
     case WX_TRACKER:
-      writedisplaytext("LoRa - APRS","","Init:","Mode","WX & TRACKER","",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","WX & TRACKER","",1000);
       Serial.println("Init: Mode WX & TRACKER");
       break;
     default:
-      writedisplaytext("LoRa - APRS","","Init:","Mode","UNKNOWN","STOPPED",1000);
+      writedisplaytext("LoRa-APRS","","Init:","Mode","UNKNOWN","STOPPED",1000);
       Serial.println("Init: Mode UNKNOWN STOPPED!!!!");
       while (true) {}
       break;
@@ -204,13 +204,13 @@ void setup()
     if (!rf95.init()) {
     // Serial.println("init failed");
 
-    writedisplaytext("LoRa - APRS","","Init:","RF95 FAILED!",":-(","",1000);
+    writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",1000);
     Serial.println("Init: RF95 FAILED!");
     for(;;); // Don't proceed, loop forever
   }
 
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa - APRS","","Init:","RF95 OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",1000);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: RF95 OK!");
 
@@ -218,7 +218,7 @@ void setup()
     ss.begin(GPSBaud, SERIAL_8N1, 12, 15);        //Startup HW serial for GPS
   }
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa - APRS","","Init:","GPS Serial OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",1000);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: GPS Serial OK!");
 
@@ -228,7 +228,7 @@ void setup()
   adc1_config_width(ADC_WIDTH_BIT_12);
   adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
   // adc1_config_channel_atten(adc_channel, atten);
-  writedisplaytext("LoRa - APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",1000);
+  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",1000);
   Serial.println("Init: ADC OK!");
 
   rf95.setFrequency(433.775);
@@ -242,14 +242,14 @@ void setup()
   delay(250);
   temp = dht.getTemperature();
   hum = dht.getHumidity();
-  writedisplaytext("LoRa - APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),750);
+  writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),750);
   Serial.print("Init: DHT OK! Temp=");
   Serial.print(String(temp));
   Serial.print(" Hum=");
   Serial.println(String(hum));
 
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa - APRS","","Init:","All DONE OK!",":-D","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","All DONE OK!",":-D","",1000);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: ALL DONE OK! :-D");
   writedisplaytext("","","","","","",0);
@@ -266,20 +266,20 @@ if (digitalRead(BUTTON)==LOW) {
     switch(tracker_mode) {
       case TRACKER:
         tracker_mode = WX_TRACKER;
-        writedisplaytext("LoRa - APRS","","New Mode","WX-TRACKER","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-TRACKER","","",1000);
         break;
       case WX_TRACKER:
         tracker_mode = WX_MOVE;
-        writedisplaytext("LoRa - APRS","","New Mode","WX-MOVING","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-MOVING","","",1000);
         break;
       case WX_MOVE:
         tracker_mode = WX_FIXED;
-        writedisplaytext("LoRa - APRS","","New Mode","WX-FIXED","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-FIXED","","",1000);
         break;
       case WX_FIXED:
       default:
         tracker_mode = TRACKER;
-        writedisplaytext("LoRa - APRS","","New Mode","TRACKER","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",1000);
         break;
     }
     prefs.begin("nvs", false);
@@ -300,7 +300,7 @@ Serial.print("Init: DHT OK! Temp=");
 Serial.println(String(temp));
 
 #if DEBUG
-  writedisplaytext("LoRa - APRS","","DEBUG",millis(),String(millis()),"",0);
+  writedisplaytext("LoRa-APRS","","DEBUG",millis(),String(millis()),"",0);
 #endif
  //while(1) { if ( ss.available() ) Serial.write(ss.read());}
 if (tracker_mode != WX_FIXED) {
