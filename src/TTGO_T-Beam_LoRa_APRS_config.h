@@ -14,9 +14,9 @@
 // modifications: select mode during compilation to select model
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
-// Your Callsign
-String Tcall="OE3CJB-7";      //your Call Sign for normal position reports
-String wxTcall="OE3CJB-7";   //your Call Sign for weather reports
+// Your Callsign - now set during initial startup
+String Tcall; //="OE3CJB-7";      //your Call Sign for normal position reports
+String wxTcall; //="OE3CJB-7";   //your Call Sign for weather reports
 
 // Your symbol table and symbol for position reports incl. battery voltage
 String sTable="/";           //Primer

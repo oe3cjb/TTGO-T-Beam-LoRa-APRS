@@ -49,8 +49,9 @@
 //Variables for DHT22 temperature and humidity sensor
 int chk;
 boolean hum_temp = false;
-float hum=0;                  //Stores humidity value
-float temp=99.99;                 //Stores temperature value
+float hum=0;                 //Stores humidity value
+float temp=99.99;            //Stores temperature value
+float tempf=99.99;           //Stores temperature value
 
 //other global Variables
 String Textzeile1, Textzeile2;
@@ -100,6 +101,9 @@ String InputString = "";     //data on buff is copied to this string
 String Outputstring = "";
 String outString="";         //The new Output String with GPS Conversion RAW
 
+String LongShown="";
+String LatShown="";
+
 boolean wx;
 
 //byte arrays
@@ -129,6 +133,7 @@ void sendpacket(void);
 void loraSend(byte, byte, byte, byte, byte, long, byte, float);
 void batt_read(void);
 void writedisplaytext(String, String, String, String, String, String, int);
+void setup_data(void);
 
 
 DHTesp dht;
@@ -173,9 +178,25 @@ void setup()
      for(;;); // Don't proceed, loop forever
   }
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","Display OK!","","Press 3sec for Config",250);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: Display OK!");
+
+  //////////////////////////// Setup CALLSIGN
+  prefs.begin("nvs", false);
+  Tcall = prefs.getString("Tcall", "OE1000-0");
+  wxTcall = prefs.getString("wxTcall", "OE1000-0");
+  prefs.end();
+
+  int start_button_pressed = millis();
+
+  while ((digitalRead(BUTTON) == LOW) && (millis()<start_button_pressed+3000)) {
+
+  }
+  //if (((start_button_pressed+3000<millis())&&(digitalRead(BUTTON) == LOW)) || (Tcall == "OE1000-0")) {
+  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1000-0")) {
+    setup_data();
+  }
 
   switch(tracker_mode) {
     case TRACKER:
@@ -202,15 +223,14 @@ void setup()
   }
 
     if (!rf95.init()) {
-    // Serial.println("init failed");
 
-    writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",1000);
+    writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
     Serial.println("Init: RF95 FAILED!");
     for(;;); // Don't proceed, loop forever
   }
 
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: RF95 OK!");
 
@@ -218,17 +238,13 @@ void setup()
     ss.begin(GPSBaud, SERIAL_8N1, 12, 15);        //Startup HW serial for GPS
   }
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: GPS Serial OK!");
 
-  // adc_power_on();
-  // adc_gpio_init(ADC_UNIT_1,ADC_CHANNEL_7);
-  //adc_set_clk_div(1);
   adc1_config_width(ADC_WIDTH_BIT_12);
   adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
-  // adc1_config_channel_atten(adc_channel, atten);
-  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",1000);
+  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",250);
   Serial.println("Init: ADC OK!");
 
   rf95.setFrequency(433.775);
@@ -242,14 +258,14 @@ void setup()
   delay(250);
   temp = dht.getTemperature();
   hum = dht.getHumidity();
-  writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),750);
+  writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
   Serial.print("Init: DHT OK! Temp=");
   Serial.print(String(temp));
   Serial.print(" Hum=");
   Serial.println(String(hum));
 
   digitalWrite(TXLED, HIGH);
-  writedisplaytext("LoRa-APRS","","Init:","All DONE OK!",":-D","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","All DONE OK!",":-D","",500);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: ALL DONE OK! :-D");
   writedisplaytext("","","","","","",0);
@@ -266,20 +282,20 @@ if (digitalRead(BUTTON)==LOW) {
     switch(tracker_mode) {
       case TRACKER:
         tracker_mode = WX_TRACKER;
-        writedisplaytext("LoRa-APRS","","New Mode","WX-TRACKER","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-TRACKER","","",500);
         break;
       case WX_TRACKER:
         tracker_mode = WX_MOVE;
-        writedisplaytext("LoRa-APRS","","New Mode","WX-MOVING","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-MOVING","","",500);
         break;
       case WX_MOVE:
         tracker_mode = WX_FIXED;
-        writedisplaytext("LoRa-APRS","","New Mode","WX-FIXED","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","WX-FIXED","","",500);
         break;
       case WX_FIXED:
       default:
         tracker_mode = TRACKER;
-        writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",1000);
+        writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",500);
         break;
     }
     prefs.begin("nvs", false);
@@ -303,21 +319,28 @@ Serial.println(String(temp));
   writedisplaytext("LoRa-APRS","","DEBUG",millis(),String(millis()),"",0);
 #endif
  //while(1) { if ( ss.available() ) Serial.write(ss.read());}
-if (tracker_mode != WX_FIXED) {
-  while (ss.available() > 0) {
+// if (tracker_mode != WX_FIXED) {
+while (ss.available() > 0) {
     gps.encode(ss.read());
-  }
+//  }
 }
 
 if (rf95.waitAvailableTimeout(100)) {
   if (rf95.recvAPRS(buf, &len)) {
   }
 }
+if (tracker_mode != WX_FIXED) {
+  LatShown = String(gps.location.lat(),5);
+  LongShown = String(gps.location.lng(),5);
+} else {
+  LatShown = LATITUDE;
+  LongShown = LONGITUDE;
+}
 if (hum_temp)
 {
-  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),250);
+  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
 } else {
-  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),250);
+  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
 }
 smartDelay(1000);
 
@@ -327,9 +350,9 @@ if ( (lastTX+nextTX) <= millis()  ) {
       digitalWrite(TXLED, HIGH);
       batt_read();
       if (hum_temp) {
-        writedisplaytext(" "+Tcall,"     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),250);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" "+Tcall,"     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),250);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
       }
       sendpacket();
       Serial.println("State: Packet sent!");
@@ -339,9 +362,9 @@ if ( (lastTX+nextTX) <= millis()  ) {
       digitalWrite(TXLED, HIGH);
       batt_read();
       if (hum_temp) {
-        writedisplaytext(" "+Tcall,"     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),250);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" "+Tcall,"     ((TX))","LAT: "+String(gps.location.lat(),5),"LON: "+String(gps.location.lng(),5),"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),250);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
       }
       sendpacket();
       Serial.println("State: Packet sent!");
@@ -352,9 +375,9 @@ if ( (lastTX+nextTX) <= millis()  ) {
     digitalWrite(TXLED, HIGH);
     batt_read();
     if (hum_temp) {
-      writedisplaytext(" "+wxTcall,"     ((TX))","LAT: " + String(LATITUDE),"LON: " + String(LONGITUDE),"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),250);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
     } else {
-      writedisplaytext(" "+wxTcall,"     ((TX))","LAT: " + String(LATITUDE),"LON: " + String(LONGITUDE),"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),250);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
     }
     sendpacket();
     Serial.println("State: Packet sent!");
@@ -418,7 +441,7 @@ outString = "";
 switch(tracker_mode) {
   case WX_FIXED:
     hum = dht.getHumidity();
-    temp = dht.getTemperature();
+    tempf = dht.getTemperature()*9/5+32;
     outString = (wxTcall);
     outString += ">APRS:!";
     outString += LATITUDE;
@@ -426,15 +449,15 @@ switch(tracker_mode) {
     outString += LONGITUDE;
     outString += wxSymbol;
     outString += ".../...g...t";
-    if (temp < 0) {     // negative Werte erstellen
+    if (tempf < 0) {     // negative Werte erstellen
       outString += "-";
-      if(temp>-10) {outString += "0"; }
-      temp = abs(temp);
+      if(tempf>-10) {outString += "0"; }
+      tempf = abs(tempf);
     } else {                // positive Werte erstellen
-      if(temp<100) {outString += "0"; }
-      if(temp<10) {outString += "0"; }
+      if(tempf<100) {outString += "0"; }
+      if(tempf<10) {outString += "0"; }
     }
-    helper = String(temp,0);
+    helper = String(tempf,0);
     helper.trim();
     outString += helper;
     outString += "r...p...P...h";
@@ -447,7 +470,7 @@ switch(tracker_mode) {
   case WX_TRACKER:
     if (wx) {
       hum = dht.getHumidity();
-      temp = dht.getTemperature();
+      tempf = dht.getTemperature()*9/5+32;
       outString = (wxTcall);
       outString += ">APRS:!";
       if(Tlat<10) {outString += "0"; }
@@ -460,15 +483,15 @@ switch(tracker_mode) {
       outString += Ew;
       outString += wxSymbol;
       outString += ".../...g...t";
-      if (temp < 0) {     // negative Werte erstellen
+      if (tempf < 0) {     // negative Werte erstellen
         outString += "-";
-        if(temp>-10) {outString += "0"; }
-        temp = abs(temp);
+        if(tempf>-10) {outString += "0"; }
+        tempf = abs(tempf);
       } else {                // positive Werte erstellen
-        if(temp<100) {outString += "0"; }
-        if(temp<10) {outString += "0"; }
+        if(tempf<100) {outString += "0"; }
+        if(tempf<10) {outString += "0"; }
       }
-      helper = String(temp,0);
+      helper = String(tempf,0);
       helper.trim();
       outString += helper;
       outString += "r...p...P...h";
@@ -500,7 +523,7 @@ switch(tracker_mode) {
   break;
 case WX_MOVE:
     hum = dht.getHumidity();
-    temp = dht.getTemperature();
+    tempf = dht.getTemperature()*9/5+32;
     outString = (wxTcall);
     outString += ">APRS:!";
     if(Tlat<10) {outString += "0"; }
@@ -513,15 +536,15 @@ case WX_MOVE:
     outString += Ew;
     outString += wxSymbol;
     outString += ".../...g...t";
-    if (temp < 0) {     // negative Werte erstellen
+    if (tempf < 0) {     // negative Werte erstellen
       outString += "-";
-      if(temp>-10) {outString += "0"; }
-      temp = abs(temp);
+      if(tempf>-10) {outString += "0"; }
+      tempf = abs(tempf);
     } else {                // positive Werte erstellen
-      if(temp<100) {outString += "0"; }
-      if(temp<10) {outString += "0"; }
+      if(tempf<100) {outString += "0"; }
+      if(tempf<10) {outString += "0"; }
     }
-    helper = String(temp,0);
+    helper = String(tempf,0);
     helper.trim();
     outString += helper;
     outString += "r...p...P...h";
@@ -627,8 +650,7 @@ void batt_read()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten)
-{
+void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -647,4 +669,109 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line5);
   display.display();
   smartDelay(warten);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+void setup_data(void) {
+  char letter[36] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0'};
+  String SSID[16] = {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
+  int8_t pos_call = 0;
+  int8_t pos_ssid;
+  bool key_pressed = false;
+  int waiter;
+  int initial_waiter = 2000;
+  int ii;
+  char aktueller_letter;
+  int8_t pos_letter;
+  String pfeile = "^";
+  int8_t initial_ssid;
+
+
+  pos_call = 0;
+  while (pos_call < 6) {
+    key_pressed = false;
+    aktueller_letter = (char) Tcall.charAt(pos_call);// ist Buchstabe holen
+    for (pos_letter=0;pos_letter<36;pos_letter++) {
+      if (aktueller_letter == letter[pos_letter]) {
+        break;
+      }
+    }
+    while (true) {
+      Tcall.setCharAt(pos_call, aktueller_letter);
+      writedisplaytext("  SETUP", "    Call","   "+Tcall,"   "+pfeile, "press to select", "", 0);
+      waiter = millis();
+      while (millis()<(waiter+1000+initial_waiter)) {
+        if (digitalRead(BUTTON)==LOW) {
+          key_pressed = true;
+        }
+      }
+      initial_waiter = 0;
+      if (key_pressed==true) {
+        key_pressed = false;
+        break;
+      }
+      // nächster Buchstabe
+      ++pos_letter;
+      if (pos_letter>=36) {pos_letter=0;}
+      aktueller_letter=letter[pos_letter];
+    }
+    initial_waiter = 2000;
+    pfeile = " "+pfeile;
+    ++pos_call;
+  }
+
+  // Tcall = Tcall.substring(0,6)+"-"+"0";
+  // wxTcall = Tcall.substring(0,6)+"-"+"0";
+  initial_ssid = (int8_t) (Tcall.substring(7,9)).toInt();
+
+  pos_ssid = initial_ssid;
+  pfeile = "          ^";
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (true) {
+    writedisplaytext("  SETUP", "normal SSID","   "+Tcall, pfeile, "press to select", "", 0);
+    waiter = millis();
+    while (millis()<(waiter+1000+initial_waiter)) {
+      if (digitalRead(BUTTON)==LOW) {
+        key_pressed = true;
+      }
+    }
+    initial_waiter = 0;
+    if (key_pressed==true) {
+      key_pressed = false;
+      break;
+    }
+    ++pos_ssid;
+    if (pos_ssid>=16) {pos_ssid=0;}
+    Tcall = Tcall.substring(0,6)+"-"+SSID[pos_ssid];
+  }
+
+  initial_ssid = (int8_t) (wxTcall.substring(7,9)).toInt();
+
+  pos_ssid = initial_ssid;
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (true) {
+    writedisplaytext("  SETUP", "  WX SSID","   "+wxTcall, pfeile, "press to select", "", 0);
+    waiter = millis();
+    while (millis()<(waiter+1000+initial_waiter)) {
+      if (digitalRead(BUTTON)==LOW) {
+        key_pressed = true;
+      }
+    }
+    initial_waiter = 0;
+    if (key_pressed==true) {
+      key_pressed = false;
+      break;
+    }
+    ++pos_ssid;
+    if (pos_ssid>=16) {pos_ssid=0;}
+    wxTcall = wxTcall.substring(0,6)+"-"+SSID[pos_ssid];
+  }
+
+  prefs.begin("nvs", false);
+  prefs.putString("Tcall", Tcall);
+  prefs.putString("wxTcall", wxTcall);
+  prefs.end();
+  writedisplaytext("  SETUP", "DONE","", "stored in NVS", "", "", 2500);
 }
