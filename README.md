@@ -3,8 +3,9 @@ He is the author of BG_RF95!
 
 All user settings can be found in TTGO_T-Beam_LoRa_APRS.h
 
-If you start the FW for teh first time you are asked to program your callsign and SSID(s).<br>
-Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON (39) for 3secs while switching on the racker.<br>
+<b>Callsign setting:</b><br>
+If you start the FW for the first time you are asked to program your callsign and SSID(s).<br>
+Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON (GPIO39) for 3secs while switching on the racker.<br>
 
 <b>"sTable"</b> should contain the value for the primary or secondary symbol table<br>
 <b>"sSymbol"</b> contains finally the symbol to be sent with the position report
