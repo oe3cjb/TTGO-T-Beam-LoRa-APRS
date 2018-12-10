@@ -4,7 +4,7 @@ He is the author of BG_RF95!
 <b>USER GUIDE of TTGO T-Beam LoRa APRS:</b><br>
 <b>Callsign setting:</b><br>
 If you start the FW for the first time you are asked to program your callsign and SSID(s).<br>
-Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON (GPIO39) for 3secs while switching on the racker.<br>
+Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON (GPIO39) for 3secs while switching on the tracker.<br>
 
 The MODE of the tracker can now be changed by pressing button at <b>GPIO39 for 10secs</b>!<br>
 <b>The modes are</b><br>
