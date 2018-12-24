@@ -11,9 +11,8 @@
 //
 // licensed under CC BY-NC-SA
 //
-// last update: 01.12.2018
-// modifications: select mode during compilation to select model
-
+// version: 1.0b
+// last update: 24.12.2018
 
 #define DEBUG false           // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes

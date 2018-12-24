@@ -10,8 +10,8 @@
 //
 // licensed under CC BY-NC-SA
 //
-// last update: 01.12.2018
-// modifications: select mode during compilation to select model
+// version: 1.0b
+// last update: 24.12.2018
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // Your Callsign - now set during initial startup
