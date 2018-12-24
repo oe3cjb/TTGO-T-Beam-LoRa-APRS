@@ -104,6 +104,11 @@ String outString="";         //The new Output String with GPS Conversion RAW
 String LongShown="";
 String LatShown="";
 
+String LongFixed="";
+String LatFixed="";
+
+String TxSymbol="";
+
 boolean wx;
 
 //byte arrays
@@ -184,8 +189,11 @@ void setup()
 
   //////////////////////////// Setup CALLSIGN
   prefs.begin("nvs", false);
-  Tcall = prefs.getString("Tcall", "OE1000-0");
-  wxTcall = prefs.getString("wxTcall", "OE1000-0");
+  Tcall = prefs.getString("Tcall", "OE1XYZ-0");
+  wxTcall = prefs.getString("wxTcall", "OE1XYZ-0");
+  LongFixed = prefs.getString("LongFixed", "01539.85E");
+  LatFixed = prefs.getString("LatFixed", "4813.62N");
+  TxSymbol = prefs.getString("TxSymbol", "[");
   prefs.end();
 
   int start_button_pressed = millis();
@@ -194,7 +202,7 @@ void setup()
 
   }
   //if (((start_button_pressed+3000<millis())&&(digitalRead(BUTTON) == LOW)) || (Tcall == "OE1000-0")) {
-  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1000-0")) {
+  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1XYZ-0")) {
     setup_data();
   }
 
@@ -333,8 +341,8 @@ if (tracker_mode != WX_FIXED) {
   LatShown = String(gps.location.lat(),5);
   LongShown = String(gps.location.lng(),5);
 } else {
-  LatShown = LATITUDE;
-  LongShown = LONGITUDE;
+  LatShown = LatFixed;
+  LongShown = LongFixed;
 }
 if (hum_temp)
 {
@@ -444,9 +452,9 @@ switch(tracker_mode) {
     tempf = dht.getTemperature()*9/5+32;
     outString = (wxTcall);
     outString += ">APRS:!";
-    outString += LATITUDE;
+    outString += LatFixed;
     outString += wxTable;
-    outString += LONGITUDE;
+    outString += LongFixed;
     outString += wxSymbol;
     outString += ".../...g...t";
     if (tempf < 0) {     // negative Werte erstellen
@@ -512,7 +520,7 @@ switch(tracker_mode) {
       if(Tlon<10) {outString += "0"; }
       outString += String(Lon,2);
       outString += Ew;
-      outString += sSymbol;
+      outString += TxSymbol;
       outString += " /A=";
       outString += Talt;
       outString += "m Batt=";
@@ -566,7 +574,7 @@ case WX_MOVE:
     if(Tlon<10) {outString += "0"; }
     outString += String(Lon,2);
     outString += Ew;
-    outString += sSymbol;
+    outString += TxSymbol;
     outString += " /A=";
     outString += Talt;
     outString += "m Batt=";
@@ -673,10 +681,13 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
 
 ///////////////////////////////////////////////////////////////////////////////////////
 void setup_data(void) {
-  char letter[36] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0'};
-  String SSID[16] = {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
-  int8_t pos_call = 0;
-  int8_t pos_ssid;
+  char werte_call[36] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0'};
+  String werte_SSID[16] = {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
+  char werte_latlon[14] = {'0','1','2','3','4','5','6','7','8','9','N','S','E','W'};
+  String werte_TxSymbol_text[5] = {"WX Station","Auto","Fussgaenger","Fahrrad","Motorrad"};
+  String werte_TxSymbol_symbol[5] = {"_",">","[","b","<"};
+  int8_t pos_in_string;
+  int8_t pos_ssid, pos_latlon;
   bool key_pressed = false;
   int waiter;
   int initial_waiter = 2000;
@@ -684,21 +695,22 @@ void setup_data(void) {
   char aktueller_letter;
   int8_t pos_letter;
   String pfeile = "^";
-  int8_t initial_ssid;
+  int8_t initial_ssid, initial_latlon, inital_TxSymbnol;
 
 
-  pos_call = 0;
-  while (pos_call < 6) {
+  // set callsign - one for both reports
+  pos_in_string = 0;
+  while (pos_in_string < 6) {
     key_pressed = false;
-    aktueller_letter = (char) Tcall.charAt(pos_call);// ist Buchstabe holen
+    aktueller_letter = (char) Tcall.charAt(pos_in_string);// ist Buchstabe holen
     for (pos_letter=0;pos_letter<36;pos_letter++) {
-      if (aktueller_letter == letter[pos_letter]) {
+      if (aktueller_letter == werte_call[pos_letter]) {
         break;
       }
     }
     while (true) {
-      Tcall.setCharAt(pos_call, aktueller_letter);
-      writedisplaytext("  SETUP", "    Call","   "+Tcall,"   "+pfeile, "press to select", "", 0);
+      Tcall.setCharAt(pos_in_string, aktueller_letter);
+      writedisplaytext("  SETUP", "     Call","   "+Tcall,"   "+pfeile, "PRESS KEY to select", "", 0);
       waiter = millis();
       while (millis()<(waiter+1000+initial_waiter)) {
         if (digitalRead(BUTTON)==LOW) {
@@ -713,15 +725,14 @@ void setup_data(void) {
       // nächster Buchstabe
       ++pos_letter;
       if (pos_letter>=36) {pos_letter=0;}
-      aktueller_letter=letter[pos_letter];
+      aktueller_letter=werte_call[pos_letter];
     }
     initial_waiter = 2000;
     pfeile = " "+pfeile;
-    ++pos_call;
+    ++pos_in_string;
   }
 
-  // Tcall = Tcall.substring(0,6)+"-"+"0";
-  // wxTcall = Tcall.substring(0,6)+"-"+"0";
+  // set normal SSID
   initial_ssid = (int8_t) (Tcall.substring(7,9)).toInt();
 
   pos_ssid = initial_ssid;
@@ -729,7 +740,7 @@ void setup_data(void) {
   key_pressed = false;
   initial_waiter = 2000;
   while (true) {
-    writedisplaytext("  SETUP", "normal SSID","   "+Tcall, pfeile, "press to select", "", 0);
+    writedisplaytext("  SETUP", "  normal SSID","   "+Tcall, pfeile, "PRESS KEY to select", "", 0);
     waiter = millis();
     while (millis()<(waiter+1000+initial_waiter)) {
       if (digitalRead(BUTTON)==LOW) {
@@ -743,16 +754,17 @@ void setup_data(void) {
     }
     ++pos_ssid;
     if (pos_ssid>=16) {pos_ssid=0;}
-    Tcall = Tcall.substring(0,6)+"-"+SSID[pos_ssid];
+    Tcall = Tcall.substring(0,6)+"-"+werte_SSID[pos_ssid];
   }
 
+  // set WX SSID
   initial_ssid = (int8_t) (wxTcall.substring(7,9)).toInt();
 
   pos_ssid = initial_ssid;
   key_pressed = false;
   initial_waiter = 2000;
   while (true) {
-    writedisplaytext("  SETUP", "  WX SSID","   "+wxTcall, pfeile, "press to select", "", 0);
+    writedisplaytext("  SETUP", "    WX SSID","   "+wxTcall, pfeile, "PRESS KEY to select", "", 0);
     waiter = millis();
     while (millis()<(waiter+1000+initial_waiter)) {
       if (digitalRead(BUTTON)==LOW) {
@@ -766,12 +778,120 @@ void setup_data(void) {
     }
     ++pos_ssid;
     if (pos_ssid>=16) {pos_ssid=0;}
-    wxTcall = wxTcall.substring(0,6)+"-"+SSID[pos_ssid];
+    wxTcall = wxTcall.substring(0,6)+"-"+werte_SSID[pos_ssid];
   }
 
+  // set LONGITUDE
+  pfeile = "^";
+  pos_in_string = 0;
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (pos_in_string < 9) {
+    key_pressed = false;
+    aktueller_letter = (char) LongFixed.charAt(pos_in_string);// ist Buchstabe holen
+    for (pos_letter=0;pos_letter<14;pos_letter++) {
+      if (aktueller_letter == werte_latlon[pos_letter]) {
+        break;
+      }
+    }
+    while (true) {
+      LongFixed.setCharAt(pos_in_string, aktueller_letter);
+      writedisplaytext("  SETUP", "    Longitude","  "+LongFixed,"  "+pfeile, "for fixed POS", "PRESS KEY to select", 0);
+      waiter = millis();
+      while (millis()<(waiter+1000+initial_waiter)) {
+        if (digitalRead(BUTTON)==LOW) {
+          key_pressed = true;
+        }
+      }
+      initial_waiter = 0;
+      if (key_pressed==true) {
+        key_pressed = false;
+        break;
+      }
+      // nächster Buchstabe
+      ++pos_letter;
+      if (pos_letter>=14) {pos_letter=0;}
+      aktueller_letter=werte_latlon[pos_letter];
+    }
+    initial_waiter = 2000;
+    pfeile = " "+pfeile;
+    ++pos_in_string;
+    if (pos_in_string == 5) {
+      ++pos_in_string;
+      pfeile = " "+pfeile;
+    }
+  }
+
+  // set LATITUDE
+  pfeile = "^";
+  pos_in_string = 0;
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (pos_in_string < 8) {
+    key_pressed = false;
+    aktueller_letter = (char) LatFixed.charAt(pos_in_string);// ist Buchstabe holen
+    for (pos_letter=0;pos_letter<14;pos_letter++) {
+      if (aktueller_letter == werte_latlon[pos_letter]) {
+        break;
+      }
+    }
+    while (true) {
+      LatFixed.setCharAt(pos_in_string, aktueller_letter);
+      writedisplaytext("  SETUP", "    Latitude","  "+LatFixed,"  "+pfeile, "for fixed POS", "PRESS KEY to select", 0);
+      waiter = millis();
+      while (millis()<(waiter+1000+initial_waiter)) {
+        if (digitalRead(BUTTON)==LOW) {
+          key_pressed = true;
+        }
+      }
+      initial_waiter = 0;
+      if (key_pressed==true) {
+        key_pressed = false;
+        break;
+      }
+      // nächster Buchstabe
+      ++pos_letter;
+      if (pos_letter>=14) {pos_letter=0;}
+      aktueller_letter=werte_latlon[pos_letter];
+    }
+    initial_waiter = 2000;
+    pfeile = " "+pfeile;
+    ++pos_in_string;
+    if (pos_in_string == 4) {
+      ++pos_in_string;
+      pfeile = " "+pfeile;
+    }
+  }
+
+  // set Tx Symbol
+  pos_ssid = 0;
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (true) {
+    TxSymbol = werte_TxSymbol_symbol[pos_ssid];
+    writedisplaytext("  SETUP", "    Symbol","   "+werte_TxSymbol_text[pos_ssid], "", "PRESS KEY to select", "", 0);
+    waiter = millis();
+    while (millis()<(waiter+1000+initial_waiter)) {
+      if (digitalRead(BUTTON)==LOW) {
+        key_pressed = true;
+      }
+    }
+    initial_waiter = 0;
+    if (key_pressed==true) {
+      key_pressed = false;
+      break;
+    }
+    ++pos_ssid;
+    if (pos_ssid>=5) {pos_ssid=0;}
+    }
+
+  // write all values to NVRAM
   prefs.begin("nvs", false);
   prefs.putString("Tcall", Tcall);
   prefs.putString("wxTcall", wxTcall);
+  prefs.putString("LatFixed", LatFixed);
+  prefs.putString("LongFixed", LongFixed);
+  prefs.putString("TxSymbol", TxSymbol);
   prefs.end();
   writedisplaytext("  SETUP", "DONE","", "stored in NVS", "", "", 2500);
 }
