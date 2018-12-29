@@ -6,7 +6,7 @@ He is the author of BG_RF95!
 If you start the FW for the first time you are asked to program your callsign and SSID(s).<br>
 Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON (GPIO39) for 3secs while switching on the tracker.<br>
 
-The MODE, fiex position and Symbol of the tracker can now be changed by pressing button at <b>GPIO39 for 10secs</b>!<br>
+The MODE of the tracker can now be changed by pressing button at <b>GPIO39 for 10secs</b>!<br>
 <b>The modes are</b><br>
 TRACKER ...     normal APRS tracker<br>
 WX&TRACKER ...  alternate transmission of normal position packet and WX packet (if DHT22 is mounted)<br>
