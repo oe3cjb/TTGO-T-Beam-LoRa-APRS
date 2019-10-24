@@ -319,8 +319,8 @@ if (hum_temp){
   hum = dht.getHumidity();
 }
 // temp = dht.readTemperature();
-Serial.print("Init: DHT OK! Temp=");
-Serial.println(String(temp));
+// Serial.print("Init: DHT OK! Temp=");
+// Serial.println(String(temp));
 
 #if DEBUG
   writedisplaytext("LoRa-APRS","","DEBUG",millis(),String(millis()),"",0);
@@ -424,14 +424,25 @@ void recalcGPS(){
 
   String Ns, Ew, helper;
   float Tlat, Tlon;
-  int Talt;
+  int i, Talt, lenalt;
   float Lat;
   float Lon;
+  float Tspeed, Tcourse;
+  String Speedx, Coursex, Altx;
 
   if (tracker_mode != WX_FIXED) {
     Tlat=gps.location.lat();
     Tlon=gps.location.lng();
-    Talt=gps.altitude.meters();
+    Talt=gps.altitude.meters() * 3.28;
+    Altx = Talt;
+    lenalt = Altx.length();
+    Altx = "";
+    for (i = 0; i < (6-lenalt); i++) {
+      Altx += "0";
+    }
+    Altx += Talt;
+    Tcourse=gps.course.deg();
+    Tspeed=gps.speed.knots();
     if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
     if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
     if(Tlat < 0) { Tlat= -Tlat; }
@@ -520,9 +531,9 @@ switch(tracker_mode) {
       outString += String(Lon,2);
       outString += Ew;
       outString += TxSymbol;
-      outString += " /A=";
-      outString += Talt;
-      outString += "m Batt=";
+      outString += "/A=";
+      outString += Altx;
+      outString += " Batt=";
       outString += String(BattVolts,2);
       outString += ("V");
       wx = !wx;
@@ -574,12 +585,28 @@ case WX_MOVE:
     outString += String(Lon,2);
     outString += Ew;
     outString += TxSymbol;
-    outString += " /A=";
-    outString += Talt;
-    outString += "m Batt=";
+    if(Tcourse<100) {outString += "0"; }
+    if(Tcourse<10) {outString += "0"; }
+    Coursex = String(Tcourse,0);
+    Coursex.replace(" ","");
+    outString += Coursex;
+    outString += "/";
+    if(Tspeed<100) {outString += "0"; }
+    if(Tspeed<10) {outString += "0"; }
+    Speedx = String(Tspeed,0);
+    Speedx.replace(" ","");
+    outString += Speedx;
+    outString += "/A=";
+    outString += Altx;
+    outString += " Batt=";
     outString += String(BattVolts,2);
     outString += ("V");
-  break;
+    Serial.print("outString=");
+    // Speedx = String(Tspeed,0);
+    // Speedx.replace(" ","");
+    Serial.println(outString);
+    // Serial.println("=");
+    break;
   }
 }
 
