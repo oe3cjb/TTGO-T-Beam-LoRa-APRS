@@ -11,8 +11,17 @@
 //
 // licensed under CC BY-NC-SA
 //
-// version: 1.0b
-// last update: 24.12.2018
+// version: V1.1beta
+// last update: 22.11.2019
+//
+// change history
+// added HW Version V1.0 support
+// added presetting in the header TTGO...config.h to prevent long initial setup at first boot up
+// added "SPACE" to allowed letters for callsign for shorter callsigns - has to be added at the end
+// added smart beaconing
+//
+// version V1.0beta
+// first released version//
 
 #define DEBUG false           // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
@@ -36,6 +45,10 @@
 #include <Adafruit_SPITFT.h>
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
+
+#ifdef T_BEAM_V1_0
+  #include <axp20x.h>
+#endif
 
 //Hardware definitions
 
@@ -70,20 +83,43 @@ Tx_Mode tracker_mode;
 // #define ANALOG_PIN_0 35      // connected to battery
 
 // Pins for GPS
-static const int RXPin = 15, TXPin = 12;  //  changed BG A3 A2
+
+#ifdef T_BEAM_V1_0
+   static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
+#else
+   static const int RXPin = 15, TXPin = 12;  //  changed BG A3 A2
+#endif
+
 static const uint32_t GPSBaud = 9600; //GPS
 
 const byte TX_en  = 0;
 const byte RX_en  = 0;       //TX/RX enable 1W modul
 
-const byte TXLED  = 14;      //pin number for LED on TX Tracker
-const byte BUTTON  = 39;      //pin number for Button on TTGO T-Beam
+// LED for signalling
+#ifdef T_BEAM_V1_0
+   const byte TXLED  = 33;      //pin number for LED on TX Tracker
+#else
+   const byte TXLED  = 14;      //pin number for LED on TX Tracker
+ #endif
+
+// Button of TTGO T-Beam
+#ifdef T_BEAM_V1_0
+   const byte BUTTON  = 38;      //pin number for Button on TTGO T-Beam
+#else
+   const byte BUTTON  = 39;      //pin number for Button on TTGO T-Beam
+#endif
+
 // const byte GPSLED = 6;      // pin gps & Heartbeat
 // const byte GPSLED1 = 9;     // pin gps & Heartbeat
 
 // Pins for LoRa module
-const byte lora_PReset = 23; //pin where LoRa device reset line is connected
-const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device is connected.
+//#ifdef T_BEAM_V1_0
+//   const byte lora_PReset = 14; //pin where LoRa device reset line is connected
+//   const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device is connected.
+//#else
+   const byte lora_PReset = 23; //pin where LoRa device reset line is connected
+   const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device is connected.
+//#endif
                              // pin 11  MOSI
                              // pin 12  MISO
                              // pin 13  SCLK
@@ -91,7 +127,18 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 // #define ModemConfig BG_RF95::Bw125Cr45Sf4096
 
 #define DHTPIN 25            // pin the DHT22 is connected to Pin25
-//#define DHTTYPE DHT22        // DHT 22  (AM2302)
+
+// Variables for APRS packaging
+String Tcall;                //your Call Sign for normal position reports
+String wxTcall;              //your Call Sign for weather reports
+String sTable="/";           //Primer
+String wxTable="/";          //Primer
+String wxSymbol="_";         //Symbol Code Weather Station
+
+// Tracker setting: use these lines to modify the tracker behaviour
+#define TXFREQ  433.775      // Transmit frequency in MHz
+#define TXdbmW  18           // Transmit power in dBm
+#define TXenablePA  0        // switch internal power amplifier on (1) or off (0)
 
 // Variables and Constants
 Preferences prefs;
@@ -125,8 +172,13 @@ byte  lora_TXPacketL;        //length of packet to send, includes source, destin
 
 unsigned long lastTX = 0L;
 
-
 float BattVolts;
+
+// variables for smart beaconing
+float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=50, min_speed=0;
+int point_avg_speed = 0;
+ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
+ulong nextTX=60000L;          // preset time period between TX = 60000ms = 60secs = 1min
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
@@ -145,6 +197,9 @@ DHTesp dht;
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
+#ifdef T_BEAM_V1_0
+  AXP20X_Class axp;
+#endif
 
 // checkRX
 uint8_t buf[BG_RF95_MAX_MESSAGE_LEN];
@@ -178,6 +233,22 @@ void setup()
 
   digitalWrite(TXLED, LOW);  // turn blue LED off
   Serial.begin(115200);
+
+  #ifdef T_BEAM_V1_0      // initialize power controller - new on HW V1.0
+    Wire.begin(21, 22);
+    if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+      Serial.println("AXP192 Begin PASS");
+    } else {
+      Serial.println("AXP192 Begin FAIL");
+    }
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+    axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
+    axp.setDCDC1Voltage(3300);
+  #endif
+
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
      for(;;); // Don't proceed, loop forever
   }
@@ -188,11 +259,11 @@ void setup()
 
   //////////////////////////// Setup CALLSIGN
   prefs.begin("nvs", false);
-  Tcall = prefs.getString("Tcall", "OE1XYZ-0");
-  wxTcall = prefs.getString("wxTcall", "OE1XYZ-0");
-  LongFixed = prefs.getString("LongFixed", "01539.85E");
-  LatFixed = prefs.getString("LatFixed", "4813.62N");
-  TxSymbol = prefs.getString("TxSymbol", "[");
+  Tcall = prefs.getString("Tcall", CALLSIGN);
+  wxTcall = prefs.getString("wxTcall", WX_CALLSIGN);
+  LongFixed = prefs.getString("LongFixed", LONGITUDE_PRESET);
+  LatFixed = prefs.getString("LatFixed", LATIDUDE_PRESET);
+  TxSymbol = prefs.getString("TxSymbol", APRS_SYMBOL);
   prefs.end();
 
   int start_button_pressed = millis();
@@ -201,7 +272,7 @@ void setup()
 
   }
   //if (((start_button_pressed+3000<millis())&&(digitalRead(BUTTON) == LOW)) || (Tcall == "OE1000-0")) {
-  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1XYZ-0")) {
+  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1XYZ-0")) {  // into setup when no real data entered in TTGO...config.h
     setup_data();
   }
 
@@ -236,13 +307,15 @@ void setup()
     for(;;); // Don't proceed, loop forever
   }
 
+  if (max_time_to_nextTX < nextTX) {max_time_to_nextTX=nextTX;}
+
   digitalWrite(TXLED, HIGH);
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   digitalWrite(TXLED, LOW);
   Serial.println("Init: RF95 OK!");
 
   if (tracker_mode != WX_FIXED) {
-    ss.begin(GPSBaud, SERIAL_8N1, 12, 15);        //Startup HW serial for GPS
+    ss.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
   }
   digitalWrite(TXLED, HIGH);
   writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
@@ -343,11 +416,23 @@ if (tracker_mode != WX_FIXED) {
   LatShown = LatFixed;
   LongShown = LongFixed;
 }
+
+average_speed[point_avg_speed] = gps.speed.kmph();   // calculate smart beaconing
+++point_avg_speed;
+if (point_avg_speed>4) {point_avg_speed=0;}
+average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
+
+nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
+
+if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
+if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
+
 if (hum_temp)
 {
   writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
 } else {
   writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
+//  writedisplaytext(" "+Tcall,"Time to TX: "+String(average_speed_final),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
 }
 smartDelay(1000);
 
@@ -419,7 +504,7 @@ static void smartDelay(unsigned long ms)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
-//@APA Recalc GPS Position
+//@APA Recalc GPS Position == generate APRS string
 void recalcGPS(){
 
   String Ns, Ew, helper;
@@ -460,7 +545,12 @@ switch(tracker_mode) {
   case WX_FIXED:
     hum = dht.getHumidity();
     tempf = dht.getTemperature()*9/5+32;
-    outString = (wxTcall);
+    for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+      if (wxTcall.charAt(i) != ' ') {
+        outString += wxTcall.charAt(i);
+      }
+    }
+    // outString = wxTcall;
     outString += ">APRS:!";
     outString += LatFixed;
     outString += wxTable;
@@ -489,7 +579,12 @@ switch(tracker_mode) {
     if (wx) {
       hum = dht.getHumidity();
       tempf = dht.getTemperature()*9/5+32;
-      outString = (wxTcall);
+      for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+        if (wxTcall.charAt(i) != ' ') {
+          outString += wxTcall.charAt(i);
+        }
+      }
+      // outString = (wxTcall);
       outString += ">APRS:!";
       if(Tlat<10) {outString += "0"; }
       outString += String(Lat,2);
@@ -520,7 +615,12 @@ switch(tracker_mode) {
       outString += "b......DHT22";
       wx = !wx;
     } else {
-      outString = (Tcall);
+      for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+        if (Tcall.charAt(i) != ' ') {
+          outString += Tcall.charAt(i);
+        }
+      }
+      // outString = (Tcall);
       outString += ">APRS:!";
       if(Tlat<10) {outString += "0"; }
       outString += String(Lat,2);
@@ -542,7 +642,12 @@ switch(tracker_mode) {
 case WX_MOVE:
     hum = dht.getHumidity();
     tempf = dht.getTemperature()*9/5+32;
-    outString = (wxTcall);
+    for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+      if (wxTcall.charAt(i) != ' ') {
+        outString += wxTcall.charAt(i);
+      }
+    }
+    // outString = (wxTcall);
     outString += ">APRS:!";
     if(Tlat<10) {outString += "0"; }
     outString += String(Lat,2);
@@ -574,7 +679,12 @@ case WX_MOVE:
     break;
   case TRACKER:
   default:
-    outString = (Tcall);
+    for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+      if (Tcall.charAt(i) != ' ') {
+        outString += Tcall.charAt(i);
+      }
+    }
+    // outString = (Tcall);
     outString += ">APRS:!";
     if(Tlat<10) {outString += "0"; }
     outString += String(Lat,2);
@@ -707,21 +817,20 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
 
 ///////////////////////////////////////////////////////////////////////////////////////
 void setup_data(void) {
-  char werte_call[36] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0'};
+  char werte_call[37] = {' ','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9','0'};
   String werte_SSID[16] = {"0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15"};
   char werte_latlon[14] = {'0','1','2','3','4','5','6','7','8','9','N','S','E','W'};
   String werte_TxSymbol_text[5] = {"WX Station","Auto","Fussgaenger","Fahrrad","Motorrad"};
   String werte_TxSymbol_symbol[5] = {"_",">","[","b","<"};
   int8_t pos_in_string;
-  int8_t pos_ssid, pos_latlon;
+  int8_t pos_ssid;
   bool key_pressed = false;
   int waiter;
   int initial_waiter = 2000;
-  int ii;
   char aktueller_letter;
   int8_t pos_letter;
   String pfeile = "^";
-  int8_t initial_ssid, initial_latlon, inital_TxSymbnol;
+  int8_t initial_ssid;
 
 
   // set callsign - one for both reports
@@ -729,7 +838,7 @@ void setup_data(void) {
   while (pos_in_string < 6) {
     key_pressed = false;
     aktueller_letter = (char) Tcall.charAt(pos_in_string);// ist Buchstabe holen
-    for (pos_letter=0;pos_letter<36;pos_letter++) {
+    for (pos_letter=0;pos_letter<37;pos_letter++) {
       if (aktueller_letter == werte_call[pos_letter]) {
         break;
       }
@@ -750,7 +859,7 @@ void setup_data(void) {
       }
       // nächster Buchstabe
       ++pos_letter;
-      if (pos_letter>=36) {pos_letter=0;}
+      if (pos_letter>=37) {pos_letter=0;}
       aktueller_letter=werte_call[pos_letter];
     }
     initial_waiter = 2000;

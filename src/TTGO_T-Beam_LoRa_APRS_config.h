@@ -10,38 +10,37 @@
 //
 // licensed under CC BY-NC-SA
 //
-// version: 1.0b
-// last update: 24.12.2018
+// version: V1.1beta
+// last update: 22.11.2019
+//
+// change history
+// version V1.0
+// added HW Version V1.0 support
+// added presetting in the header TTGO...config.h to prevent long initial setup at first boot up
+// added "SPACE" to allowed letters for callsign for shorter callsigns - has to be added at the end
+// added smart beaconing
+//
+// version V1.0b
+// first released version
+
+// SET HW version
+#define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
+// #define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
-// Your Callsign - now set during initial startup
-String Tcall; //="OE3CJB-7";      //your Call Sign for normal position reports
-String wxTcall; //="OE3CJB-7";   //your Call Sign for weather reports
+// IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
 
-// Your symbol table and symbol for position reports incl. battery voltage
-String sTable="/";           //Primer
-//String sTable="\";           //Alternativ
+#define CALLSIGN "OE1XYZ-0"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
+#define WX_CALLSIGN "OE1XYZ-0"  // use same callsign but you can use different SSID
+#define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDMM.mmN or DDMM.mmS
+#define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDDMM.mmE or DDDMM.mmW
+#define APRS_SYMBOL ">"         // other symbols are
+                                // "_" => Weather Station
+                                // ">" => CAR
+                                // "[" => RUNNER
+                                // "b" => BICYCLE
+                                // "<" => MOTORCYCLE
 
-// String sSymbol="_";          //symbol code Weather Station
-// String sSymbol=">";          //symbol code CAR
-// String sSymbol="[";          //symbol code RUNNER
-// String sSymbol="b";          //symbol code BICYCLE
-// String sSymbol="<";          //symbol code MOTORCYCLE
-
-// Your symbol table and symbol for weather reports
-String wxTable="/";          //Primer
-String wxSymbol="_";         //Symbol Code Weather Station
-// String wxSymbol="W";        //Symbol Code Weather Station/
-
-//#define LATITUDE "4813.62N"  // please in APRS notation DDMM.mmN or DDMM.mmS used for FIXED_POSITION
-//#define LONGITUDE "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW used for FIXED_POSITION
-// ^^^^^LATITUDE and LONGITUDE only used when FIXED_POSITION is true
-
-// Tracker setting: use these lines to modify the tracker behaviour
-#define TXFREQ  433.775      // Transmit frequency in MHz
-#define TXdbmW  18           // Transmit power in dBm
-#define TXenablePA  0        // switch internal power amplifier on (1) or off (0)
-
-// Transmit intervall
-unsigned long nextTX = 60000L;   // Send every 60 secs
-// unsigned long nextTX = 5000L; // Send every 5 secs - FOR TESTS ONLY - NO CONNECTION TO SERVER PLEASE!!!!
+// TRANSMIT INTERVAL
+unsigned long max_time_to_nextTX = 60000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+                                // when entering 60000L intervall is fixed to 1 min
