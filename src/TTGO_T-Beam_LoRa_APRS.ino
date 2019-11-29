@@ -45,10 +45,7 @@
 #include <Adafruit_SPITFT.h>
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
-
-#ifdef T_BEAM_V1_0
-  #include <axp20x.h>
-#endif
+#include <axp20x.h>
 
 //Hardware definitions
 
@@ -352,7 +349,7 @@ void setup()
 }
 
 
-//   LOOP
+//   MAINLOOP
 
 void loop()
 {
@@ -391,18 +388,13 @@ if (hum_temp){
   hum_temp=true;
   hum = dht.getHumidity();
 }
-// temp = dht.readTemperature();
-// Serial.print("Init: DHT OK! Temp=");
-// Serial.println(String(temp));
 
 #if DEBUG
   writedisplaytext("LoRa-APRS","","DEBUG",millis(),String(millis()),"",0);
 #endif
- //while(1) { if ( ss.available() ) Serial.write(ss.read());}
-// if (tracker_mode != WX_FIXED) {
+
 while (ss.available() > 0) {
     gps.encode(ss.read());
-//  }
 }
 
 if (rf95.waitAvailableTimeout(100)) {
@@ -429,22 +421,21 @@ if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
 
 if (hum_temp)
 {
-  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
+  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
 } else {
-  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
-//  writedisplaytext(" "+Tcall,"Time to TX: "+String(average_speed_final),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
+  writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000),"LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"GPS: "+String(gps.satellites.value())+" TEMP: "+String(temp,1),0);
 }
 smartDelay(1000);
+batt_read();
 
 if ( (lastTX+nextTX) <= millis()  ) {
   if (tracker_mode != WX_FIXED) {
     if (gps.location.isValid()) {
       digitalWrite(TXLED, HIGH);
-      batt_read();
       if (hum_temp) {
-        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"GPS: "+String(gps.satellites.value())+" TEMP: "+String(temp,1),0);
       }
       sendpacket();
       Serial.println("State: Packet sent!");
@@ -452,11 +443,10 @@ if ( (lastTX+nextTX) <= millis()  ) {
     } else {
       if ( (lastTX+nextTX*2) <= millis()  ) {
       digitalWrite(TXLED, HIGH);
-      batt_read();
       if (hum_temp) {
-        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"BAR: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
+        writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"GPS: "+String(gps.satellites.value())+" TEMP: "+String(temp,1),0);
       }
       sendpacket();
       Serial.println("State: Packet sent!");
@@ -465,11 +455,10 @@ if ( (lastTX+nextTX) <= millis()  ) {
     }
   } else {
     digitalWrite(TXLED, HIGH);
-    batt_read();
     if (hum_temp) {
-      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+"  HUM: "+String(hum,1),0);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
     } else {
-      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","BAT: "+String(analogRead(35)*7.221/4096,1)+" TEMP: "+String(temp,1),0);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"No GPS used","GPS: "+String(gps.satellites.value())+" TEMP: "+String(temp,1),0);
     }
     sendpacket();
     Serial.println("State: Packet sent!");
@@ -789,8 +778,11 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
 void batt_read()
 {
   float BattRead = analogRead(35)*7.221;
-
+#ifdef T_BEAM_V1_0
+  BattVolts = axp.getBattVoltage()/1000;
+#else
   BattVolts = (BattRead / 4096);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
