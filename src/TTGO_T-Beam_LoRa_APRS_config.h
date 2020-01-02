@@ -20,15 +20,17 @@
 // added "SPACE" to allowed letters for callsign for shorter callsigns - has to be added at the end
 // added smart beaconing
 //
-// version V1.0b
+// version V1.2
 // first released version
 
 // SET HW version
-// #define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
-#define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
+#define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
+// #define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
+
+// #define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
 
 #define CALLSIGN "OE1XYZ-0"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define WX_CALLSIGN "OE1XYZ-0"  // use same callsign but you can use different SSID
@@ -42,5 +44,5 @@
                                 // "<" => MOTORCYCLE
 
 // TRANSMIT INTERVAL
-unsigned long max_time_to_nextTX = 60000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+unsigned long max_time_to_nextTX = 300000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
                                 // when entering 60000L intervall is fixed to 1 min
