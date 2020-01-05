@@ -192,8 +192,9 @@ float BattVolts;
 
 // variables for smart beaconing
 float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
+float average_course[3] = {0,0,0};
 float old_course = 0, new_course = 0;
-int point_avg_speed = 0;
+int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong nextTX=60000L;          // preset time period between TX = 60000ms = 60secs = 1min
 
@@ -485,11 +486,17 @@ void loop() {
     nextTX = 0;
   }
 
-  new_course = gps.course.deg();
-  if (abs(new_course-old_course)>=30) {
-    nextTX = 0;
+  average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
+  ++point_avg_course;
+  if (point_avg_course>2) {
+    point_avg_course=0;
+    new_course = (average_course[0]+average_course[1]+average_course[2])/3;
+    if (abs(new_course-old_course)>=30) {
+      nextTX = 0;
+    }
+    old_course = new_course;
   }
-  old_course = new_course;
+
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;

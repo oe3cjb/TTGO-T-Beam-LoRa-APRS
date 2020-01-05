@@ -24,8 +24,8 @@
 // first released version
 
 // SET HW version
-#define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
-// #define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
+// #define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
+#define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
