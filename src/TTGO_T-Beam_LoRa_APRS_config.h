@@ -24,8 +24,8 @@
 // first released version
 
 // SET HW version
-// #define T_BEAM_V1_0    // use this for older Boards AKA Rev1 (second board release)
-#define T_BEAM_V0_7    // use this for older Boards AKA Rev0 (first board release)
+// #define T_BEAM_V1_0    // use this for newer Boards AKA Rev1 (second board release)
+#define T_BEAM_V0_7    // use this for older Boards AKA Rev0.x (first board release)
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
@@ -34,8 +34,8 @@
 
 #define CALLSIGN "OE1XYZ-0"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define WX_CALLSIGN "OE1XYZ-0"  // use same callsign but you can use different SSID
-#define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDMM.mmN or DDMM.mmS
-#define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDDMM.mmE or DDDMM.mmW
+#define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW
+#define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDMM.mmN or DDMM.mmS
 #define APRS_SYMBOL ">"         // other symbols are
                                 // "_" => Weather Station
                                 // ">" => CAR
