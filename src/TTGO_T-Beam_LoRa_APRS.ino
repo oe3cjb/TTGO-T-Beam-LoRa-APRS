@@ -478,6 +478,7 @@ void loop() {
   } else {
     LatShown = LatFixed;
     LongShown = LongFixed;
+    nextTX = max_time_to_nextTX;
   }
 
   batt_read();
