@@ -585,9 +585,9 @@ void loop() {
       }
     } else {                              // ab hier WX_FIXED code
       if (hum_temp) {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
+        writedisplaytext(" "+wxTcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","SAT: ---  TEMP: "+String(temp,1),0);
+        writedisplaytext(" "+wxTcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","SAT: ---  TEMP: "+String(temp,1),0);
       }
     }
   }
