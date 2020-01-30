@@ -9,6 +9,7 @@ Search and install the following libaries:<br>
 <li>DHT sensor library for ESPx</li>
 <li>Adafruit SSD1306</li>
 <li>Adafruit GFX Library</li>
+<li>Adafruit Unified Sensor</li>
 <li>AXP202X_Library</li>
 </ul>
 <br>
