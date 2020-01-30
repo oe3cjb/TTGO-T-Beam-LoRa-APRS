@@ -265,7 +265,11 @@ void setup()
       Serial.println("LoRa-APRS / Init / AXP192 Begin FAIL");
     }
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+    if (tracker_mode != WX_FIXED) {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // switch on GPS in all modes except WX_FIXED
+    } else {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // switch off GPS in WX_FIXED mode
+    }
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
@@ -369,6 +373,9 @@ void setup()
     }
     writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
     Serial.println("LoRa-APRS / Init / Data from GPS OK!");
+  } else {
+    writedisplaytext(" "+Tcall,"","Init:","GPS switched OFF!","","",250);
+    Serial.println("LoRa-APRS / Init / GPS switched OFF!");
   }
 
   #ifdef T_BEAM_V1_0
@@ -426,6 +433,9 @@ void loop() {
           tracker_mode = WX_FIXED;
           writedisplaytext("LoRa-APRS","","New Mode","WX-FIXED","","",500);
           Serial.println("LoRa-APRS / New Mode / WX-FIXED");
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);   // switch OFF GPS at mode WX_FIXED
+          #endif
           blinker(4);
           break;
         case WX_FIXED:
@@ -433,6 +443,9 @@ void loop() {
           tracker_mode = TRACKER;
           writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",500);
           Serial.println("LoRa-APRS / New Mode / TRACKER");
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // switch on GPS in all modes except WX_FIXED
+          #endif
           blinker(1);
           break;
       }
@@ -440,6 +453,7 @@ void loop() {
       prefs.putChar("tracker_mode", (char)tracker_mode);
       prefs.end();
       button_ctr=0;
+      // ESP.restart();
     }
   } else {
     button_ctr = 0;
@@ -453,8 +467,10 @@ void loop() {
     hum = dht.getHumidity();
   }
 
-  while (ss.available() > 0) {
-    gps.encode(ss.read());
+  if (tracker_mode != WX_FIXED) {
+    while (ss.available() > 0) {
+      gps.encode(ss.read());
+    }
   }
 
   if (rf95.waitAvailableTimeout(100)) {
@@ -475,6 +491,17 @@ void loop() {
     if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
     if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
 
+    average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
+    ++point_avg_course;
+    if (point_avg_course>2) {
+      point_avg_course=0;
+      new_course = (average_course[0]+average_course[1]+average_course[2])/3;
+      if (abs(new_course-old_course)>=30) {
+        nextTX = 0;
+      }
+      old_course = new_course;
+    }
+
   } else {
     LatShown = LatFixed;
     LongShown = LongFixed;
@@ -486,18 +513,6 @@ void loop() {
   if (button_ctr==2) {
     nextTX = 0;
   }
-
-  average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
-  ++point_avg_course;
-  if (point_avg_course>2) {
-    point_avg_course=0;
-    new_course = (average_course[0]+average_course[1]+average_course[2])/3;
-    if (abs(new_course-old_course)>=30) {
-      nextTX = 0;
-    }
-    old_course = new_course;
-  }
-
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
@@ -585,9 +600,9 @@ void loop() {
       }
     } else {                              // ab hier WX_FIXED code
       if (hum_temp) {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
+        writedisplaytext(" "+wxTcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","BAT: "+String(BattVolts,1)+"  HUM: "+String(hum,1),0);
       } else {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","SAT: ---  TEMP: "+String(temp,1),0);
+        writedisplaytext(" "+wxTcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: ---  CRS: ---","SAT: ---  TEMP: "+String(temp,1),0);
       }
     }
   }
