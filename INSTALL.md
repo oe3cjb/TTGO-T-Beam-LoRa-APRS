@@ -11,6 +11,8 @@ Search and install the following libaries:<br>
 <li>Adafruit GFX Library</li>
 <li>Adafruit Unified Sensor</li>
 <li>AXP202X_Library</li>
+<li>OneWire</li>
+<li>DallasTemperature</li>
 </ul>
 <br>
 Check that the platformio.ini is available as it holds the board type for PlatformIO.<br>
