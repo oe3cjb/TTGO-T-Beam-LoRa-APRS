@@ -32,6 +32,7 @@ The symbol can now be changed without attached display - during normal operation
 <b>2x TX LED blinks represent "yes" to leave the setup</b> - press here the key to leave the setup - please do so if you don't have a display attached.<br>
 1x TX LED blinks represent "no" to continue with the setup - press here the key to continue the setup - please do so if you have a display attached.<br>
 <br>
+<b>Temperature Sensor:</b><br>
 for DHT22 I used the library from https://github.com/beegee-tokyo/DHTesp, as the standard library gives to many wrong readings<br>
 Now the DS18B20 is supported as well - uncomment line 31: // #define DS18B20    // use this if you use DS18B20, default ist DHT22<br>
 <br>
