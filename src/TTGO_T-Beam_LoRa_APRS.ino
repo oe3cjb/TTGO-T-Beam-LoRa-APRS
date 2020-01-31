@@ -41,7 +41,12 @@
 
 #include <TinyGPS++.h>
 #include <math.h>
-#include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp
+#ifdef DS18B20
+   #include <OneWire.h>         // libraries for DS18B20
+   #include <DallasTemperature.h>
+#else
+   #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+#endif
 #include <driver/adc.h>
 #include <Wire.h>
 
@@ -142,7 +147,8 @@ const byte RX_en  = 0;       //TX/RX enable 1W modul
 
 // #define ModemConfig BG_RF95::Bw125Cr45Sf4096
 
-#define DHTPIN 25            // pin the DHT22 is connected to Pin25
+#define DHTPIN 25            // the DHT22 is connected to PIN25
+#define ONE_WIRE_BUS 25      // the DS18B20 is connected to PIN25
 
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
@@ -210,7 +216,13 @@ void writedisplaytext(String, String, String, String, String, String, int);
 void setup_data(void);
 
 
-DHTesp dht;
+#ifdef DS18B20
+   OneWire oneWire(ONE_WIRE_BUS);
+   DallasTemperature sensors(&oneWire);
+#else
+   DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+#endif
+
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
@@ -394,10 +406,19 @@ void setup()
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(5);
 
-  dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+  #ifdef DS18B20
+    sensors.begin();
+  #else
+    dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+  #endif
   delay(250);
-  temp = dht.getTemperature();
-  hum = dht.getHumidity();
+  #ifdef DS18B20
+    sensors.requestTemperatures(); // Send the command to get temperature readings
+    temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
+      #else
+    temp = dht.getTemperature();
+    hum = dht.getHumidity();
+  #endif
   writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
   Serial.print("LoRa-APRS / Init / DHT OK! Temp=");
   Serial.print(String(temp));
@@ -461,10 +482,19 @@ void loop() {
 
   if (hum_temp) {
     hum_temp=false;
-    temp = dht.getTemperature();
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
+    #else
+      temp = dht.getTemperature();
+    #endif
   } else {
     hum_temp=true;
-    hum = dht.getHumidity();
+    #ifdef DS18B20
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+    #endif
   }
 
   if (tracker_mode != WX_FIXED) {
@@ -665,8 +695,14 @@ outString = "";
 
 switch(tracker_mode) {
   case WX_FIXED:
-    hum = dht.getHumidity();
-    tempf = dht.getTemperature()*9/5+32;
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+      tempf = dht.getTemperature()*9/5+32;
+    #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
         outString += wxTcall.charAt(i);
@@ -699,8 +735,14 @@ switch(tracker_mode) {
     break;
   case WX_TRACKER:
     if (wx) {
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef DS18B20
+        sensors.requestTemperatures(); // Send the command to get temperature readings
+        tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+        hum = 0;
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
       for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
         if (wxTcall.charAt(i) != ' ') {
           outString += wxTcall.charAt(i);
@@ -762,8 +804,14 @@ switch(tracker_mode) {
     }
   break;
 case WX_MOVE:
-    hum = dht.getHumidity();
-    tempf = dht.getTemperature()*9/5+32;
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+      tempf = dht.getTemperature()*9/5+32;
+    #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
         outString += wxTcall.charAt(i);
