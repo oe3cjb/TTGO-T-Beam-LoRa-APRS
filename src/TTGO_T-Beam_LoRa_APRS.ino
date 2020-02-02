@@ -72,7 +72,7 @@
 #define SSD1306_ADDRESS 0x3C
 
 // AXP192 address
-#define AXP192_SLAVE_ADDRESS  0x34
+// #define AXP192_SLAVE_ADDRESS  0x34 // already defined in axp20x.h
 
 /* for feather32u4
 #define RFM95_CS 8
@@ -673,11 +673,11 @@ static void smartDelay(unsigned long ms)
 void recalcGPS(){
 
   String Ns, Ew, helper;
-  float Tlat, Tlon;
+  float Tlat=48.2012, Tlon=15.6361;
   int i, Talt, lenalt;
-  float Lat;
-  float Lon;
-  float Tspeed, Tcourse;
+  float Lat=0.0;
+  float Lon=0.0;
+  float Tspeed=0, Tcourse=0;
   String Speedx, Coursex, Altx;
 
   if (tracker_mode != WX_FIXED) {
@@ -1012,7 +1012,7 @@ void setup_data(void) {
   int8_t pos_in_string;
   int8_t pos_ssid;
   bool key_pressed = false;
-  int waiter, symbol_only;
+  int waiter;
   int initial_waiter = 2000;
   char aktueller_letter;
   int8_t pos_letter;
