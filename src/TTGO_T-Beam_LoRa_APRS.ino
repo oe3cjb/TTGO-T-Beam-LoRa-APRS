@@ -512,7 +512,7 @@ void loop() {
         InputString += (char) lora_RXBUFF[i];
       }
       Serial.println(InputString);
-      writedisplaytext(" ((RX))","",InputString,"","","",2000);
+      writedisplaytext(" ((RX))","",InputString,"","","",10000);
     }
   }
 
