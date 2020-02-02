@@ -525,9 +525,22 @@ void loop() {
     ++point_avg_course;
     if (point_avg_course>2) {
       point_avg_course=0;
-      new_course = (average_course[0]+average_course[1]+average_course[2])/3;
-      if (abs(new_course-old_course)>=30) {
-        nextTX = 0;
+      // new_course = (average_course[0]+average_course[1]+average_course[2])/3;
+      new_course = atan ((sin(average_course[0])+sin(average_course[1])+sin(average_course[2]))/(cos(average_course[0])+cos(average_course[1])+cos(average_course[2])));
+      if ((old_course < 30) && (new_course > 330)) {
+        if (abs(new_course-old_course-360)>=30) {
+          nextTX = 0;
+        }
+      } else {
+        if ((old_course > 330) && (new_course < 30)) {
+          if (abs(new_course-old_course+360)>=30) {
+            nextTX = 0;
+          }
+        } else {
+          if (abs(new_course-old_course)>=30) {
+            nextTX = 0;
+          }
+        }
       }
       old_course = new_course;
     }
