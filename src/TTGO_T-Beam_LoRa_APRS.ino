@@ -41,7 +41,12 @@
 
 #include <TinyGPS++.h>
 #include <math.h>
-#include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp
+#ifdef DS18B20
+   #include <OneWire.h>         // libraries for DS18B20
+   #include <DallasTemperature.h>
+#else
+   #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+#endif
 #include <driver/adc.h>
 #include <Wire.h>
 
@@ -67,7 +72,7 @@
 #define SSD1306_ADDRESS 0x3C
 
 // AXP192 address
-#define AXP192_SLAVE_ADDRESS  0x34
+// #define AXP192_SLAVE_ADDRESS  0x34 // already defined in axp20x.h
 
 /* for feather32u4
 #define RFM95_CS 8
@@ -142,7 +147,8 @@ const byte RX_en  = 0;       //TX/RX enable 1W modul
 
 // #define ModemConfig BG_RF95::Bw125Cr45Sf4096
 
-#define DHTPIN 25            // pin the DHT22 is connected to Pin25
+#define DHTPIN 25            // the DHT22 is connected to PIN25
+#define ONE_WIRE_BUS 25      // the DS18B20 is connected to PIN25
 
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
@@ -210,7 +216,13 @@ void writedisplaytext(String, String, String, String, String, String, int);
 void setup_data(void);
 
 
-DHTesp dht;
+#ifdef DS18B20
+   OneWire oneWire(ONE_WIRE_BUS);
+   DallasTemperature sensors(&oneWire);
+#else
+   DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+#endif
+
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
@@ -265,7 +277,11 @@ void setup()
       Serial.println("LoRa-APRS / Init / AXP192 Begin FAIL");
     }
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+    if (tracker_mode != WX_FIXED) {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // switch on GPS in all modes except WX_FIXED
+    } else {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // switch off GPS in WX_FIXED mode
+    }
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
@@ -369,6 +385,9 @@ void setup()
     }
     writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
     Serial.println("LoRa-APRS / Init / Data from GPS OK!");
+  } else {
+    writedisplaytext(" "+Tcall,"","Init:","GPS switched OFF!","","",250);
+    Serial.println("LoRa-APRS / Init / GPS switched OFF!");
   }
 
   #ifdef T_BEAM_V1_0
@@ -387,10 +406,19 @@ void setup()
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(5);
 
-  dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+  #ifdef DS18B20
+    sensors.begin();
+  #else
+    dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+  #endif
   delay(250);
-  temp = dht.getTemperature();
-  hum = dht.getHumidity();
+  #ifdef DS18B20
+    sensors.requestTemperatures(); // Send the command to get temperature readings
+    temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
+      #else
+    temp = dht.getTemperature();
+    hum = dht.getHumidity();
+  #endif
   writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
   Serial.print("LoRa-APRS / Init / DHT OK! Temp=");
   Serial.print(String(temp));
@@ -426,6 +454,9 @@ void loop() {
           tracker_mode = WX_FIXED;
           writedisplaytext("LoRa-APRS","","New Mode","WX-FIXED","","",500);
           Serial.println("LoRa-APRS / New Mode / WX-FIXED");
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);   // switch OFF GPS at mode WX_FIXED
+          #endif
           blinker(4);
           break;
         case WX_FIXED:
@@ -433,6 +464,9 @@ void loop() {
           tracker_mode = TRACKER;
           writedisplaytext("LoRa-APRS","","New Mode","TRACKER","","",500);
           Serial.println("LoRa-APRS / New Mode / TRACKER");
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // switch on GPS in all modes except WX_FIXED
+          #endif
           blinker(1);
           break;
       }
@@ -440,6 +474,7 @@ void loop() {
       prefs.putChar("tracker_mode", (char)tracker_mode);
       prefs.end();
       button_ctr=0;
+      // ESP.restart();
     }
   } else {
     button_ctr = 0;
@@ -447,14 +482,25 @@ void loop() {
 
   if (hum_temp) {
     hum_temp=false;
-    temp = dht.getTemperature();
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
+    #else
+      temp = dht.getTemperature();
+    #endif
   } else {
     hum_temp=true;
-    hum = dht.getHumidity();
+    #ifdef DS18B20
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+    #endif
   }
 
-  while (ss.available() > 0) {
-    gps.encode(ss.read());
+  if (tracker_mode != WX_FIXED) {
+    while (ss.available() > 0) {
+      gps.encode(ss.read());
+    }
   }
 
   if (rf95.waitAvailableTimeout(100)) {
@@ -475,6 +521,30 @@ void loop() {
     if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
     if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
 
+    average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
+    ++point_avg_course;
+    if (point_avg_course>2) {
+      point_avg_course=0;
+      // new_course = (average_course[0]+average_course[1]+average_course[2])/3;
+      new_course = atan ((sin(average_course[0])+sin(average_course[1])+sin(average_course[2]))/(cos(average_course[0])+cos(average_course[1])+cos(average_course[2])));
+      if ((old_course < 30) && (new_course > 330)) {
+        if (abs(new_course-old_course-360)>=30) {
+          nextTX = 0;
+        }
+      } else {
+        if ((old_course > 330) && (new_course < 30)) {
+          if (abs(new_course-old_course+360)>=30) {
+            nextTX = 0;
+          }
+        } else {
+          if (abs(new_course-old_course)>=30) {
+            nextTX = 0;
+          }
+        }
+      }
+      old_course = new_course;
+    }
+
   } else {
     LatShown = LatFixed;
     LongShown = LongFixed;
@@ -486,18 +556,6 @@ void loop() {
   if (button_ctr==2) {
     nextTX = 0;
   }
-
-  average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
-  ++point_avg_course;
-  if (point_avg_course>2) {
-    point_avg_course=0;
-    new_course = (average_course[0]+average_course[1]+average_course[2])/3;
-    if (abs(new_course-old_course)>=30) {
-      nextTX = 0;
-    }
-    old_course = new_course;
-  }
-
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
@@ -615,11 +673,11 @@ static void smartDelay(unsigned long ms)
 void recalcGPS(){
 
   String Ns, Ew, helper;
-  float Tlat, Tlon;
+  float Tlat=48.2012, Tlon=15.6361;
   int i, Talt, lenalt;
-  float Lat;
-  float Lon;
-  float Tspeed, Tcourse;
+  float Lat=0.0;
+  float Lon=0.0;
+  float Tspeed=0, Tcourse=0;
   String Speedx, Coursex, Altx;
 
   if (tracker_mode != WX_FIXED) {
@@ -650,8 +708,14 @@ outString = "";
 
 switch(tracker_mode) {
   case WX_FIXED:
-    hum = dht.getHumidity();
-    tempf = dht.getTemperature()*9/5+32;
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+      tempf = dht.getTemperature()*9/5+32;
+    #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
         outString += wxTcall.charAt(i);
@@ -684,8 +748,14 @@ switch(tracker_mode) {
     break;
   case WX_TRACKER:
     if (wx) {
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef DS18B20
+        sensors.requestTemperatures(); // Send the command to get temperature readings
+        tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+        hum = 0;
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
       for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
         if (wxTcall.charAt(i) != ' ') {
           outString += wxTcall.charAt(i);
@@ -747,8 +817,14 @@ switch(tracker_mode) {
     }
   break;
 case WX_MOVE:
-    hum = dht.getHumidity();
-    tempf = dht.getTemperature()*9/5+32;
+    #ifdef DS18B20
+      sensors.requestTemperatures(); // Send the command to get temperature readings
+      tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
+      hum = 0;
+    #else
+      hum = dht.getHumidity();
+      tempf = dht.getTemperature()*9/5+32;
+    #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
         outString += wxTcall.charAt(i);
@@ -936,7 +1012,7 @@ void setup_data(void) {
   int8_t pos_in_string;
   int8_t pos_ssid;
   bool key_pressed = false;
-  int waiter, symbol_only;
+  int waiter;
   int initial_waiter = 2000;
   char aktueller_letter;
   int8_t pos_letter;
