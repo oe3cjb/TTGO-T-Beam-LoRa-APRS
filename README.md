@@ -40,7 +40,7 @@ Now the DS18B20 is supported as well - uncomment line 31: // #define DS18B20    
 <b>show RX packets</b><br>
 by uncommenting <b>// #define SHOW_RX_PACKET</b> the tracker shows received LoRa APRS packets in raw format for the time in milliseconds defined in SHOW_RX_TIME - both in ...config.h<br>
 <br>
-<b>new features:<b><br>
+<b>new features:</b><br>
 - show RX packets
 - DS18B20 support (setable in config.h)
 - GPS switched off in WX_FIXED mode (only available with boards with HW-Version >=V1.0)
