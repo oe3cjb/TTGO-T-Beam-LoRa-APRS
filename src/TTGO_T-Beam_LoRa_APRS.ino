@@ -505,6 +505,7 @@ void loop() {
   }
 
   if (rf95.waitAvailableTimeout(100)) {
+  #ifdef SHOW_RX_PACKET                                       // only show RX packets when activitated in config
     if (rf95.recvAPRS(lora_RXBUFF, &len)) {
       Serial.print("((RX)): ");
       InputString = "";
@@ -513,8 +514,9 @@ void loop() {
       }
       Serial.println(InputString);
       blinker(3);
-      writedisplaytext("  ((RX))","",InputString,"","","",10000);
+      writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
     }
+  #endif
   }
 
   if (tracker_mode != WX_FIXED) {

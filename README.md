@@ -36,7 +36,11 @@ The symbol can now be changed without attached display - during normal operation
 for DHT22 I used the library from https://github.com/beegee-tokyo/DHTesp, as the standard library gives to many wrong readings<br>
 Now the DS18B20 is supported as well - uncomment line 31: // #define DS18B20    // use this if you use DS18B20, default ist DHT22<br>
 <br>
-new features:<br>
+<b>show RX packets</b><br>
+by uncommenting <b>// #define SHOW_RX_PACKET</b> the tracker shows received LoRa APRS packets in raw format for the time in milliseconds defined in SHOW_RX_TIME - both in ...config.h<br>
+<br>
+<b>new features:<b><br>
+- show RX packets
 - DS18B20 support (setable in config.h)
 - GPS switched off in WX_FIXED mode (only available with boards with HW-Version >=V1.0)
 - immediate TX with short key press
