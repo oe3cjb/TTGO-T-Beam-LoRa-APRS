@@ -15,6 +15,7 @@ Now two possibilities are implemented:<br>
 in case of shorter callsign use "SPACES" and extend up to total length of 6 characters<br>
 2nd) if you leave the config-file unchanged, you will run into a simple setup routine at the very first boot and you will be asked to enter your callsign and SSID(s).<br>
 Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON for 5secs while switching on the tracker.<br>
+When you uncomment this line <b>// #define DONT_USE_FLASH_MEMORY</b> in TTGO_T-Beam_LoRa_APRS_<b>config</b>.h then the FW will always use the values from the config-file<br>
 <br>
 The MODE of the tracker can now be changed by pressing the button 10secs!<br>
 This can be done now without connected display but with a mounted TX LED.<br>
