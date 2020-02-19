@@ -181,6 +181,7 @@ boolean wx;
 
 //byte arrays
 byte  lora_TXBUFF[128];      //buffer for packet to send
+byte  lora_RXBUFF[128];      //buffer for packet to send
 //byte Variables
 byte  lora_TXStart;          //start of packet data in TXbuff
 byte  lora_TXEnd;            //end of packet data in TXbuff
@@ -436,7 +437,7 @@ void setup()
 void loop() {
   if (digitalRead(BUTTON)==LOW) {
     ++button_ctr;
-    if (button_ctr>=5){
+    if (button_ctr>=5) {
       switch(tracker_mode) {
         case TRACKER:
           tracker_mode = WX_TRACKER;
@@ -480,7 +481,7 @@ void loop() {
     button_ctr = 0;
   }
 
-  if (hum_temp) {
+    if (hum_temp) {
     hum_temp=false;
     #ifdef DS18B20
       sensors.requestTemperatures(); // Send the command to get temperature readings
@@ -504,8 +505,18 @@ void loop() {
   }
 
   if (rf95.waitAvailableTimeout(100)) {
-    if (rf95.recvAPRS(buf, &len)) {
+  #ifdef SHOW_RX_PACKET                                       // only show RX packets when activitated in config
+    if (rf95.recvAPRS(lora_RXBUFF, &len)) {
+      Serial.print("((RX)): ");
+      InputString = "";
+      for ( int i=0 ; i < len ; i++) {
+        InputString += (char) lora_RXBUFF[i];
+      }
+      Serial.println(InputString);
+      blinker(3);
+      writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
     }
+  #endif
   }
 
   if (tracker_mode != WX_FIXED) {
