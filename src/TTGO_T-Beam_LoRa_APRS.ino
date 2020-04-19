@@ -29,7 +29,7 @@
 // version V1.0beta
 // first released version//
 
-#define DEBUG false           // used for debugging purposes , e.g. turning on special serial or display logging
+// #define DEBUG             // used for debugging purposes , e.g. turning on special serial or display logging
 // Includes
 
 #include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
@@ -199,11 +199,20 @@ float BattVolts;
 
 // variables for smart beaconing
 float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
-float average_course[3] = {0,0,0};
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong nextTX=60000L;          // preset time period between TX = 60000ms = 60secs = 1min
+#define ANGLE 37              // angle to send packet at smart beaconing
+#define ANGLE_AVGS 3          // angle averaging - x times
+float average_course[ANGLE_AVGS];
+float avg_c_y, avg_c_x;
+
+#ifdef DEBUG
+  // debug Variables
+  String TxRoot="0";
+  float millis_angle[ANGLE_AVGS];
+#endif
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
@@ -250,6 +259,8 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 void setup()
 {
+  for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
+
   prefs.begin("nvs", false);
   tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", 0);
   prefs.end();
@@ -262,6 +273,8 @@ void setup()
   } else  {
     wx = false;
   }
+
+  tracker_mode = TRACKER;
 
   pinMode(TXLED, OUTPUT);
   pinMode(BUTTON, INPUT);
@@ -528,34 +541,73 @@ void loop() {
     if (point_avg_speed>4) {point_avg_speed=0;}
     average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
     nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
+    #ifdef DEBUG
+      TxRoot="S";
+    #endif
 
     if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
     if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
 
     average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
+    #ifdef DEBUG
+      millis_angle[point_avg_course]=millis();
+    #endif
     ++point_avg_course;
-    if (point_avg_course>2) {
+    if (point_avg_course>(ANGLE_AVGS-1)) {
       point_avg_course=0;
-      // new_course = (average_course[0]+average_course[1]+average_course[2])/3;
-      new_course = atan ((sin(average_course[0])+sin(average_course[1])+sin(average_course[2]))/(cos(average_course[0])+cos(average_course[1])+cos(average_course[2])));
-      if ((old_course < 30) && (new_course > 330)) {
-        if (abs(new_course-old_course-360)>=30) {
+      avg_c_y = 0;
+      avg_c_x = 0;
+      for (int i=0;i<ANGLE_AVGS;i++) {
+        avg_c_y += sin(average_course[i]/180*3.1415);
+        avg_c_x += cos(average_course[i]/180*3.1415);
+      }
+      new_course = atan2f(avg_c_y,avg_c_x)*180/3.1415;
+      if (new_course < 0) {new_course=360+new_course;}
+      if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
+        if (abs(new_course-old_course-360)>=ANGLE) {
           nextTX = 0;
+          // lastTX = min_time_to_nextTX
+          #ifdef DEBUG
+            TxRoot="W1";
+            for (int i=0;i<2;i++)
+            {
+//              TxRoot += " c:" + String(average_course[i]) + " t:" + String(millis_angle[i]);
+              TxRoot += " " + String(millis_angle[i],2);
+            }
+            TxRoot = TxRoot + " new:" + String(new_course) + " old:" +String(old_course);
+          #endif
         }
       } else {
-        if ((old_course > 330) && (new_course < 30)) {
-          if (abs(new_course-old_course+360)>=30) {
+        if ((old_course > (360-ANGLE)) && (new_course < ANGLE)) {
+          if (abs(new_course-old_course+360)>=ANGLE) {
             nextTX = 0;
+            #ifdef DEBUG
+              TxRoot="W2";
+              for (int i=0;i<2;i++)
+              {
+                //              TxRoot += " c:" + String(average_course[i]) + " t:" + String(millis_angle[i]);
+                TxRoot += " " + String(millis_angle[i],2);
+              }
+              TxRoot = TxRoot + " new:" + String(new_course) + " old:" +String(old_course);
+            #endif
           }
         } else {
-          if (abs(new_course-old_course)>=30) {
+          if (abs(new_course-old_course)>=ANGLE) {
             nextTX = 0;
+            #ifdef DEBUG
+              TxRoot="W3";
+              for (int i=0;i<2;i++)
+              {
+                //              TxRoot += " c:" + String(average_course[i]) + " t:" + String(millis_angle[i]);
+                TxRoot += " " + String(millis_angle[i],2);
+              }
+              TxRoot = TxRoot + " new:" + String(new_course) + " old:" +String(old_course);
+            #endif
           }
         }
       }
       old_course = new_course;
     }
-
   } else {
     LatShown = LatFixed;
     LongShown = LongFixed;
@@ -566,10 +618,16 @@ void loop() {
 
   if (button_ctr==2) {
     nextTX = 0;
+    #ifdef DEBUG
+      TxRoot="B";
+    #endif
   }
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
+    #ifdef DEBUG
+      TxRoot="1";
+    #endif
   }
 
   if ( (lastTX+nextTX) <= millis()  ) {
@@ -905,6 +963,10 @@ case WX_MOVE:
     outString += " Batt=";
     outString += String(BattVolts,2);
     outString += ("V");
+    outString += (" Debug: ");
+#ifdef DEBUG
+    outString += TxRoot;
+#endif
     Serial.print("outString=");
     // Speedx = String(Tspeed,0);
     // Speedx.replace(" ","");

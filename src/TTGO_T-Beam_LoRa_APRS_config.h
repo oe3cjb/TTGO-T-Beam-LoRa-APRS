@@ -46,7 +46,7 @@
                                 // "<" => MOTORCYCLE
 
 // TRANSMIT INTERVAL
-unsigned long max_time_to_nextTX = 300000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+unsigned long max_time_to_nextTX = 180000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
                                 // when entering 60000L intervall is fixed to 1 min
 
 // show RX values
