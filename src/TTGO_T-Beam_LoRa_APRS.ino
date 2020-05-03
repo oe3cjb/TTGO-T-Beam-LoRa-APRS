@@ -203,7 +203,7 @@ float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong nextTX=60000L;          // preset time period between TX = 60000ms = 60secs = 1min
-#define ANGLE 37              // angle to send packet at smart beaconing
+#define ANGLE 60              // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3          // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
@@ -963,8 +963,8 @@ case WX_MOVE:
     outString += " Batt=";
     outString += String(BattVolts,2);
     outString += ("V");
-    outString += (" Debug: ");
 #ifdef DEBUG
+    outString += (" Debug: ");
     outString += TxRoot;
 #endif
     Serial.print("outString=");
