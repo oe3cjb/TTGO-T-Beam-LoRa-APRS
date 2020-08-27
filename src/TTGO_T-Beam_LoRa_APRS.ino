@@ -11,9 +11,14 @@
 //
 // licensed under CC BY-NC-SA
 //
+// version: V1.3
+// last update: 27.08.2020
+// change history
+// symbol RV added
+// compressed packets in tracker mode (base91)
+//
 // version: V1.2
 // last update: 02.01.2020
-//
 // change history
 // added course change to smart Beaconing
 // code cleaned
@@ -736,14 +741,29 @@ static void smartDelay(unsigned long ms)
   } while (millis() - start < ms);
 }
 
+char *ax25_base91enc(char *s, uint8_t n, uint32_t v)
+{
+  /* Creates a Base-91 representation of the value in v in the string */
+  /* pointed to by s, n-characters long. String length should be n+1. */
+
+  for(s += n, *s = '\0'; n; n--)
+  {
+    *(--s) = v % 91 + 33;
+    v /= 91;
+  }
+
+  return(s);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //@APA Recalc GPS Position == generate APRS string
 void recalcGPS(){
 
   String Ns, Ew, helper;
+  char helper_base91[] = {"0000\0"};
   float Tlat=48.2012, Tlon=15.6361;
   int i, Talt, lenalt;
+  uint32_t aprs_lat, aprs_lon;
   float Lat=0.0;
   float Lon=0.0;
   float Tspeed=0, Tcourse=0;
@@ -931,48 +951,76 @@ case WX_MOVE:
     break;
   case TRACKER:
   default:
-    for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-      if (Tcall.charAt(i) != ' ') {
-        outString += Tcall.charAt(i);
+    #ifndef TX_BASE91
+      for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+        if (Tcall.charAt(i) != ' ') {
+          outString += Tcall.charAt(i);
+        }
       }
-    }
-    // outString = (Tcall);
-    outString += ">APRS:!";
-    if(Tlat<10) {outString += "0"; }
-    outString += String(Lat,2);
-    outString += Ns;
-    outString += sTable;
-    if(Tlon<100) {outString += "0"; }
-    if(Tlon<10) {outString += "0"; }
-    outString += String(Lon,2);
-    outString += Ew;
-    outString += TxSymbol;
-    if(Tcourse<100) {outString += "0"; }
-    if(Tcourse<10) {outString += "0"; }
-    Coursex = String(Tcourse,0);
-    Coursex.replace(" ","");
-    outString += Coursex;
-    outString += "/";
-    if(Tspeed<100) {outString += "0"; }
-    if(Tspeed<10) {outString += "0"; }
-    Speedx = String(Tspeed,0);
-    Speedx.replace(" ","");
-    outString += Speedx;
-    outString += "/A=";
-    outString += Altx;
-    outString += " Batt=";
-    outString += String(BattVolts,2);
-    outString += ("V");
-#ifdef DEBUG
-    outString += (" Debug: ");
-    outString += TxRoot;
-#endif
+      // outString = (Tcall);
+      outString += ">APRS:!";
+      if(Tlat<10) {outString += "0"; }
+      outString += String(Lat,2);
+      outString += Ns;
+      outString += sTable;
+      if(Tlon<100) {outString += "0"; }
+      if(Tlon<10) {outString += "0"; }
+      outString += String(Lon,2);
+      outString += Ew;
+      outString += TxSymbol;
+      if(Tcourse<100) {outString += "0"; }
+      if(Tcourse<10) {outString += "0"; }
+      Coursex = String(Tcourse,0);
+      Coursex.replace(" ","");
+      outString += Coursex;
+      outString += "/";
+      if(Tspeed<100) {outString += "0"; }
+      if(Tspeed<10) {outString += "0"; }
+      Speedx = String(Tspeed,0);
+      Speedx.replace(" ","");
+      outString += Speedx;
+      outString += "/A=";
+      outString += Altx;
+      outString += " Batt=";
+      outString += String(BattVolts,2);
+      outString += ("V");
+      #ifdef DEBUG
+        outString += (" Debug: ");
+        outString += TxRoot;
+      #endif
+    #else
+      for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+        if (Tcall.charAt(i) != ' ') {
+          outString += Tcall.charAt(i);
+        }
+      }
+      // outString = (Tcall);
+      outString += ">APRS:!/";
+      aprs_lat = 900000000 - Tlat * 10000000;
+      aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
+      aprs_lon = 900000000 + Tlon * 10000000 / 2;
+      aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
+      ax25_base91enc(helper_base91, 4, aprs_lat);
+      for (i=0; i<4; i++) {
+        outString += helper_base91[i];
+      }
+      ax25_base91enc(helper_base91, 4, aprs_lon);
+      for (i=0; i<4; i++) {
+        outString += helper_base91[i];
+      }
+      outString += TxSymbol;
+      ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+      outString += helper_base91[0];
+      ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+      outString += helper_base91[0];
+      outString += "\x48";
+    #endif
     Serial.print("outString=");
     // Speedx = String(Tspeed,0);
     // Speedx.replace(" ","");
     Serial.println(outString);
     // Serial.println("=");
-    break;
+  break;
   }
 }
 

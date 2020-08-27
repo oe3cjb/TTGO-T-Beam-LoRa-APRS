@@ -10,6 +10,12 @@
 //
 // licensed under CC BY-NC-SA
 //
+// version: V1.3
+// last update: 27.08.2020
+// change history
+// symbol RV added
+// compressed packets in tracker mode (base91)
+//
 // version: V1.1beta
 // last update: 22.11.2019
 //
@@ -26,6 +32,7 @@
 // SET HW version
 #define T_BEAM_V1_0    // use this for newer Boards AKA Rev1 (second board release)
 // #define T_BEAM_V0_7    // use this for older Boards AKA Rev0.x (first board release)
+#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
 
 // SET temperature sensor type
 // #define DS18B20    // use this if you use DS18B20, default ist DHT22
@@ -33,12 +40,12 @@
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
 
-#define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
-#define CALLSIGN "OE3CJB-14"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
-#define WX_CALLSIGN "OE3CJB-14"  // use same callsign but you can use different SSID
+// #define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
+#define CALLSIGN "OE1XYZ-11"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
+#define WX_CALLSIGN "OE1XYZ-11"  // use same callsign but you can use different SSID
 #define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW
 #define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDMM.mmN or DDMM.mmS
-#define APRS_SYMBOL "R"         // other symbols are
+#define APRS_SYMBOL ">"         // other symbols are
                                 // "_" => Weather Station
                                 // ">" => CAR
                                 // "[" => RUNNER
