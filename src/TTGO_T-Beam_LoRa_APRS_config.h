@@ -32,7 +32,6 @@
 // SET HW version
 #define T_BEAM_V1_0    // use this for newer Boards AKA Rev1 (second board release)
 // #define T_BEAM_V0_7    // use this for older Boards AKA Rev0.x (first board release)
-#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
 
 // SET temperature sensor type
 // #define DS18B20    // use this if you use DS18B20, default ist DHT22
@@ -52,6 +51,9 @@
                                 // "b" => BICYCLE
                                 // "<" => MOTORCYCLE
                                 // "R" => Recreation Vehicle
+// #define HW_COMMENT              // send Alt und Battery Voltage, UNcomment if don't want to send it
+#define MY_COMMENT "" // add your coment here - if empty then no comment is sent
+// #define MY_COMMENT "TTGO by OE3CJB" // add your coment here - if empty then no comment is sent
 
 // TRANSMIT INTERVAL
 unsigned long max_time_to_nextTX = 180000L;   // set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!

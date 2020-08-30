@@ -219,6 +219,8 @@ float avg_c_y, avg_c_x;
   float millis_angle[ANGLE_AVGS];
 #endif
 
+#define TX_BASE91         // if BASE91 is set, packets will be sent compressed (in TRACKER-mode only)
+
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
 
@@ -791,6 +793,10 @@ void recalcGPS(){
     if(Tlon < 0) { Tlon= -Tlon; }
     unsigned int Deg_Lon = Tlon;
     Lon = 100*(Deg_Lon) + (Tlon - Deg_Lon)*60;
+    aprs_lat = 900000000 - Tlat * 10000000;
+    aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
+    aprs_lon = 900000000 + Tlon * 10000000 / 2;
+    aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
   }
 
 outString = "";
@@ -816,6 +822,10 @@ switch(tracker_mode) {
     outString += wxTable;
     outString += LongFixed;
     outString += wxSymbol;
+
+
+
+
     outString += ".../...g...t";
     if (tempf < 0) {     // negative Werte erstellen
       outString += "-";
@@ -834,6 +844,7 @@ switch(tracker_mode) {
     helper.trim();
     outString += helper;
     outString += "b......DHT22";
+    outString += MY_COMMENT;
     break;
   case WX_TRACKER:
     if (wx) {
@@ -845,22 +856,46 @@ switch(tracker_mode) {
         hum = dht.getHumidity();
         tempf = dht.getTemperature()*9/5+32;
       #endif
-      for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
-        if (wxTcall.charAt(i) != ' ') {
-          outString += wxTcall.charAt(i);
+      #ifndef TX_BASE91
+        for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (wxTcall.charAt(i) != ' ') {
+            outString += wxTcall.charAt(i);
+          }
         }
-      }
-      // outString = (wxTcall);
-      outString += ">APRS:!";
-      if(Tlat<10) {outString += "0"; }
-      outString += String(Lat,2);
-      outString += Ns;
-      outString += wxTable;
-      if(Tlon<100) {outString += "0"; }
-      if(Tlon<10) {outString += "0"; }
-      outString += String(Lon,2);
-      outString += Ew;
-      outString += wxSymbol;
+        // outString = (wxTcall);
+        outString += ">APRS:!";
+        if(Tlat<10) {outString += "0"; }
+        outString += String(Lat,2);
+        outString += Ns;
+        outString += wxTable;
+        if(Tlon<100) {outString += "0"; }
+        if(Tlon<10) {outString += "0"; }
+        outString += String(Lon,2);
+        outString += Ew;
+        outString += wxSymbol;
+      #else
+        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (Tcall.charAt(i) != ' ') {
+            outString += Tcall.charAt(i);
+          }
+        }
+        // outString = (Tcall);
+        outString += ">APRS:!/";
+        ax25_base91enc(helper_base91, 4, aprs_lat);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        ax25_base91enc(helper_base91, 4, aprs_lon);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        outString += wxSymbol;
+        ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+        outString += helper_base91[0];
+        ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+        outString += helper_base91[0];
+        outString += "\x48";
+      #endif
       outString += ".../...g...t";
       if (tempf < 0) {     // negative Werte erstellen
         outString += "-";
@@ -879,29 +914,58 @@ switch(tracker_mode) {
       helper.trim();
       outString += helper;
       outString += "b......DHT22";
+      outString += MY_COMMENT;
       wx = !wx;
     } else {
-      for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-        if (Tcall.charAt(i) != ' ') {
-          outString += Tcall.charAt(i);
+      #ifndef TX_BASE91
+        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (Tcall.charAt(i) != ' ') {
+            outString += Tcall.charAt(i);
+          }
         }
-      }
-      // outString = (Tcall);
-      outString += ">APRS:!";
-      if(Tlat<10) {outString += "0"; }
-      outString += String(Lat,2);
-      outString += Ns;
-      outString += sTable;
-      if(Tlon<100) {outString += "0"; }
-      if(Tlon<10) {outString += "0"; }
-      outString += String(Lon,2);
-      outString += Ew;
-      outString += TxSymbol;
-      outString += "/A=";
-      outString += Altx;
-      outString += " Batt=";
-      outString += String(BattVolts,2);
-      outString += ("V");
+        // outString = (Tcall);
+        outString += ">APRS:!";
+        if(Tlat<10) {outString += "0"; }
+        outString += String(Lat,2);
+        outString += Ns;
+        outString += sTable;
+        if(Tlon<100) {outString += "0"; }
+        if(Tlon<10) {outString += "0"; }
+        outString += String(Lon,2);
+        outString += Ew;
+        outString += TxSymbol;
+      #else
+        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (Tcall.charAt(i) != ' ') {
+            outString += Tcall.charAt(i);
+          }
+        }
+        // outString = (Tcall);
+        outString += ">APRS:!/";
+        ax25_base91enc(helper_base91, 4, aprs_lat);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        ax25_base91enc(helper_base91, 4, aprs_lon);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        outString += TxSymbol;
+        ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+        outString += helper_base91[0];
+        ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+        outString += helper_base91[0];
+        outString += "\x48";
+      #endif
+
+      #ifdef HW_COMMENT
+        outString += "/A=";
+        outString += Altx;
+        outString += " Batt=";
+        outString += String(BattVolts,2);
+        outString += ("V");
+      #endif
+      outString += MY_COMMENT;
       wx = !wx;
     }
   break;
@@ -914,22 +978,48 @@ case WX_MOVE:
       hum = dht.getHumidity();
       tempf = dht.getTemperature()*9/5+32;
     #endif
-    for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
-      if (wxTcall.charAt(i) != ' ') {
-        outString += wxTcall.charAt(i);
+
+
+    #ifndef TX_BASE91
+      for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+        if (wxTcall.charAt(i) != ' ') {
+          outString += wxTcall.charAt(i);
+        }
       }
-    }
-    // outString = (wxTcall);
-    outString += ">APRS:!";
-    if(Tlat<10) {outString += "0"; }
-    outString += String(Lat,2);
-    outString += Ns;
-    outString += wxTable;
-    if(Tlon<100) {outString += "0"; }
-    if(Tlon<10) {outString += "0"; }
-    outString += String(Lon,2);
-    outString += Ew;
-    outString += wxSymbol;
+      // outString = (wxTcall);
+      outString += ">APRS:!";
+      if(Tlat<10) {outString += "0"; }
+      outString += String(Lat,2);
+      outString += Ns;
+      outString += wxTable;
+      if(Tlon<100) {outString += "0"; }
+      if(Tlon<10) {outString += "0"; }
+      outString += String(Lon,2);
+      outString += Ew;
+      outString += wxSymbol;
+      #else
+        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (Tcall.charAt(i) != ' ') {
+            outString += Tcall.charAt(i);
+          }
+        }
+        // outString = (Tcall);
+        outString += ">APRS:!/";
+        ax25_base91enc(helper_base91, 4, aprs_lat);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        ax25_base91enc(helper_base91, 4, aprs_lon);
+        for (i=0; i<4; i++) {
+          outString += helper_base91[i];
+        }
+        outString += wxSymbol;
+        ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+        outString += helper_base91[0];
+        ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+        outString += helper_base91[0];
+        outString += "\x48";
+      #endif
     outString += ".../...g...t";
     if (tempf < 0) {     // negative Werte erstellen
       outString += "-";
@@ -948,6 +1038,7 @@ case WX_MOVE:
     helper.trim();
     outString += helper;
     outString += "b......DHT22";
+    outString += MY_COMMENT;
     break;
   case TRACKER:
   default:
@@ -979,11 +1070,14 @@ case WX_MOVE:
       Speedx = String(Tspeed,0);
       Speedx.replace(" ","");
       outString += Speedx;
-      outString += "/A=";
-      outString += Altx;
-      outString += " Batt=";
-      outString += String(BattVolts,2);
-      outString += ("V");
+      #ifdef HW_COMMENT
+        outString += "/A=";
+        outString += Altx;
+        outString += " Batt=";
+        outString += String(BattVolts,2);
+        outString += ("V");
+      #endif
+      outString += MY_COMMENT;
       #ifdef DEBUG
         outString += (" Debug: ");
         outString += TxRoot;
@@ -996,10 +1090,6 @@ case WX_MOVE:
       }
       // outString = (Tcall);
       outString += ">APRS:!/";
-      aprs_lat = 900000000 - Tlat * 10000000;
-      aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
-      aprs_lon = 900000000 + Tlon * 10000000 / 2;
-      aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
       ax25_base91enc(helper_base91, 4, aprs_lat);
       for (i=0; i<4; i++) {
         outString += helper_base91[i];
@@ -1014,6 +1104,14 @@ case WX_MOVE:
       ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
       outString += helper_base91[0];
       outString += "\x48";
+      #ifdef HW_COMMENT
+        outString += "/A=";
+        outString += Altx;
+        outString += " Batt=";
+        outString += String(BattVolts,2);
+        outString += ("V");
+      #endif
+      outString += MY_COMMENT;
     #endif
     Serial.print("outString=");
     // Speedx = String(Tspeed,0);
