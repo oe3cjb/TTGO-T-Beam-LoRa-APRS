@@ -11,7 +11,7 @@ You can now do an immediate TX beacon if you press the key for 2secs - use this 
 <br>
 <b>Callsign setting:</b><br>
 Now two possibilities are implemented:<br>
-1st) enter your callsign in the file TTGO_T-Beam_LoRa_APRS_<b>config</b>.h and replace the OE1XYZ-0 with your data with 6 characters plus SSID-<br>
+1st) enter your callsign in the file TTGO_T-Beam_LoRa_APRS_<b>config</b>.h and replace the OE1JCB-0 with your data with 6 characters plus SSID-<br>
 in case of shorter callsign use "SPACES" and extend up to total length of 6 characters<br>
 2nd) if you leave the config-file unchanged, you will run into a simple setup routine at the very first boot and you will be asked to enter your callsign and SSID(s).<br>
 Once the callsign is programmed you can reenter the programming mode by pressing the BUTTON for 5secs while switching on the tracker.<br>
