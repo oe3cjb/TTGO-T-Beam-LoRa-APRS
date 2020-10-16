@@ -34,8 +34,8 @@
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
 
 // #define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
-#define CALLSIGN "OE1XYZ-0"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
-#define WX_CALLSIGN "OE1XYZ-0"  // use same callsign but you can use different SSID
+#define CALLSIGN "OE1JCB-0"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
+#define WX_CALLSIGN "OE1JCB-0"  // use same callsign but you can use different SSID
 #define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW
 #define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDMM.mmN or DDMM.mmS
 #define APRS_SYMBOL ">"         // other symbols are
