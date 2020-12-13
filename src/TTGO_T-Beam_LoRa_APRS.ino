@@ -849,7 +849,7 @@ switch(tracker_mode) {
     #else
       #ifdef USE_BME280
         bme.takeForcedMeasurement();
-        temp = bme.readTemperature();
+        tempf = bme.readTemperature();
         hum = bme.readHumidity();
       #else
         hum = dht.getHumidity();
@@ -888,7 +888,7 @@ switch(tracker_mode) {
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......DHT22";
+    outString += "b......";
     outString += MY_COMMENT;
     break;
   case WX_TRACKER:
@@ -900,7 +900,7 @@ switch(tracker_mode) {
       #else
         #ifdef USE_BME280
           bme.takeForcedMeasurement();
-          temp = bme.readTemperature();  // bme Temperatur auslesen
+          tempf = bme.readTemperature();  // bme Temperatur auslesen
           hum = bme.readHumidity();
         #else
           hum = dht.getHumidity();
@@ -964,7 +964,7 @@ switch(tracker_mode) {
       helper = String(hum,0);
       helper.trim();
       outString += helper;
-      outString += "b......DHT22";
+      outString += "b......";
       outString += MY_COMMENT;
       wx = !wx;
     } else {
@@ -1028,7 +1028,7 @@ case WX_MOVE:
     #else
       #ifdef USE_BME280
         bme.takeForcedMeasurement();
-        temp = bme.readTemperature();  // bme Temperatur auslesen
+        tempf = bme.readTemperature();  // bme Temperatur auslesen
         hum = bme.readHumidity();
       #else
         hum = dht.getHumidity();
@@ -1094,7 +1094,7 @@ case WX_MOVE:
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......DHT22";
+    outString += "b......";
     outString += MY_COMMENT;
     break;
   case TRACKER:

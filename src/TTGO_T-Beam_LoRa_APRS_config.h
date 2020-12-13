@@ -35,7 +35,7 @@
 
 // SET temperature sensor type
 // #define DS18B20    // use this if you use DS18B20, default is DHT22
-// #define USE_BME280 // use this if you use BME280,m default is BDHT22
+#define USE_BME280 // use this if you use BME280,m default is DHT22
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
