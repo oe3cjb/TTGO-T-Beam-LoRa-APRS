@@ -35,7 +35,8 @@ The symbol can now be changed without attached display - during normal operation
 <br>
 <b>Temperature Sensor:</b><br>
 for DHT22 I used the library from https://github.com/beegee-tokyo/DHTesp, as the standard library gives to many wrong readings<br>
-Now the DS18B20 is supported as well - uncomment line 31: // #define DS18B20    // use this if you use DS18B20, default ist DHT22<br>
+Now the DS18B20 is supported as well - uncomment line 37: // #define DS18B20    // use this if you use DS18B20, default ist DHT22<br>
+Now the BME280 is supported as well - uncomment line 38: // #define USE_BME280    // use this if you use BME280, default ist DHT22<br>
 <br>
 <b>show RX packets</b><br>
 by uncommenting <b>// #define SHOW_RX_PACKET</b> the tracker shows received LoRa APRS packets in raw format for the time in milliseconds defined in SHOW_RX_TIME - both in ...config.h<br>

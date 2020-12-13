@@ -49,10 +49,12 @@
 #ifdef DS18B20
    #include <OneWire.h>         // libraries for DS18B20
    #include <DallasTemperature.h>
-#elif USE_BME280
-   #include <Adafruit_BME280.h>  // BME280 Library
 #else
-   #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+  #ifdef USE_BME280
+    #include <Adafruit_BME280.h>  // BME280 Library
+  #else
+    #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+  #endif
 #endif
 #include <driver/adc.h>
 #include <Wire.h>
@@ -240,10 +242,12 @@ void setup_data(void);
 #ifdef DS18B20
    OneWire oneWire(ONE_WIRE_BUS);
    DallasTemperature sensors(&oneWire);
-#elif USE_BME280
-   Adafruit_BME280 bme;         // if BME is used
 #else
-   DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+  #ifdef USE_BME280
+    Adafruit_BME280 bme;         // if BME is used
+  #else
+    DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+  #endif
 #endif
 
 
@@ -435,26 +439,30 @@ void setup()
 
   #ifdef DS18B20
     sensors.begin();
-  #elif USE_BME280
-    if (!bme.begin(0x76))
-    {
-      Serial.println("Could not find a valid BME280 sensor, check wiring!");
-      while (1);
-    }
   #else
-    dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+    #ifdef USE_BME280
+      if (!bme.begin(0x76))
+      {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        while (1);
+      }
+    #else
+      dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+    #endif
   #endif
   delay(250);
 
   #ifdef DS18B20
     sensors.requestTemperatures(); // Send the command to get temperature readings
     temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
-  #elif USE_BME280
-    temp = bme.readTemperature();  // bme Temperatur auslesen
-    hum = bme.readHuminity();
   #else
-    temp = dht.getTemperature();
-    hum = dht.getHumidity();
+    #ifdef USE_BME280
+      temp = bme.readTemperature();  // bme Temperatur auslesen
+      hum = bme.readHumidity();
+    #else
+      temp = dht.getTemperature();
+      hum = dht.getHumidity();
+    #endif
   #endif
   writedisplaytext("LoRa-APRS","","Init:","Temp OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
   Serial.print("LoRa-APRS / Init / Temp OK! Temp=");
@@ -522,19 +530,23 @@ void loop() {
     #ifdef DS18B20
       sensors.requestTemperatures(); // Send the command to get temperature readings
       temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
-    #elif USE_BME280
-      temp = bme.readTemperature();  // bme Temperatur auslesen
     #else
-      temp = dht.getTemperature();
+      #ifdef USE_BME280
+        temp = bme.readTemperature();  // bme Temperatur auslesen
+      #else
+        temp = dht.getTemperature();
+      #endif
     #endif
   } else {
     hum_temp=true;
     #ifdef DS18B20
       hum = 0;
-    #elif USE_BME280
-      hum = bme.readHuminity();
     #else
-      hum = dht.getHumidity();
+      #ifdef USE_BME280
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+      #endif
     #endif
   }
 
@@ -827,12 +839,14 @@ switch(tracker_mode) {
       sensors.requestTemperatures(); // Send the command to get temperature readings
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
-    #elif USE_BME280
-      temp = bme.readTemperature();
-      hum = bme.readHuminity();
     #else
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef USE_BME280
+        temp = bme.readTemperature();
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
     #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
@@ -875,12 +889,14 @@ switch(tracker_mode) {
         sensors.requestTemperatures(); // Send the command to get temperature readings
         tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
         hum = 0;
-      #elif USE_BME280
-        temp = bme.readTemperature();  // bme Temperatur auslesen
-        hum = bme.readHuminity();
       #else
-        hum = dht.getHumidity();
-        tempf = dht.getTemperature()*9/5+32;
+        #ifdef USE_BME280
+          temp = bme.readTemperature();  // bme Temperatur auslesen
+          hum = bme.readHumidity();
+        #else
+          hum = dht.getHumidity();
+          tempf = dht.getTemperature()*9/5+32;
+        #endif
       #endif
       #ifndef TX_BASE91
         for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
@@ -1000,12 +1016,14 @@ case WX_MOVE:
       sensors.requestTemperatures(); // Send the command to get temperature readings
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
-    #elif USE_BME280
-      temp = bme.readTemperature();  // bme Temperatur auslesen
-      hum = bme.readHuminity();
     #else
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef USE_BME280
+        temp = bme.readTemperature();  // bme Temperatur auslesen
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
     #endif
 
 
