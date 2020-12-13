@@ -276,6 +276,8 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 void setup()
 {
+  bool bme_status;
+
   for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
 
   prefs.begin("nvs", false);
@@ -441,9 +443,11 @@ void setup()
     sensors.begin();
   #else
     #ifdef USE_BME280
-      if (!bme.begin(0x76))
+      bme_status = bme.begin(0x76);
+      if (!bme_status)
       {
         Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        writedisplaytext("LoRa-APRS","","Init:","BME280 ERROR!","","",250);
         while (1);
       }
     #else
@@ -457,6 +461,7 @@ void setup()
     temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
   #else
     #ifdef USE_BME280
+      bme.takeForcedMeasurement();
       temp = bme.readTemperature();  // bme Temperatur auslesen
       hum = bme.readHumidity();
     #else
@@ -532,6 +537,7 @@ void loop() {
       temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
     #else
       #ifdef USE_BME280
+        bme.takeForcedMeasurement();
         temp = bme.readTemperature();  // bme Temperatur auslesen
       #else
         temp = dht.getTemperature();
@@ -543,6 +549,7 @@ void loop() {
       hum = 0;
     #else
       #ifdef USE_BME280
+        bme.takeForcedMeasurement();
         hum = bme.readHumidity();
       #else
         hum = dht.getHumidity();
@@ -841,6 +848,7 @@ switch(tracker_mode) {
       hum = 0;
     #else
       #ifdef USE_BME280
+        bme.takeForcedMeasurement();
         temp = bme.readTemperature();
         hum = bme.readHumidity();
       #else
@@ -891,6 +899,7 @@ switch(tracker_mode) {
         hum = 0;
       #else
         #ifdef USE_BME280
+          bme.takeForcedMeasurement();
           temp = bme.readTemperature();  // bme Temperatur auslesen
           hum = bme.readHumidity();
         #else
@@ -1018,6 +1027,7 @@ case WX_MOVE:
       hum = 0;
     #else
       #ifdef USE_BME280
+        bme.takeForcedMeasurement();
         temp = bme.readTemperature();  // bme Temperatur auslesen
         hum = bme.readHumidity();
       #else
