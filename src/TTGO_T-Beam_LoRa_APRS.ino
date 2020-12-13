@@ -849,7 +849,7 @@ switch(tracker_mode) {
     #else
       #ifdef USE_BME280
         bme.takeForcedMeasurement();
-        tempf = bme.readTemperature();
+        tempf = bme.readTemperature()*9/5+32;
         hum = bme.readHumidity();
       #else
         hum = dht.getHumidity();
@@ -900,7 +900,7 @@ switch(tracker_mode) {
       #else
         #ifdef USE_BME280
           bme.takeForcedMeasurement();
-          tempf = bme.readTemperature();  // bme Temperatur auslesen
+          tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
           hum = bme.readHumidity();
         #else
           hum = dht.getHumidity();
@@ -1028,7 +1028,7 @@ case WX_MOVE:
     #else
       #ifdef USE_BME280
         bme.takeForcedMeasurement();
-        tempf = bme.readTemperature();  // bme Temperatur auslesen
+        tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
         hum = bme.readHumidity();
       #else
         hum = dht.getHumidity();
