@@ -49,12 +49,15 @@
 #ifdef DS18B20
    #include <OneWire.h>         // libraries for DS18B20
    #include <DallasTemperature.h>
+#elif USE_BME280
+   #include <Adafruit_BME280.h>  // BME280 Library
 #else
    #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
 #endif
 #include <driver/adc.h>
 #include <Wire.h>
 
+#include <Adafruit_I2CDevice.h>
 #include <Adafruit_SSD1306.h>
 #include <splash.h>
 #include <Adafruit_GFX.h>
@@ -155,6 +158,7 @@ const byte RX_en  = 0;       //TX/RX enable 1W modul
 #define DHTPIN 25            // the DHT22 is connected to PIN25
 #define ONE_WIRE_BUS 25      // the DS18B20 is connected to PIN25
 
+
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
 String wxTcall;              //your Call Sign for weather reports
@@ -236,6 +240,8 @@ void setup_data(void);
 #ifdef DS18B20
    OneWire oneWire(ONE_WIRE_BUS);
    DallasTemperature sensors(&oneWire);
+#elif USE_BME280
+   Adafruit_BME280 bme;         // if BME is used
 #else
    DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
 #endif
@@ -429,19 +435,29 @@ void setup()
 
   #ifdef DS18B20
     sensors.begin();
+  #elif USE_BME280
+    if (!bme.begin(0x76))
+    {
+      Serial.println("Could not find a valid BME280 sensor, check wiring!");
+      while (1);
+    }
   #else
     dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
   #endif
   delay(250);
+
   #ifdef DS18B20
     sensors.requestTemperatures(); // Send the command to get temperature readings
     temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
-      #else
+  #elif USE_BME280
+    temp = bme.readTemperature();  // bme Temperatur auslesen
+    hum = bme.readHuminity();
+  #else
     temp = dht.getTemperature();
     hum = dht.getHumidity();
   #endif
-  writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
-  Serial.print("LoRa-APRS / Init / DHT OK! Temp=");
+  writedisplaytext("LoRa-APRS","","Init:","Temp OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
+  Serial.print("LoRa-APRS / Init / Temp OK! Temp=");
   Serial.print(String(temp));
   Serial.print(" Hum=");
   Serial.println(String(hum));
@@ -506,6 +522,8 @@ void loop() {
     #ifdef DS18B20
       sensors.requestTemperatures(); // Send the command to get temperature readings
       temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
+    #elif USE_BME280
+      temp = bme.readTemperature();  // bme Temperatur auslesen
     #else
       temp = dht.getTemperature();
     #endif
@@ -513,6 +531,8 @@ void loop() {
     hum_temp=true;
     #ifdef DS18B20
       hum = 0;
+    #elif USE_BME280
+      hum = bme.readHuminity();
     #else
       hum = dht.getHumidity();
     #endif
@@ -807,6 +827,9 @@ switch(tracker_mode) {
       sensors.requestTemperatures(); // Send the command to get temperature readings
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
+    #elif USE_BME280
+      temp = bme.readTemperature();
+      hum = bme.readHuminity();
     #else
       hum = dht.getHumidity();
       tempf = dht.getTemperature()*9/5+32;
@@ -852,6 +875,9 @@ switch(tracker_mode) {
         sensors.requestTemperatures(); // Send the command to get temperature readings
         tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
         hum = 0;
+      #elif USE_BME280
+        temp = bme.readTemperature();  // bme Temperatur auslesen
+        hum = bme.readHuminity();
       #else
         hum = dht.getHumidity();
         tempf = dht.getTemperature()*9/5+32;
@@ -974,6 +1000,9 @@ case WX_MOVE:
       sensors.requestTemperatures(); // Send the command to get temperature readings
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
+    #elif USE_BME280
+      temp = bme.readTemperature();  // bme Temperatur auslesen
+      hum = bme.readHuminity();
     #else
       hum = dht.getHumidity();
       tempf = dht.getTemperature()*9/5+32;
