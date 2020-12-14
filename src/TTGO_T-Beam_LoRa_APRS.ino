@@ -281,8 +281,9 @@ void setup()
   for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
 
   prefs.begin("nvs", false);
-  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", 0);
+  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", TRACKERMODE);
   prefs.end();
+
   //tracker_mode = current_mode;
   /////////////////
   // hier muss aus dem RAM der Modus gelesen werden!
