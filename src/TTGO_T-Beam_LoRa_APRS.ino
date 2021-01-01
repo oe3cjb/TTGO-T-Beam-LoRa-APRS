@@ -50,11 +50,16 @@
    #include <OneWire.h>         // libraries for DS18B20
    #include <DallasTemperature.h>
 #else
-   #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+  #ifdef USE_BME280
+    #include <Adafruit_BME280.h>  // BME280 Library
+  #else
+    #include <DHTesp.h>          // library from https://github.com/beegee-tokyo/DHTesp for DHT22
+  #endif
 #endif
 #include <driver/adc.h>
 #include <Wire.h>
 
+#include <Adafruit_I2CDevice.h>
 #include <Adafruit_SSD1306.h>
 #include <splash.h>
 #include <Adafruit_GFX.h>
@@ -155,6 +160,7 @@ const byte RX_en  = 0;       //TX/RX enable 1W modul
 #define DHTPIN 25            // the DHT22 is connected to PIN25
 #define ONE_WIRE_BUS 25      // the DS18B20 is connected to PIN25
 
+
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
 String wxTcall;              //your Call Sign for weather reports
@@ -237,9 +243,13 @@ void setup_data(void);
    OneWire oneWire(ONE_WIRE_BUS);
    DallasTemperature sensors(&oneWire);
 #else
-   DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+  #ifdef USE_BME280
+    Adafruit_BME280 bme;         // if BME is used
+  #else
+    DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
+  #endif
 #endif
-
+boolean tempsensoravailable=true;
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
@@ -266,11 +276,14 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 void setup()
 {
+  bool bme_status;
+
   for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
 
   prefs.begin("nvs", false);
-  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", 0);
+  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", TRACKERMODE);
   prefs.end();
+
   //tracker_mode = current_mode;
   /////////////////
   // hier muss aus dem RAM der Modus gelesen werden!
@@ -430,18 +443,35 @@ void setup()
   #ifdef DS18B20
     sensors.begin();
   #else
-    dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+    #ifdef USE_BME280
+      bme_status = bme.begin(0x76);
+      if (!bme_status)
+      {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        writedisplaytext("LoRa-APRS","","Init:","BME280 ERROR!","","",3000);
+        tempsensoravailable = false;
+      }
+    #else
+      dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
+    #endif
   #endif
   delay(250);
+
   #ifdef DS18B20
     sensors.requestTemperatures(); // Send the command to get temperature readings
     temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
-      #else
-    temp = dht.getTemperature();
-    hum = dht.getHumidity();
+  #else
+    #ifdef USE_BME280
+      bme.takeForcedMeasurement();
+      temp = bme.readTemperature();  // bme Temperatur auslesen
+      hum = bme.readHumidity();
+    #else
+      temp = dht.getTemperature();
+      hum = dht.getHumidity();
+    #endif
   #endif
-  writedisplaytext("LoRa-APRS","","Init:","DHT OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
-  Serial.print("LoRa-APRS / Init / DHT OK! Temp=");
+  writedisplaytext("LoRa-APRS","","Init:","Temp OK!","TEMP: "+String(temp,1),"HUM: "+String(hum,1),250);
+  Serial.print("LoRa-APRS / Init / Temp OK! Temp=");
   Serial.print(String(temp));
   Serial.print(" Hum=");
   Serial.println(String(hum));
@@ -507,14 +537,24 @@ void loop() {
       sensors.requestTemperatures(); // Send the command to get temperature readings
       temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
     #else
-      temp = dht.getTemperature();
+      #ifdef USE_BME280
+        bme.takeForcedMeasurement();
+        temp = bme.readTemperature();  // bme Temperatur auslesen
+      #else
+        temp = dht.getTemperature();
+      #endif
     #endif
   } else {
     hum_temp=true;
     #ifdef DS18B20
       hum = 0;
     #else
-      hum = dht.getHumidity();
+      #ifdef USE_BME280
+        bme.takeForcedMeasurement();
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+      #endif
     #endif
   }
 
@@ -808,8 +848,14 @@ switch(tracker_mode) {
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
     #else
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef USE_BME280
+        bme.takeForcedMeasurement();
+        tempf = bme.readTemperature()*9/5+32;
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
     #endif
     for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
       if (wxTcall.charAt(i) != ' ') {
@@ -843,7 +889,7 @@ switch(tracker_mode) {
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......DHT22";
+    outString += "b......";
     outString += MY_COMMENT;
     break;
   case WX_TRACKER:
@@ -853,8 +899,14 @@ switch(tracker_mode) {
         tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
         hum = 0;
       #else
-        hum = dht.getHumidity();
-        tempf = dht.getTemperature()*9/5+32;
+        #ifdef USE_BME280
+          bme.takeForcedMeasurement();
+          tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
+          hum = bme.readHumidity();
+        #else
+          hum = dht.getHumidity();
+          tempf = dht.getTemperature()*9/5+32;
+        #endif
       #endif
       #ifndef TX_BASE91
         for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
@@ -913,7 +965,7 @@ switch(tracker_mode) {
       helper = String(hum,0);
       helper.trim();
       outString += helper;
-      outString += "b......DHT22";
+      outString += "b......";
       outString += MY_COMMENT;
       wx = !wx;
     } else {
@@ -975,8 +1027,14 @@ case WX_MOVE:
       tempf = sensors.getTempFByIndex(0); // get temp from 1st (!) sensor only
       hum = 0;
     #else
-      hum = dht.getHumidity();
-      tempf = dht.getTemperature()*9/5+32;
+      #ifdef USE_BME280
+        bme.takeForcedMeasurement();
+        tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
+        hum = bme.readHumidity();
+      #else
+        hum = dht.getHumidity();
+        tempf = dht.getTemperature()*9/5+32;
+      #endif
     #endif
 
 
@@ -1037,7 +1095,7 @@ case WX_MOVE:
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......DHT22";
+    outString += "b......";
     outString += MY_COMMENT;
     break;
   case TRACKER:
