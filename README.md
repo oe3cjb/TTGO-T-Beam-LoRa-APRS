@@ -42,6 +42,8 @@ Now the BME280 is supported as well - uncomment line 38: // #define USE_BME280  
 by uncommenting <b>// #define SHOW_RX_PACKET</b> the tracker shows received LoRa APRS packets in raw format for the time in milliseconds defined in SHOW_RX_TIME - both in ...config.h<br>
 <br>
 <b>new features:</b><br>
+- Trackermode setable via config file
+- BME280 sensor implemented (Temp und Hum only)
 - compressed packets in tracker mode
 - symbol RV added
 - show RX packets

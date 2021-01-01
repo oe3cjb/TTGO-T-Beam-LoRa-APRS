@@ -249,7 +249,7 @@ void setup_data(void);
     DHTesp dht;   // Initialize DHT sensor for normal 16mhz Arduino
   #endif
 #endif
-
+boolean tempsensoravailable=true;
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial ss(1);        // TTGO has HW serial
@@ -448,8 +448,8 @@ void setup()
       if (!bme_status)
       {
         Serial.println("Could not find a valid BME280 sensor, check wiring!");
-        writedisplaytext("LoRa-APRS","","Init:","BME280 ERROR!","","",250);
-        while (1);
+        writedisplaytext("LoRa-APRS","","Init:","BME280 ERROR!","","",3000);
+        tempsensoravailable = false;
       }
     #else
       dht.setup(DHTPIN,dht.AUTO_DETECT); // initialize DHT22
