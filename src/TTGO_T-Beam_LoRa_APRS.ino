@@ -94,6 +94,7 @@
 // Variables for DHT22 temperature and humidity sensor
 int chk;
 boolean hum_temp = false;
+uint8_t hum_temp_ctr, hum_temp_ctr_max = 3;
 float hum=0;                 //Stores humidity value
 float temp=99.99;            //Stores temperature value
 float tempf=99.99;           //Stores temperature value
@@ -354,7 +355,7 @@ void setup()
 
   }
 
-  if ((digitalRead(BUTTON) == LOW) || (Tcall == "OE1XYZ-0")) {  // into setup when no real data entered in TTGO...config.h
+  if ((digitalRead(BUTTON) == LOW) || (Tcall == "XX9XXX-0")) {  // into setup when no real data entered in TTGO...config.h
     writedisplaytext("LoRa-APRS","","","Entering Setup!","","",2000);
     setup_data();
   }
@@ -478,6 +479,8 @@ void setup()
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   Serial.println("LoRa-APRS / Init / FINISHED OK! / =:-)");
   writedisplaytext("","","","","","",0);
+
+  hum_temp_ctr = 0;
 }
 
 // +---------------------------------------------------------------------+//
@@ -532,7 +535,11 @@ void loop() {
   }
 
     if (hum_temp) {
-    hum_temp=false;
+      ++hum_temp_ctr;
+      if (hum_temp_ctr>hum_temp_ctr_max) {
+        hum_temp_ctr = 0;
+        hum_temp=false;
+      }
     #ifdef DS18B20
       sensors.requestTemperatures(); // Send the command to get temperature readings
       temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
@@ -545,7 +552,11 @@ void loop() {
       #endif
     #endif
   } else {
-    hum_temp=true;
+    ++hum_temp_ctr;
+    if (hum_temp_ctr>hum_temp_ctr_max) {
+      hum_temp_ctr = 0;
+      hum_temp=true;
+    }
     #ifdef DS18B20
       hum = 0;
     #else
@@ -824,19 +835,21 @@ void recalcGPS(){
     Altx += Talt;
     Tcourse=gps.course.deg();
     Tspeed=gps.speed.knots();
-    if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
-    if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
-    if(Tlat < 0) { Tlat= -Tlat; }
-    unsigned int Deg_Lat = Tlat;
-    Lat = 100*(Deg_Lat) + (Tlat - Deg_Lat)*60;
 
-    if(Tlon < 0) { Tlon= -Tlon; }
-    unsigned int Deg_Lon = Tlon;
-    Lon = 100*(Deg_Lon) + (Tlon - Deg_Lon)*60;
     aprs_lat = 900000000 - Tlat * 10000000;
     aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
     aprs_lon = 900000000 + Tlon * 10000000 / 2;
     aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
+
+    if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
+    if(Tlat < 0) { Tlat= -Tlat; }
+    unsigned int Deg_Lat = Tlat;
+    Lat = 100*(Deg_Lat) + (Tlat - Deg_Lat)*60;
+
+    if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
+    if(Tlon < 0) { Tlon= -Tlon; }
+    unsigned int Deg_Lon = Tlon;
+    Lon = 100*(Deg_Lon) + (Tlon - Deg_Lon)*60;
   }
 
 outString = "";
@@ -926,9 +939,9 @@ switch(tracker_mode) {
         outString += Ew;
         outString += wxSymbol;
       #else
-        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-          if (Tcall.charAt(i) != ' ') {
-            outString += Tcall.charAt(i);
+        for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (wxTcall.charAt(i) != ' ') {
+            outString += wxTcall.charAt(i);
           }
         }
         // outString = (Tcall);
@@ -1056,9 +1069,9 @@ case WX_MOVE:
       outString += Ew;
       outString += wxSymbol;
       #else
-        for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-          if (Tcall.charAt(i) != ' ') {
-            outString += Tcall.charAt(i);
+        for (i=0; i<wxTcall.length();++i){  // remove unneeded "spaces" from callsign field
+          if (wxTcall.charAt(i) != ' ') {
+            outString += wxTcall.charAt(i);
           }
         }
         // outString = (Tcall);
@@ -1297,7 +1310,7 @@ void setup_data(void) {
   int8_t initial_ssid;
 
 
-  // set Tx Symbol - gleich zu Beginn, falls man nur das Symbol ändern möchte
+  // set Tx Symbol und die normale SSID - gleich zu Beginn, falls man nur das Symbol ändern möchte
   pos_ssid = 0;
   while (true) {
     TxSymbol = werte_TxSymbol_symbol[pos_ssid];
@@ -1319,7 +1332,32 @@ void setup_data(void) {
     if (pos_ssid>=6) {pos_ssid=0;}
   }
 
-  // smartDelay(500);
+  // set normal SSID
+  initial_ssid = (int8_t) (Tcall.substring(7,9)).toInt();
+
+  pos_ssid = initial_ssid;
+  pfeile = "          ^";
+  key_pressed = false;
+  initial_waiter = 2000;
+  while (true) {
+    writedisplaytext("  SETUP", "  normal SSID","   "+Tcall, pfeile, "PRESS KEY to select", "", 0);
+    waiter = millis();
+    while (millis()<(waiter+1000+initial_waiter)) {
+      if (digitalRead(BUTTON)==LOW) {
+        key_pressed = true;
+      }
+    }
+    initial_waiter = 0;
+    if (key_pressed==true) {
+      key_pressed = false;
+      break;
+    }
+    ++pos_ssid;
+    if (pos_ssid>=16) {pos_ssid=0;}
+    Tcall = Tcall.substring(0,6)+"-"+werte_SSID[pos_ssid];
+  }
+
+  writedisplaytext("  SETUP", "     SSID","   "+Tcall,"   ", "programmed", "", 2000);
 
   // fragen, ob es weiter gehen soll
   pos_ssid = 0;
@@ -1383,32 +1421,8 @@ void setup_data(void) {
       ++pos_in_string;
     }
 
-        // set normal SSID
-    initial_ssid = (int8_t) (Tcall.substring(7,9)).toInt();
-
-    pos_ssid = initial_ssid;
-    pfeile = "          ^";
-    key_pressed = false;
-    initial_waiter = 2000;
-    while (true) {
-      writedisplaytext("  SETUP", "  normal SSID","   "+Tcall, pfeile, "PRESS KEY to select", "", 0);
-      waiter = millis();
-      while (millis()<(waiter+1000+initial_waiter)) {
-        if (digitalRead(BUTTON)==LOW) {
-          key_pressed = true;
-        }
-      }
-      initial_waiter = 0;
-      if (key_pressed==true) {
-        key_pressed = false;
-        break;
-      }
-      ++pos_ssid;
-      if (pos_ssid>=16) {pos_ssid=0;}
-      Tcall = Tcall.substring(0,6)+"-"+werte_SSID[pos_ssid];
-    }
-
     writedisplaytext("  SETUP", "     Call","   "+Tcall,"   ", "programmed", "", 2000);
+
 
     // set WX SSID
     initial_ssid = (int8_t) (wxTcall.substring(7,9)).toInt();
