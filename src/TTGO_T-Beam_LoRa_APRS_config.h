@@ -42,8 +42,8 @@
 
 // #define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
 #define TRACKERMODE 0       // preset MODE here, if flash not used >> 0=TRACKER, 1=WX_TRACKER, 2=WX_MOVE, 3=WX_FIXED
-#define CALLSIGN "OE3CJB-11"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
-#define WX_CALLSIGN "OE3CJB-11"  // use same callsign but you can use different SSID
+#define CALLSIGN "XX9XXX-11"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
+#define WX_CALLSIGN "XX9XXX-11"  // use same callsign but you can use different SSID
 #define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW
 #define LATIDUDE_PRESET "4813.62N"   // please in APRS notation DDMM.mmN or DDMM.mmS
 #define APRS_SYMBOL ">"         // other symbols are
