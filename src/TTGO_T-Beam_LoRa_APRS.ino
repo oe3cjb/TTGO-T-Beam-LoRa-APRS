@@ -22,8 +22,6 @@
 #include <gfxfont.h>
 #include <axp20x.h>
 
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//PINs used for HW extensions
 // I2C LINES
 #define I2C_SDA 21
 #define I2C_SCL 22
@@ -119,9 +117,7 @@ BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ 
 #define OLED_RESET 4         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
-// +---------------------------------------------------------------------+//
 // + FUNCTIONS-----------------------------------------------------------+//
-// +---------------------------------------------------------------------+//
 
 // This custom version of delay() ensures that the gps object
 // is being "fed".
@@ -206,13 +202,13 @@ outString += "\x48";
 
 outString += MY_COMMENT;
 
-#ifdef SHOW_BATT
+#ifdef SHOW_BATT            // battery is not frame part move after comment
   outString += " Batt=";
   outString += String(BattVolts,2);
   outString += ("V");
 #endif
 
-Serial.println(outString);
+Serial.print(outString);
 }
 
 void sendpacket(){
@@ -248,8 +244,7 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
   lastTX = millis();
 
   ltemp = message.length();
-  for (i = 0; i <= ltemp; i++)
-  {
+  for (i = 0; i <= ltemp; i++){
     lora_TXBUFF[i] = message.charAt(i);
   }
 
@@ -288,21 +283,19 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   smartDelay(warten);
 }
 
-void blinker(int counter) {
-  for (int i = 0; i < (counter-1); i++) {
-    digitalWrite(TXLED, HIGH);  // turn blue LED ON
-    smartDelay(150);
-    digitalWrite(TXLED, LOW);  // turn blue LED OFF
-    smartDelay(100);
-  }
-  digitalWrite(TXLED, HIGH);  // turn blue LED ON
-  smartDelay(150);
-  digitalWrite(TXLED, LOW);  // turn blue LED OFF
-}
+//void blinker(int counter) {
+//  for (int i = 0; i < (counter-1); i++) {
+//    digitalWrite(TXLED, HIGH);  // turn blue LED ON
+//    smartDelay(150);
+//    digitalWrite(TXLED, LOW);  // turn blue LED OFF
+//    smartDelay(100);
+//  }
+//  digitalWrite(TXLED, HIGH);  // turn blue LED ON
+//  smartDelay(150);
+//  digitalWrite(TXLED, LOW);  // turn blue LED OFF
+//}
 
-// +---------------------------------------------------------------------+//
 // + SETUP --------------------------------------------------------------+//
-// +---------------------------------------------------------------------+//
 
 void setup(){
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -336,14 +329,14 @@ void setup(){
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Serial.println("LoRa-APRS / Init / Display OK! ");
   Tcall = CALLSIGN;
-  LongFixed = LONGITUDE_PRESET;
-  LatFixed = LATIDUDE_PRESET;
+  //LongFixed = LONGITUDE_PRESET;
+  //LatFixed = LATIDUDE_PRESET;
   TxSymbol = APRS_SYMBOL;
   Serial.println("LoRa-APRS / Call="+Tcall+"  / TxSymbol="+TxSymbol);
   //int start_button_pressed = millis();
   writedisplaytext("LoRa-APRS","","Init:","Mode","TRACKER","",1000);
   Serial.println("LoRa-APRS / Init / Mode / TRACKER");
-  blinker(1);
+  //blinker(1);
   
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
@@ -367,7 +360,9 @@ void setup(){
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
     Serial.println("LoRa-APRS / Init / GPS ERROR - no GPS data - please RESTART TTGO");
-    while (true) {blinker(1);}
+    while (true) {
+      //blinker(1);
+      }
   }
   writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
   Serial.println("LoRa-APRS / Init / Data from GPS OK!");
@@ -382,7 +377,7 @@ void setup(){
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   Serial.println("LoRa-APRS / Init / FINISHED OK! / =:-)");
   writedisplaytext("","","","","","",0);
-  blinker(5);
+  //blinker(5);
 }
 
 // +---------------------------------------------------------------------+//
@@ -414,7 +409,7 @@ void loop() {
           InputString += (char) lora_RXBUFF[i];
         }
         Serial.println(InputString);
-        blinker(3);
+        //blinker(3);
         writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
       }
     #endif
