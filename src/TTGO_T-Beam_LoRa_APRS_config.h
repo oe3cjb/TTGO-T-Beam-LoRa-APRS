@@ -5,11 +5,11 @@
 // licensed under CC BY-NC-SA
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
-#define KISS_PROTOCOLL                                  // If enabled send and receive data in SIMPLE KISS format
-//#define TEXT_PROTOCOLL                                // TEXT outpu data
+//#define KISS_PROTOCOLL                                  // If enabled send and receive data in SIMPLE KISS format
+#define TEXT_PROTOCOLL                                // TEXT outpu data
 #define CALLSIGN "SQ9MDD-11"                            // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
-#define LONGITUDE_PRESET "02055.59E"                    // please in APRS notation DDDMM.mmE or DDDMM.mmW
-#define LATIDUDE_PRESET "5215.02N"                      // please in APRS notation DDMM.mmN or DDMM.mmS
+//#define LONGITUDE_PRESET "02055.59E"                    // please in APRS notation DDDMM.mmE or DDDMM.mmW
+//#define LATIDUDE_PRESET "5215.02N"                      // please in APRS notation DDMM.mmN or DDMM.mmS
 #define APRS_SYMBOL "["                                 // other symbols are: "[" => RUNNER, "b" => BICYCLE, "<" => MOTORCYCLE, "R" => Recreation Vehicle
 #define MY_COMMENT "test trakera LORA"                  // add your coment here - if empty then no comment is sent
 #define SHOW_ALT                                        // send Altitude in frame

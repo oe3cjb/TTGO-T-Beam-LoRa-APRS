@@ -311,14 +311,10 @@ void setup(){
   pinMode(BUTTON, INPUT);
   digitalWrite(TXLED, LOW);                                               // turn blue LED off
   Serial.begin(115200);
-
   Wire.begin(I2C_SDA, I2C_SCL);
 
   if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-    //Serial.println("LoRa-APRS / Init / AXP192 Begin PASS");
-  } else {
-    //Serial.println("LoRa-APRS / Init / AXP192 Begin FAIL");
-  }
+  } 
 
   axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
   axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
@@ -332,61 +328,41 @@ void setup(){
   }
   
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
-  //Serial.println("LoRa-APRS / Init / Display OK! ");
   Tcall = CALLSIGN;
   //LongFixed = LONGITUDE_PRESET;
   //LatFixed = LATIDUDE_PRESET;
   TxSymbol = APRS_SYMBOL;
-  //Serial.println("LoRa-APRS / Call="+Tcall+"  / TxSymbol="+TxSymbol);
-  //int start_button_pressed = millis();
   writedisplaytext("LoRa-APRS","","Init:","Mode","TRACKER","",1000);
-  //Serial.println("LoRa-APRS / Init / Mode / TRACKER");
-  //blinker(1);
   
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
-    //Serial.println("LoRa-APRS / Init / RF95 FAILED!");
     for(;;); // Don't proceed, loop forever
   }
 
   if (max_time_to_nextTX < nextTX){
     max_time_to_nextTX=nextTX;
     }
-  // digitalWrite(TXLED, HIGH);
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
-  // digitalWrite(TXLED, LOW);
-  //Serial.println("LoRa-APRS / Init / RF95 OK!");
   ss.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
   writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
-  //Serial.println("LoRa-APRS / Init / GPS Serial OK!");
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  //Serial.println("LoRa-APRS / Init / Waiting for GPS");
   while (millis() < 5000 && gps.charsProcessed() < 10) {}
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
-    //Serial.println("LoRa-APRS / Init / GPS ERROR - no GPS data - please RESTART TTGO");
     while (true) {
       //blinker(1);
       }
   }
   writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
-  //Serial.println("LoRa-APRS / Init / Data from GPS OK!");
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
-  //Serial.print("LoRa-APRS / Init / ADC OK! / BAT: ");
-  //Serial.println(String(axp.getBattVoltage()/1000,1));
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(20);    // was 5
   delay(250);
-  //Serial.print("LoRa-APRS / Init");
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
-  //Serial.println("LoRa-APRS / Init / FINISHED OK! / =:-)");
   writedisplaytext("","","","","","",0);
-  //blinker(5);
 
-  #ifdef KISS_PROTOCOLL
-    //Serial.write(DCD_ON);
-  #endif
+
 }
 
 
@@ -400,22 +376,22 @@ void loop() {
     gps.encode(ss.read());
   }
 
-  while (Serial.available() > 0 ){
-    char character = Serial.read();
-    content.concat(character);
-   }
+  //while (Serial.available() > 0 ){
+  //  char character = Serial.read();
+  //  content.concat(character);
+  // }
 
-  if(content != ""){
+  //if(content != ""){
     //Serial.println(content);
-    #ifdef TEXT_PROTOCOLL
-      loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
-    #endif
-    #ifdef KISS_PROTOCOLL
-      decode_kiss();
-      loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
-    #endif
-    content = "";
-  }
+  //  #ifdef TEXT_PROTOCOLL
+  //    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
+  //  #endif
+  //  #ifdef KISS_PROTOCOLL
+  //    decode_kiss();
+  //    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
+  //  #endif
+  //  content = "";
+  //}
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
