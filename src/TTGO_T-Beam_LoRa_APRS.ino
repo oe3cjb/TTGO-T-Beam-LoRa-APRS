@@ -21,6 +21,7 @@
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
 #include <axp20x.h>
+#include "KISS.h"
 
 // I2C LINES
 #define I2C_SDA 21
@@ -283,17 +284,21 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   smartDelay(warten);
 }
 
-//void blinker(int counter) {
-//  for (int i = 0; i < (counter-1); i++) {
-//    digitalWrite(TXLED, HIGH);  // turn blue LED ON
-//    smartDelay(150);
-//    digitalWrite(TXLED, LOW);  // turn blue LED OFF
-//    smartDelay(100);
-//  }
-//  digitalWrite(TXLED, HIGH);  // turn blue LED ON
-//  smartDelay(150);
-//  digitalWrite(TXLED, LOW);  // turn blue LED OFF
-//}
+void encode_address(){
+
+}
+
+void decode_address(){
+
+}
+
+void encode_kiss(){
+
+}
+
+void decode_kiss(){
+
+}
 
 // + SETUP --------------------------------------------------------------+//
 
@@ -310,9 +315,9 @@ void setup(){
   Wire.begin(I2C_SDA, I2C_SCL);
 
   if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-    Serial.println("LoRa-APRS / Init / AXP192 Begin PASS");
+    //Serial.println("LoRa-APRS / Init / AXP192 Begin PASS");
   } else {
-    Serial.println("LoRa-APRS / Init / AXP192 Begin FAIL");
+    //Serial.println("LoRa-APRS / Init / AXP192 Begin FAIL");
   }
 
   axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
@@ -327,20 +332,20 @@ void setup(){
   }
   
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
-  Serial.println("LoRa-APRS / Init / Display OK! ");
+  //Serial.println("LoRa-APRS / Init / Display OK! ");
   Tcall = CALLSIGN;
   //LongFixed = LONGITUDE_PRESET;
   //LatFixed = LATIDUDE_PRESET;
   TxSymbol = APRS_SYMBOL;
-  Serial.println("LoRa-APRS / Call="+Tcall+"  / TxSymbol="+TxSymbol);
+  //Serial.println("LoRa-APRS / Call="+Tcall+"  / TxSymbol="+TxSymbol);
   //int start_button_pressed = millis();
   writedisplaytext("LoRa-APRS","","Init:","Mode","TRACKER","",1000);
-  Serial.println("LoRa-APRS / Init / Mode / TRACKER");
+  //Serial.println("LoRa-APRS / Init / Mode / TRACKER");
   //blinker(1);
   
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
-    Serial.println("LoRa-APRS / Init / RF95 FAILED!");
+    //Serial.println("LoRa-APRS / Init / RF95 FAILED!");
     for(;;); // Don't proceed, loop forever
   }
 
@@ -350,35 +355,41 @@ void setup(){
   // digitalWrite(TXLED, HIGH);
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   // digitalWrite(TXLED, LOW);
-  Serial.println("LoRa-APRS / Init / RF95 OK!");
+  //Serial.println("LoRa-APRS / Init / RF95 OK!");
   ss.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
   writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
-  Serial.println("LoRa-APRS / Init / GPS Serial OK!");
+  //Serial.println("LoRa-APRS / Init / GPS Serial OK!");
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  Serial.println("LoRa-APRS / Init / Waiting for GPS");
+  //Serial.println("LoRa-APRS / Init / Waiting for GPS");
   while (millis() < 5000 && gps.charsProcessed() < 10) {}
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
-    Serial.println("LoRa-APRS / Init / GPS ERROR - no GPS data - please RESTART TTGO");
+    //Serial.println("LoRa-APRS / Init / GPS ERROR - no GPS data - please RESTART TTGO");
     while (true) {
       //blinker(1);
       }
   }
   writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
-  Serial.println("LoRa-APRS / Init / Data from GPS OK!");
+  //Serial.println("LoRa-APRS / Init / Data from GPS OK!");
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
-  Serial.print("LoRa-APRS / Init / ADC OK! / BAT: ");
-  Serial.println(String(axp.getBattVoltage()/1000,1));
+  //Serial.print("LoRa-APRS / Init / ADC OK! / BAT: ");
+  //Serial.println(String(axp.getBattVoltage()/1000,1));
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
-  rf95.setTxPower(5);
+  rf95.setTxPower(20);    // was 5
   delay(250);
-  Serial.print("LoRa-APRS / Init");
+  //Serial.print("LoRa-APRS / Init");
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
-  Serial.println("LoRa-APRS / Init / FINISHED OK! / =:-)");
+  //Serial.println("LoRa-APRS / Init / FINISHED OK! / =:-)");
   writedisplaytext("","","","","","",0);
   //blinker(5);
+
+  #ifdef KISS_PROTOCOLL
+    //Serial.write(DCD_ON);
+  #endif
 }
+
+
 
 // +---------------------------------------------------------------------+//
 // + MAINLOOP -----------------------------------------------------------+//
@@ -392,11 +403,17 @@ void loop() {
   while (Serial.available() > 0 ){
     char character = Serial.read();
     content.concat(character);
-  }
+   }
 
   if(content != ""){
     //Serial.println(content);
-    //loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
+    #ifdef TEXT_PROTOCOLL
+      loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
+    #endif
+    #ifdef KISS_PROTOCOLL
+      decode_kiss();
+      loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
+    #endif
     content = "";
   }
 
@@ -407,9 +424,13 @@ void loop() {
         InputString = "";
         for ( int i=0 ; i < len ; i++) {
           InputString += (char) lora_RXBUFF[i];
-        }
-        Serial.println(InputString);
-        //blinker(3);
+        }        
+        #ifdef TEXT_PROTOCOLL
+          Serial.println(InputString);
+        #endif
+        #ifdef KISS_PROTOCOLL
+          //encode_kiss(InputString);
+        #endif
         writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
       }
     #endif
