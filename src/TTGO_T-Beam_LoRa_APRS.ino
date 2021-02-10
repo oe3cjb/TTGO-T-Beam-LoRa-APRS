@@ -128,7 +128,7 @@ const byte RX_en  = 0;       //TX/RX enable 1W modul
 
 // LED for signalling
 #ifdef T_BEAM_V1_0
-   const byte TXLED  = 33;      //pin number for LED on TX Tracker
+   const byte TXLED  = 4;      //pin number for LED on TX Tracker
 #else
    const byte TXLED  = 14;      //pin number for LED on TX Tracker
  #endif
@@ -881,10 +881,6 @@ switch(tracker_mode) {
     outString += wxTable;
     outString += LongFixed;
     outString += wxSymbol;
-
-
-
-
     outString += ".../...g...t";
     if (tempf < 0) {     // negative Werte erstellen
       outString += "-";
@@ -902,7 +898,7 @@ switch(tracker_mode) {
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......";
+    outString += "b.....";
     outString += MY_COMMENT;
     break;
   case WX_TRACKER:
@@ -978,7 +974,7 @@ switch(tracker_mode) {
       helper = String(hum,0);
       helper.trim();
       outString += helper;
-      outString += "b......";
+      outString += "b.....";
       outString += MY_COMMENT;
       wx = !wx;
     } else {
@@ -1108,7 +1104,7 @@ case WX_MOVE:
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b......";
+    outString += "b.....";
     outString += MY_COMMENT;
     break;
   case TRACKER:
