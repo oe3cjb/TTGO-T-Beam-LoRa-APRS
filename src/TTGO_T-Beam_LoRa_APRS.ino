@@ -107,12 +107,14 @@ int button_ctr=0;
 // bool ssd1306_found = false;
 // bool axp192_found = false;
 
-enum Tx_Mode {TRACKER, WX_TRACKER, WX_MOVE, WX_FIXED};
+#define TRACKER 0
+#define WX_TRACKER 1
+#define WX_MOVE 2
+#define WX_FIXED 3
 // Position from GPS for TRACKER and WX_TRACKER
 // Position for WX_ONLY from Headerfile!!!
 
-Tx_Mode tracker_mode;
-
+uint8_t tracker_mode;
 
 // Pins for GPS
 #ifdef T_BEAM_V1_0
@@ -282,7 +284,7 @@ void setup()
   for (int i=0;i<ANGLE_AVGS;i++) {average_course[i]=0;} // set average_course to "0"
 
   prefs.begin("nvs", false);
-  tracker_mode = (Tx_Mode)prefs.getChar("tracker_mode", TRACKERMODE);
+  tracker_mode = (uint8_t) prefs.getChar("tracker_mode", TRACKERMODE);
   prefs.end();
 
   //tracker_mode = current_mode;
@@ -525,7 +527,7 @@ void loop() {
           break;
       }
       prefs.begin("nvs", false);
-      prefs.putChar("tracker_mode", (char)tracker_mode);
+      prefs.putChar("tracker_mode", (char) tracker_mode);
       prefs.end();
       button_ctr=0;
       // ESP.restart();

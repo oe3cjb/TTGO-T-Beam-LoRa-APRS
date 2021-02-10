@@ -41,7 +41,7 @@
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
 
 // #define DONT_USE_FLASH_MEMORY   // uncomment if you don't want to use Flashmemory - instead data below must be corrected
-#define TRACKERMODE 0       // preset MODE here, if flash not used >> 0=TRACKER, 1=WX_TRACKER, 2=WX_MOVE, 3=WX_FIXED
+#define TRACKERMODE 0       // preset MODE here, if flash not used >> "0"=TRACKER, "1"=WX_TRACKER, "2"=WX_MOVE, "3"=WX_FIXED
 #define CALLSIGN "XX9XXX-11"     // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define WX_CALLSIGN "XX9XXX-11"  // use same callsign but you can use different SSID
 #define LONGITUDE_PRESET "01539.85E" // please in APRS notation DDDMM.mmE or DDDMM.mmW
@@ -53,7 +53,7 @@
                                 // "b" => BICYCLE
                                 // "<" => MOTORCYCLE
                                 // "R" => Recreation Vehicle
-// #define HW_COMMENT              // send Alt und Battery Voltage, UNcomment if don't want to send it
+// #define HW_COMMENT              // send Alt und Battery Voltage, UNcomment if you want to send it
 #define MY_COMMENT "" // add your coment here - if empty then no comment is sent
 // #define MY_COMMENT "TTGO by OE3CJB" // add your coment here - if empty then no comment is sent
 
