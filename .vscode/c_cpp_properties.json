@@ -10,6 +10,7 @@
             "includePath": [
                 "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/include",
                 "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/src",
+                "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/lib/KISS_TO_TNC2",
                 "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/lib/BG_RF95",
                 "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/.pio/libdeps/ttgo-t-beam/OneWire",
                 "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/.pio/libdeps/ttgo-t-beam/AXP202X_Library/src",
@@ -114,6 +115,7 @@
                 "path": [
                     "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/include",
                     "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/src",
+                    "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/lib/KISS_TO_TNC2",
                     "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/lib/BG_RF95",
                     "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/.pio/libdeps/ttgo-t-beam/OneWire",
                     "e:/Dokumenty/GitHub/TTGO-T-Beam-LoRa-APRS/.pio/libdeps/ttgo-t-beam/AXP202X_Library/src",
@@ -215,7 +217,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50004",
+                "PLATFORMIO=50100",
                 "ARDUINO_T_Beam",
                 "BOARD_HAS_PSRAM",
                 "ESP32",
