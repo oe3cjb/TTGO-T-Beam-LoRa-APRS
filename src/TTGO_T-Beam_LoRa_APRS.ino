@@ -365,6 +365,7 @@ void loop() {
     #ifdef KISS_PROTOCOLL
       if (character == (char)FEND && content.length() > 3){
         loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(content));
+        writedisplaytext("((KISSTX))","","","","","",30);
         content = "";
       }
     #endif
@@ -378,9 +379,6 @@ void loop() {
         for ( int i=0 ; i < len ; i++) {
           InputString += (char) lora_RXBUFF[i];
         }        
-        #ifdef TEXT_PROTOCOLL
-          Serial.println(InputString);
-        #endif
         #ifdef KISS_PROTOCOLL
           Serial.print(encode_kiss(InputString));
         #endif
