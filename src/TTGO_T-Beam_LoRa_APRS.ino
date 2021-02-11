@@ -21,7 +21,7 @@
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
 #include <axp20x.h>
-#include "KISS.h"
+#include <KISS_TO_TNC2.h>
 
 // I2C LINES
 #define I2C_SDA 21
@@ -283,23 +283,6 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.display();
   smartDelay(warten);
 }
-
-void encode_address(){
-
-}
-
-void decode_address(){
-
-}
-
-void encode_kiss(){
-
-}
-
-void decode_kiss(){
-
-}
-
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
@@ -405,7 +388,7 @@ void loop() {
           Serial.println(InputString);
         #endif
         #ifdef KISS_PROTOCOLL
-          //encode_kiss(InputString);
+          Serial.println(encode_kiss(InputString));
         #endif
         writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
       }
