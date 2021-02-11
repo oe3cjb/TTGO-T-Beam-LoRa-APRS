@@ -359,22 +359,16 @@ void loop() {
     gps.encode(ss.read());
   }
 
-  //while (Serial.available() > 0 ){
-  //  char character = Serial.read();
-  //  content.concat(character);
-  // }
-
-  //if(content != ""){
-    //Serial.println(content);
-  //  #ifdef TEXT_PROTOCOLL
-  //    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
-  //  #endif
-  //  #ifdef KISS_PROTOCOLL
-  //    decode_kiss();
-  //    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, content);
-  //  #endif
-  //  content = "";
-  //}
+  while (Serial.available() > 0 ){
+    char character = Serial.read();
+    content.concat(character);
+    #ifdef KISS_PROTOCOLL
+      if (character == (char)FEND && content.length() > 3){
+        loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(content));
+        content = "";
+      }
+    #endif
+  }
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
@@ -388,7 +382,7 @@ void loop() {
           Serial.println(InputString);
         #endif
         #ifdef KISS_PROTOCOLL
-          Serial.println(encode_kiss(InputString));
+          Serial.print(encode_kiss(InputString));
         #endif
         writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
       }
