@@ -5,7 +5,7 @@ If you want to discuss with other LoRa APRS interested persons join the growing 
 <br>
 <b>USER GUIDE of TTGO T-Beam LoRa APRS V1.2:</b><br>
 <b>Attention: a new HW Version is available - if you use the old version uncomment "// #define T_BEAM_V0_7" and comment out "#define T_BEAM_V1_0".</b>You can recognize the new Rev1.0-Boards at their three push buttons instead of two at the older boards - both versions are now supported.<br>
-As the new board only has two LEDs for the GPS and battery charger I've moved the TX Led to PIN 33 - please use a LED with reasonable resistor of 470R.<br>
+As the new board only has two LEDs for the GPS and battery charger I've moved the TX Led to PIN 4 (GPIO 4) - please use a LED with reasonable resistor of 470R.<br>
 <br>
 You can now do an immediate TX beacon if you press the key for 2secs - use this for testing purposes.<br>
 <br>
