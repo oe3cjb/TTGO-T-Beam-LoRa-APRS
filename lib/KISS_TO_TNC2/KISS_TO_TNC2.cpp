@@ -56,7 +56,7 @@ String encode_kiss(const String& tnc2FormattedFrame) {
     kissFrame += (char)FEND; // start of frame
     kissFrame += (char)CMD_DATA; // TNC0, DATA
     for (int i = 0; i < ax25Frame.length(); ++i) {
-        char currentChar = tnc2FormattedFrame.charAt(i);
+        char currentChar = ax25Frame.charAt(i);
         if (currentChar == (char)FEND) {
             kissFrame += FESC;
             kissFrame += TFEND;
