@@ -514,6 +514,30 @@ void loop() {
         displayInvalidGPS();
       }
   }
+  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_DEBUG
+  static auto last_debug_send_time = millis();
+  if (millis() - last_debug_send_time > 1000*10) {
+    last_debug_send_time = millis();
+    String debug_message = "";
+    debug_message += "Bat V: " + String(axp.getBattVoltage());
+    debug_message += ", ";
+    debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
+    debug_message += ", ";
+    debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
+    debug_message += ", ";
+    debug_message += "Bat %: " + String(axp.getBattPercentage());
+    debug_message += ", ";
+    debug_message += "USB V: " + String(axp.getVbusVoltage());
+    debug_message += ", ";
+    debug_message += "USB A: " + String(axp.getVbusCurrent());
+    debug_message += ", ";
+    debug_message += "Temp C: " + String(axp.getTemp());
+
+    Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+  }
+#endif
+  #endif
 }
 
 void handleKISSData(char character) {

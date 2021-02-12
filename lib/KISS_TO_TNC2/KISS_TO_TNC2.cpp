@@ -7,8 +7,6 @@ String decode_address_ax25(const String& ax25Address, bool &isLast);
 
 bool validateKISSFrame(const String &kissFormattedFrame);
 
-String encapsulateKISS(const String &ax25Frame);
-
 String decapsulateKISS(const String& frame);
 
 /*
@@ -64,14 +62,14 @@ String encode_kiss(const String& tnc2FormattedFrame) {
         ax25Frame += tnc2FormattedFrame.substring(tnc2FormattedFrame.indexOf(':')+1);
     }
 
-    String kissFrame = encapsulateKISS(ax25Frame);
+    String kissFrame = encapsulateKISS(ax25Frame, CMD_DATA);
     return kissFrame;
 }
 
-String encapsulateKISS(const String &ax25Frame) {
+String encapsulateKISS(const String &ax25Frame, uint8_t TNCCmd) {
     String kissFrame = "";
     kissFrame += (char)FEND; // start of frame
-    kissFrame += (char)CMD_DATA; // TNC0, DATA
+    kissFrame += (char)(0x0f & TNCCmd); // TNC0, cmd
     for (int i = 0; i < ax25Frame.length(); ++i) {
         char currentChar = ax25Frame.charAt(i);
         if (currentChar == (char)FEND){
