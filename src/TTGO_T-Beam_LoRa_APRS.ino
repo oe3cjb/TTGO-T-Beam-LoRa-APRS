@@ -52,6 +52,7 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
 String sTable="/";           //Primer
+String relay_path;
 
 // Variables and Constants
 String InputString = "";     //data on buff is copied to this string
@@ -123,6 +124,10 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 // This custom version of delay() ensures that the gps object
 // is being "fed".
 static void smartDelay(unsigned long ms){
+  #ifdef KISS_PROTOCOLL
+    delay(10);
+    return;
+  #endif
   unsigned long start = millis();
   do{
       while (ss.available())
@@ -173,43 +178,48 @@ void recalcGPS(){
   aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
   //}
 
-outString = "";
-for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-  if (Tcall.charAt(i) != ' ') {
-    outString += Tcall.charAt(i);
+  outString = "";
+  for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
+    if (Tcall.charAt(i) != ' ') {
+      outString += Tcall.charAt(i);
+    }
   }
-}
-// outString = (Tcall);
-outString += ">APLM0:!/";
-ax25_base91enc(helper_base91, 4, aprs_lat);
-for (i=0; i<4; i++) {
-  outString += helper_base91[i];
-}
-ax25_base91enc(helper_base91, 4, aprs_lon);
-for (i=0; i<4; i++) {
-  outString += helper_base91[i];
-}
-outString += TxSymbol;
-ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
-outString += helper_base91[0];
-ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
-outString += helper_base91[0];
-outString += "\x48";
+  // outString = (Tcall);
+  #ifdef DIGI_PATH
+    outString += ">APLM0," + relay_path + ":!/";
+  #elif
+    outString += ">APLM0:!/";
+  #endif
+  
+  ax25_base91enc(helper_base91, 4, aprs_lat);
+  for (i=0; i<4; i++) {
+    outString += helper_base91[i];
+  }
+  ax25_base91enc(helper_base91, 4, aprs_lon);
+  for (i=0; i<4; i++) {
+    outString += helper_base91[i];
+  }
+  outString += TxSymbol;
+  ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+  outString += helper_base91[0];
+  ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+  outString += helper_base91[0];
+  outString += "\x48";
 
-#ifdef SHOW_ALT
-  outString += "/A=";
-  outString += Altx;
-#endif
+  #ifdef SHOW_ALT
+    outString += "/A=";
+    outString += Altx;
+  #endif
 
-outString += MY_COMMENT;
+  outString += MY_COMMENT;
 
-#ifdef SHOW_BATT            // battery is not frame part move after comment
-  outString += " Batt=";
-  outString += String(BattVolts,2);
-  outString += ("V");
-#endif
+  #ifdef SHOW_BATT            // battery is not frame part move after comment
+    outString += " Batt=";
+    outString += String(BattVolts,2);
+    outString += ("V");
+  #endif
 
-Serial.print(outString);
+  Serial.print(outString);
 }
 
 void sendpacket(){
@@ -312,10 +322,7 @@ void setup(){
   
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Tcall = CALLSIGN;
-  //LongFixed = LONGITUDE_PRESET;
-  //LatFixed = LATIDUDE_PRESET;
-  TxSymbol = APRS_SYMBOL;
-  writedisplaytext("LoRa-APRS","","Init:","Mode","TRACKER","",1000);
+  relay_path = DIGI_PATH;
   
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
@@ -324,7 +331,7 @@ void setup(){
 
   if (max_time_to_nextTX < nextTX){
     max_time_to_nextTX=nextTX;
-    }
+  }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   ss.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
   writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
@@ -332,9 +339,7 @@ void setup(){
   while (millis() < 5000 && gps.charsProcessed() < 10) {}
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
-    while (true) {
-      //blinker(1);
-      }
+    while (true) {}
   }
   writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
@@ -344,11 +349,7 @@ void setup(){
   delay(250);
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
-
-
 }
-
-
 
 // +---------------------------------------------------------------------+//
 // + MAINLOOP -----------------------------------------------------------+//
@@ -359,28 +360,25 @@ void loop() {
     gps.encode(ss.read());
   }
 
-  while (Serial.available() > 0 ){
-    char character = Serial.read();
-    content.concat(character);
-    #ifdef KISS_PROTOCOLL
-      if (character == (char)FEND && content.length() > 3){
-        loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(content));
-        content = "";
-      }
-    #endif
-  }
+  #ifdef KISS_PROTOCOLL
+    while (Serial.available() > 0 ){
+      char character = Serial.read();
+      content.concat(character);
+        if (character == (char)FEND && content.length() > 3){
+          loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(content));
+          writedisplaytext("(KISSTX))","","","","","",1);
+          content = "";
+        }
+    }
+  #endif
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       if (rf95.recvAPRS(lora_RXBUFF, &len)) {
-        //Serial.print("((RX)): ");
         InputString = "";
         for ( int i=0 ; i < len ; i++) {
           InputString += (char) lora_RXBUFF[i];
         }        
-        #ifdef TEXT_PROTOCOLL
-          Serial.println(InputString);
-        #endif
         #ifdef KISS_PROTOCOLL
           Serial.print(encode_kiss(InputString));
         #endif
@@ -393,7 +391,9 @@ void loop() {
   LongShown = String(gps.location.lng(),5);
   average_speed[point_avg_speed] = gps.speed.kmph();   // calculate smart beaconing
   ++point_avg_speed;
-  if (point_avg_speed>4) {point_avg_speed=0;}
+  if (point_avg_speed>4) {
+    point_avg_speed=0;
+  }
   average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
   nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
 
@@ -484,6 +484,6 @@ void loop() {
         writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"SAT: "+String(gps.satellites.value()) + "  BAT: "+String(BattVolts,1) +"V",1);
       } 
   }
-  smartDelay(900);
+  //smartDelay(900);
 }
 // end of main loop
