@@ -23,6 +23,10 @@
 #include <axp20x.h>
 #include <KISS_TO_TNC2.h>
 
+#ifdef ENABLE_BLUETOOTH
+#include "BluetoothSerial.h"
+#endif
+
 // I2C LINES
 #define I2C_SDA 21
 #define I2C_SCL 22
@@ -108,6 +112,8 @@ void setup_data(void);
 
 void displayInvalidGPS();
 
+void handleKISSData(char character);
+
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
@@ -123,6 +129,10 @@ BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ 
 // initialize OLED display
 #define OLED_RESET 4         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
+
+#ifdef ENABLE_BLUETOOTH
+BluetoothSerial SerialBT;
+#endif
 
 // + FUNCTIONS-----------------------------------------------------------+//
 
@@ -226,7 +236,13 @@ void recalcGPS(){
   #endif
   #ifdef KISS_PROTOCOLL
     Serial.print(encode_kiss(outString));
-  #else
+    #ifdef ENABLE_BLUETOOTH
+    if (SerialBT.connected()){
+      SerialBT.print(encode_kiss(outString));
+    }
+    #endif
+
+#else
     Serial.println(outString);
   #endif
 }
@@ -356,6 +372,10 @@ void setup(){
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(20);    // was 5
   delay(250);
+#ifdef ENABLE_BLUETOOTH
+  SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
+  writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
+#endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
 }
@@ -372,13 +392,17 @@ void loop() {
   #ifdef KISS_PROTOCOLL
     while (Serial.available() > 0 ){
       char character = Serial.read();
-      inTNCData.concat(character);
-        if (character == (char)FEND && inTNCData.length() > 3){
-          writedisplaytext("(KISSTX))","","","","","",1);
-          loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(inTNCData));
-          inTNCData = "";
-        }
+      handleKISSData(character);
     }
+    #ifdef ENABLE_BLUETOOTH
+      if (SerialBT.connected()) {
+        while (SerialBT.available() > 0 ){
+          char character = SerialBT.read();
+          handleKISSData(character);
+        }
+      }
+    #endif
+
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
@@ -486,6 +510,15 @@ void loop() {
       } else {
         displayInvalidGPS();
       }
+  }
+}
+
+void handleKISSData(char character) {
+  inTNCData.concat(character);
+  if (character == (char)FEND && inTNCData.length() > 3){
+    writedisplaytext("(KISSTX))","","","","","",1);
+    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(inTNCData));
+    inTNCData = "";
   }
 }
 

@@ -18,5 +18,6 @@
 #define TXFREQ  433.775                                 // Transmit frequency in MHz
 #define TXdbmW  20                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
 //#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
+#define ENABLE_BLUETOOTH
 
 unsigned long max_time_to_nextTX = 180000L;   // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
