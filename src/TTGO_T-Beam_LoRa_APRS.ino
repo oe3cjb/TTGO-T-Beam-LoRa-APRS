@@ -106,6 +106,8 @@ void batt_read(void);
 void writedisplaytext(String, String, String, String, String, String, int);
 void setup_data(void);
 
+void displayInvalidGPS();
+
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
@@ -474,22 +476,28 @@ void loop() {
         Serial.print(String(BattVolts,1));
         digitalWrite(TXLED, LOW);
       #endif
-  } else{
-      writedisplaytext(" "+Tcall,"(TX) at valid GPS","LAT: not valid","LON: not valid","SPD: ---  CRS: ---","SAT: "+String(gps.satellites.value()) + "  BAT: "+String(BattVolts,1) +"V",1);
-      #ifdef SHOW_GPS_DATA
-        Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
-        Serial.print(" / SAT: ");
-        Serial.print(String(gps.satellites.value()));
-        Serial.print(" / BAT: ");
-        Serial.println(String(BattVolts,1));    
-      #endif  
-  
-    }
+  } else {
+      displayInvalidGPS();
+  }
   
   }else{
       if (gps.location.age() < 2000) {
         writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"SAT: "+String(gps.satellites.value()) + "  BAT: "+String(BattVolts,1) +"V",1);
-      } 
+      } else {
+        displayInvalidGPS();
+      }
   }
+}
+
+void displayInvalidGPS() {
+  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V", 1);
+#ifdef SHOW_GPS_DATA
+  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
+    Serial.print(" / SAT: ");
+    Serial.print(String(gps.satellites.value()));
+    Serial.print(" / BAT: ");
+    Serial.println(String(BattVolts,1));
+#endif
+
 }
 // end of main loop
