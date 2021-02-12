@@ -1,4 +1,4 @@
-Simple LoRA tracer with KISS TNC capability
+Simple LoRA tracker with KISS TNC capability
 
 Initial work: This code is build from OE1ACM, OE3CJB<br>
 Redesigned SQ9MDD
