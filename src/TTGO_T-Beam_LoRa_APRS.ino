@@ -414,6 +414,11 @@ void loop() {
         }        
         #ifdef KISS_PROTOCOLL
           Serial.print(encode_kiss(InputString));
+          #ifdef ENABLE_BLUETOOTH
+            if (SerialBT.connected()){
+              SerialBT.print(encode_kiss(InputString));
+            }
+          #endif
         #endif
         writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
       }
@@ -483,7 +488,7 @@ void loop() {
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
       digitalWrite(TXLED, HIGH);
-      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"SAT: "+String(gps.satellites.value()),1);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
       #ifdef SHOW_GPS_DATA
         Serial.print("((TX)) / LAT: ");
@@ -506,7 +511,7 @@ void loop() {
   
   }else{
       if (gps.location.age() < 2000) {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"SAT: "+String(gps.satellites.value()) + "  BAT: "+String(BattVolts,1) +"V",1);
+        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
       } else {
         displayInvalidGPS();
       }
@@ -522,8 +527,18 @@ void handleKISSData(char character) {
   }
 }
 
+String getSatAndBatInfo() {
+  String line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+  #ifdef ENABLE_BLUETOOTH
+    if (SerialBT.connected()){
+      line5 += "BT";
+    }
+  #endif
+  return line5;
+}
+
 void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V", 1);
+  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
 #ifdef SHOW_GPS_DATA
   Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
     Serial.print(" / SAT: ");
@@ -533,4 +548,5 @@ void displayInvalidGPS() {
 #endif
 
 }
+
 // end of main loop
