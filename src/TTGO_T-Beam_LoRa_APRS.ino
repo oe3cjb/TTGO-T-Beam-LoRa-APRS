@@ -52,6 +52,7 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
 String sTable="/";           //Primer
+String relay_path;
 
 // Variables and Constants
 String InputString = "";     //data on buff is copied to this string
@@ -184,7 +185,12 @@ void recalcGPS(){
     }
   }
   // outString = (Tcall);
-  outString += ">APLM0:!/";
+  #ifdef DIGI_PATH
+    outString += ">APLM0," + relay_path + ":!/";
+  #elif
+    outString += ">APLM0:!/";
+  #endif
+  
   ax25_base91enc(helper_base91, 4, aprs_lat);
   for (i=0; i<4; i++) {
     outString += helper_base91[i];
@@ -316,6 +322,7 @@ void setup(){
   
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Tcall = CALLSIGN;
+  relay_path = DIGI_PATH;
   
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
