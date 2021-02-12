@@ -124,7 +124,7 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 // is being "fed".
 static void smartDelay(unsigned long ms){
   #ifdef KISS_PROTOCOLL
-    delay(ms);
+    delay(10);
     return;
   #endif
   unsigned long start = millis();
