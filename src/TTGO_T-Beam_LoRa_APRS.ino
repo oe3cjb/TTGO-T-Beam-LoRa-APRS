@@ -334,6 +334,8 @@ void setup(){
   axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
   axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
   axp.setDCDC1Voltage(3300);
+  axp.adc1Enable(0xfe, true);
+  axp.adc2Enable(0x80, true);
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
@@ -517,7 +519,7 @@ void loop() {
   #ifdef KISS_PROTOCOLL
   #ifdef KISS_DEBUG
   static auto last_debug_send_time = millis();
-  if (millis() - last_debug_send_time > 1000*10) {
+  if (millis() - last_debug_send_time > 1000*5) {
     last_debug_send_time = millis();
     String debug_message = "";
     debug_message += "Bat V: " + String(axp.getBattVoltage());
@@ -526,7 +528,7 @@ void loop() {
     debug_message += ", ";
     debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
     debug_message += ", ";
-    debug_message += "Bat %: " + String(axp.getBattPercentage());
+    debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
     debug_message += ", ";
     debug_message += "USB V: " + String(axp.getVbusVoltage());
     debug_message += ", ";
@@ -535,6 +537,10 @@ void loop() {
     debug_message += "Temp C: " + String(axp.getTemp());
 
     Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+    #ifdef ENABLE_BLUETOOTH
+      SerialBT.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+    #endif
+
   }
 #endif
   #endif
