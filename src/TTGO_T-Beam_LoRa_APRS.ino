@@ -37,7 +37,7 @@
 //other global Variables
 String Textzeile1, Textzeile2;
 
-#ifdef KISS_PROTOCOLL
+#ifdef KISS_PROTOCOL
 String inTNCData = "";
 #endif
 int button=0;
@@ -138,7 +138,7 @@ BluetoothSerial SerialBT;
 // This custom version of delay() ensures that the gps object
 // is being "fed".
 static void smartDelay(unsigned long ms){
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     delay(10);
     return;
   #endif
@@ -233,7 +233,7 @@ void recalcGPS(){
     outString += String(BattVolts,2);
     outString += ("V");
   #endif
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     Serial.print(encode_kiss(outString));
     #ifdef ENABLE_BLUETOOTH
     if (SerialBT.connected()){
@@ -388,7 +388,7 @@ void loop() {
     gps.encode(gpsSerial.read());
   }
 
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     while (Serial.available() > 0 ){
       char character = Serial.read();
       handleKISSData(character);
@@ -412,7 +412,7 @@ void loop() {
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
-        #ifdef KISS_PROTOCOLL
+        #ifdef KISS_PROTOCOL
           Serial.print(encode_kiss(loraReceivedFrameString));
           #ifdef ENABLE_BLUETOOTH
             if (SerialBT.connected()){
@@ -516,7 +516,7 @@ void loop() {
         displayInvalidGPS();
       }
   }
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
   #ifdef KISS_DEBUG
   static auto last_debug_send_time = millis();
   if (millis() - last_debug_send_time > 1000*5) {
@@ -550,7 +550,7 @@ void handleKISSData(char character) {
   inTNCData.concat(character);
   if (character == (char)FEND && inTNCData.length() > 3){
     writedisplaytext("(KISSTX))","","","","","",1);
-    #ifdef KISS_PROTOCOLL
+    #ifdef KISS_PROTOCOL
     const String &TNC2DataFrame = decode_kiss(inTNCData);
 
     Serial.print(inTNCData);

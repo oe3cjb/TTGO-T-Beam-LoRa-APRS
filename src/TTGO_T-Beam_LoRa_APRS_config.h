@@ -5,7 +5,7 @@
 // licensed under CC BY-NC-SA
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
-#define KISS_PROTOCOLL                                  // If enabled send and receive data in SIMPLE KISS format to serial port
+#define KISS_PROTOCOL                                  // If enabled send and receive data in SIMPLE KISS format to serial port
 #define CALLSIGN "SQ9MDD-11"                            // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define DIGI_PATH "WIDE1-1"                             // one hope please (WIDE1-1)
 #define APRS_SYMBOL_TABLE "/"
