@@ -367,6 +367,9 @@ void setup(){
   rf95.setTxPower(20);    // was 5
   delay(250);
 #ifdef ENABLE_BLUETOOTH
+  #ifdef BLUETOOTH_PIN
+    SerialBT.setPin(BLUETOOTH_PIN);
+  #endif
   SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
   writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
 #endif
