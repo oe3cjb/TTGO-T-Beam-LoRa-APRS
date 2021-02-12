@@ -8,6 +8,7 @@
 #define KISS_PROTOCOLL                                  // If enabled send and receive data in SIMPLE KISS format to serial port
 #define CALLSIGN "SQ9MDD-11"                            // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define DIGI_PATH "WIDE1-1"                             // one hope please (WIDE1-1)
+#define APRS_SYMBOL_TABLE "/"
 #define APRS_SYMBOL "["                                 // other symbols are: "[" => RUNNER, "b" => BICYCLE, "<" => MOTORCYCLE, "R" => Recreation Vehicle
 #define MY_COMMENT "test trakera LORA"                  // add your coment here - if empty then no comment is sent
 //#define SHOW_ALT                                        // send Altitude in frame

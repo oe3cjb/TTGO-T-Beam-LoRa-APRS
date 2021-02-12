@@ -62,7 +62,6 @@ String LongShown="";
 String LatShown="";
 String LongFixed="";
 String LatFixed="";
-String TxSymbol="";
 
 //byte arrays
 byte  lora_TXBUFF[128];      //buffer for packet to send
@@ -186,10 +185,11 @@ void recalcGPS(){
   }
   // outString = (Tcall);
   #ifdef DIGI_PATH
-    outString += ">APLM0," + relay_path + ":!/";
+    outString += ">APLM0," + relay_path + ":!";
   #elif
-    outString += ">APLM0:!/";
+    outString += ">APLM0:!";
   #endif
+  outString += APRS_SYMBOL_TABLE;
   
   ax25_base91enc(helper_base91, 4, aprs_lat);
   for (i=0; i<4; i++) {
@@ -199,7 +199,7 @@ void recalcGPS(){
   for (i=0; i<4; i++) {
     outString += helper_base91[i];
   }
-  outString += TxSymbol;
+  outString += APRS_SYMBOL;
   ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
   outString += helper_base91[0];
   ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
