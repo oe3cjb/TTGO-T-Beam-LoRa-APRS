@@ -63,7 +63,7 @@ String sTable="/";           //Primer
 String relay_path;
 
 // Variables and Constants
-String InputString = "";     //data on buff is copied to this string
+String loraReceivedFrameString = "";     //data on buff is copied to this string
 String Outputstring = "";
 String outString="";         //The new Output String with GPS Conversion RAW
 String LongShown="";
@@ -72,8 +72,8 @@ String LongFixed="";
 String LatFixed="";
 
 //byte arrays
-byte  lora_TXBUFF[128];      //buffer for packet to send
-byte  lora_RXBUFF[128];      //buffer for packet to send
+byte  lora_TXBUFF[BG_RF95_MAX_MESSAGE_LEN];      //buffer for packet to send
+byte  lora_RXBUFF[BG_RF95_MAX_MESSAGE_LEN];      //buffer for packet to send
 
 //byte Variables
 byte  lora_TXStart;          //start of packet data in TXbuff
@@ -120,8 +120,7 @@ TinyGPSPlus gps;             // The TinyGPS++ object
 AXP20X_Class axp;
 
 // checkRX
-uint8_t buf[BG_RF95_MAX_MESSAGE_LEN];
-uint8_t len = sizeof(buf);
+uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 
 // Singleton instance of the radio driver
 BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
@@ -272,11 +271,6 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
   byte i;
   byte ltemp;
 
-  if (rf95.waitAvailableTimeout(100)) {
-    if (rf95.recvAPRS(buf, &len)) {
-    }
-  }
-
   lastTX = millis();
 
   ltemp = message.length();
@@ -407,20 +401,21 @@ void loop() {
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
-      if (rf95.recvAPRS(lora_RXBUFF, &len)) {
-        InputString = "";
-        for ( int i=0 ; i < len ; i++) {
-          InputString += (char) lora_RXBUFF[i];
-        }        
+      loraReceivedLength = sizeof(lora_RXBUFF); // reset max length before receiving!
+      if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
+        loraReceivedFrameString = "";
+        for (int i=0 ; i < loraReceivedLength ; i++) {
+          loraReceivedFrameString += (char) lora_RXBUFF[i];
+        }
         #ifdef KISS_PROTOCOLL
-          Serial.print(encode_kiss(InputString));
+          Serial.print(encode_kiss(loraReceivedFrameString));
           #ifdef ENABLE_BLUETOOTH
             if (SerialBT.connected()){
-              SerialBT.print(encode_kiss(InputString));
+              SerialBT.print(encode_kiss(loraReceivedFrameString));
             }
           #endif
         #endif
-        writedisplaytext("  ((RX))","",InputString,"","","",SHOW_RX_TIME);
+        writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
       }
     #endif
   }
@@ -522,7 +517,17 @@ void handleKISSData(char character) {
   inTNCData.concat(character);
   if (character == (char)FEND && inTNCData.length() > 3){
     writedisplaytext("(KISSTX))","","","","","",1);
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(inTNCData));
+    #ifdef KISS_PROTOCOLL
+    const String &TNC2DataFrame = decode_kiss(inTNCData);
+
+    Serial.print(inTNCData);
+      #ifdef ENABLE_BLUETOOTH
+        if (SerialBT.connected()) {
+          SerialBT.print(inTNCData);
+        }
+      #endif
+    #endif
+    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
     inTNCData = "";
   }
 }
