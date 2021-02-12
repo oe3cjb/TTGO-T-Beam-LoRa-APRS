@@ -31,7 +31,11 @@
 #define SSD1306_ADDRESS 0x3C
 
 //other global Variables
-String Textzeile1, Textzeile2, content;
+String Textzeile1, Textzeile2;
+
+#ifdef KISS_PROTOCOLL
+String inTNCData = "";
+#endif
 int button=0;
 int button_ctr=0;
 
@@ -103,7 +107,7 @@ void writedisplaytext(String, String, String, String, String, String, int);
 void setup_data(void);
 
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
-HardwareSerial ss(1);        // TTGO has HW serial
+HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
 AXP20X_Class axp;
 
@@ -129,8 +133,8 @@ static void smartDelay(unsigned long ms){
   #endif
   unsigned long start = millis();
   do{
-      while (ss.available())
-        gps.encode(ss.read());
+      while (gpsSerial.available())
+        gps.encode(gpsSerial.read());
   } while (millis() - start < ms);
 }
 
@@ -218,8 +222,11 @@ void recalcGPS(){
     outString += String(BattVolts,2);
     outString += ("V");
   #endif
-
-  Serial.print(outString);
+  #ifdef KISS_PROTOCOLL
+    Serial.print(encode_kiss(outString));
+  #else
+    Serial.println(outString);
+  #endif
 }
 
 void sendpacket(){
@@ -243,7 +250,7 @@ void sendpacket(){
   }
 }
 
-void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, String message){
+void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, const String& message){
   byte i;
   byte ltemp;
 
@@ -333,7 +340,7 @@ void setup(){
     max_time_to_nextTX=nextTX;
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
-  ss.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
+  gpsSerial.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
   writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
   while (millis() < 5000 && gps.charsProcessed() < 10) {}
@@ -356,18 +363,18 @@ void setup(){
 // +---------------------------------------------------------------------+//
 
 void loop() {
-  while (ss.available() > 0) {
-    gps.encode(ss.read());
+  while (gpsSerial.available() > 0) {
+    gps.encode(gpsSerial.read());
   }
 
   #ifdef KISS_PROTOCOLL
     while (Serial.available() > 0 ){
       char character = Serial.read();
-      content.concat(character);
-        if (character == (char)FEND && content.length() > 3){
-          loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(content));
+      inTNCData.concat(character);
+        if (character == (char)FEND && inTNCData.length() > 3){
           writedisplaytext("(KISSTX))","","","","","",1);
-          content = "";
+          loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, decode_kiss(inTNCData));
+          inTNCData = "";
         }
     }
   #endif
@@ -484,6 +491,5 @@ void loop() {
         writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),"SAT: "+String(gps.satellites.value()) + "  BAT: "+String(BattVolts,1) +"V",1);
       } 
   }
-  //smartDelay(900);
 }
 // end of main loop
