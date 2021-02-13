@@ -44,14 +44,28 @@ int button=0;
 int button_ctr=0;
 
 // Pins for GPS
-static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
+#ifdef T_BEAM_V1_0
+  static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
+#else
+   static const int RXPin = 15, TXPin = 12;  //  changed BG A3 A2
+#endif
+
 static const uint32_t GPSBaud = 9600; //GPS
 
 // LED for signalling
-const byte TXLED  = 33;      //pin number for LED on TX Tracker
+#ifdef T_BEAM_V1_0
+   const byte TXLED  = 4;      //pin number for LED on TX Tracker
+#else
+   const byte TXLED  = 14;      //pin number for LED on TX Tracker
+ #endif
 
 // Button of TTGO T-Beam
-#define BUTTON  38      //pin number for Button on TTGO T-Beam
+#ifdef T_BEAM_V1_0
+//   const byte BUTTON  = 38;      //pin number for Button on TTGO T-Beam
+   #define BUTTON  38      //pin number for Button on TTGO T-Beam
+#else
+   #define BUTTON  39      //pin number for Button on TTGO T-Beam
+#endif
 
 // Pins for LoRa module
 const byte lora_PReset = 23; //pin where LoRa device reset line is connected
@@ -117,7 +131,9 @@ void handleKISSData(char character);
 // SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
-AXP20X_Class axp;
+#ifdef T_BEAM_V1_0
+  AXP20X_Class axp;
+#endif
 
 // checkRX
 uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
@@ -325,15 +341,17 @@ void setup(){
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
 
-  if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-  } 
+   #ifdef T_BEAM_V1_0
+    if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+    } 
 
-  axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // Lora power
-  axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // provides power to GPS
-  axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-  axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-  axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enables power to OLED LCD
-  axp.setDCDC1Voltage(3300);
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // Lora power
+    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // provides power to GPS
+    axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enables power to OLED LCD
+    axp.setDCDC1Voltage(3300);
+  #endif
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
@@ -361,7 +379,14 @@ void setup(){
     while (true) {}
   }
   writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
-  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
+  #ifdef T_BEAM_V1_0
+    writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
+  #else
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
+    writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",250);
+  #endif
+
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(20);    // was 5
