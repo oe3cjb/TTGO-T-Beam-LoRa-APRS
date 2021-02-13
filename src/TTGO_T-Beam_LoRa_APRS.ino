@@ -328,11 +328,11 @@ void setup(){
   if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
   } 
 
-  axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-  axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+  axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // Lora power
+  axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // provides power to GPS
   axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
   axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-  axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
+  axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enables power to OLED LCD
   axp.setDCDC1Voltage(3300);
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
