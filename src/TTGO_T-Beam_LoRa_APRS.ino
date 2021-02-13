@@ -9,7 +9,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <BG_RF95.h>         // library from OE1ACM
-#include <TinyGPS++.h>
 #include <math.h>
 #include <driver/adc.h>
 #include <Wire.h>
@@ -22,6 +21,7 @@
 #include <gfxfont.h>
 #include <axp20x.h>
 #include <KISS_TO_TNC2.h>
+#include "taskGPS.h"
 
 #ifdef ENABLE_BLUETOOTH
 #include "BluetoothSerial.h"
@@ -43,9 +43,6 @@ String inTNCData = "";
 int button=0;
 int button_ctr=0;
 
-// Pins for GPS
-static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
-static const uint32_t GPSBaud = 9600; //GPS
 
 // LED for signalling
 const byte TXLED  = 33;      //pin number for LED on TX Tracker
@@ -114,8 +111,7 @@ void displayInvalidGPS();
 
 void handleKISSData(char character);
 
-HardwareSerial gpsSerial(1);        // TTGO has HW serial
-TinyGPSPlus gps;             // The TinyGPS++ object
+
 AXP20X_Class axp;
 
 // checkRX
@@ -137,15 +133,7 @@ BluetoothSerial SerialBT;
 // This custom version of delay() ensures that the gps object
 // is being "fed".
 static void smartDelay(unsigned long ms){
-  #ifdef KISS_PROTOCOL
-    delay(10);
-    return;
-  #endif
-  unsigned long start = millis();
-  do{
-      while (gpsSerial.available())
-        gps.encode(gpsSerial.read());
-  } while (millis() - start < ms);
+  vTaskDelay(ms/portTICK_PERIOD_MS);
 }
 
 char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
@@ -353,15 +341,9 @@ void setup(){
     max_time_to_nextTX=nextTX;
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
-  gpsSerial.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
-  writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  while (millis() < 5000 && gps.charsProcessed() < 10) {}
-  if (millis() > 5000 && gps.charsProcessed() < 10) {
-    writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
-    while (true) {}
-  }
-  writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
+  xTaskCreate(taskGPS, "taskGPS", 10000, NULL, 1, NULL);
+  writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
@@ -383,9 +365,6 @@ void setup(){
 // +---------------------------------------------------------------------+//
 
 void loop() {
-  while (gpsSerial.available() > 0) {
-    gps.encode(gpsSerial.read());
-  }
 
   #ifdef KISS_PROTOCOL
     while (Serial.available() > 0 ){
@@ -543,6 +522,7 @@ void loop() {
   }
 #endif
   #endif
+  vTaskDelay(1);
 }
 
 void handleKISSData(char character) {
