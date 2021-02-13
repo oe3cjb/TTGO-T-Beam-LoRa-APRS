@@ -297,7 +297,6 @@ void batt_read(){
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
   batt_read();
-  delay(100);
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
