@@ -286,7 +286,11 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
 }
 
 void batt_read(){
+#ifdef T_BEAM_V1_0
   BattVolts = axp.getBattVoltage()/1000;
+#else
+  BattVolts = analogRead(35)*7.221/4096;
+#endif
 }
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
@@ -355,7 +359,12 @@ void setup(){
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
   xTaskCreate(taskGPS, "taskGPS", 10000, NULL, 1, NULL);
   writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
-  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
+  #ifndef T_BEAM_V1_0
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
+  #endif
+  batt_read();
+  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"",250);
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(20);    // was 5
