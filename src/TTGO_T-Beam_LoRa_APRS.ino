@@ -117,7 +117,6 @@ float avg_c_y, avg_c_x;
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
 
-static void smartDelay(unsigned long);
 void recalcGPS(void);
 void sendpacket(void);
 void loraSend(byte, byte, byte, byte, byte, long, byte, float);
@@ -236,6 +235,7 @@ void recalcGPS(){
     outString += String(BattVolts,2);
     outString += ("V");
   #endif
+
   #ifdef KISS_PROTOCOLL
     Serial.print(encode_kiss(outString));
     #ifdef ENABLE_BLUETOOTH
@@ -244,7 +244,7 @@ void recalcGPS(){
     }
     #endif
 
-#else
+  #else
     Serial.println(outString);
   #endif
 }
@@ -315,6 +315,7 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.setCursor(0,56);
   display.println(Line5);
   display.display();
+  time_to_refresh = millis() + SHOW_RX_TIME;
 }
 // + SETUP --------------------------------------------------------------+//
 
@@ -389,6 +390,7 @@ void setup(){
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
   time_to_refresh = millis() + SHOW_RX_TIME;
+  displayInvalidGPS();
 }
 
 // +---------------------------------------------------------------------+//
@@ -433,7 +435,6 @@ void loop() {
           #endif
         #endif
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
-        time_to_refresh = millis() + SHOW_RX_TIME;
       }
     #endif
   }
@@ -501,7 +502,6 @@ void loop() {
       digitalWrite(TXLED, HIGH);
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
-      time_to_refresh = millis() + SHOW_RX_TIME;
       #ifdef SHOW_GPS_DATA
         Serial.print("((TX)) / LAT: ");
         Serial.print(LatShown);
@@ -517,10 +517,11 @@ void loop() {
         Serial.print(String(BattVolts,1));
         digitalWrite(TXLED, LOW);
       #endif
-  } else {
-      displayInvalidGPS();
-  }
-  
+    } else {
+      if (millis() > time_to_refresh){
+        displayInvalidGPS();
+      }
+    }
   }else{
       if (millis() > time_to_refresh){
         if (gps.location.age() < 2000) {
@@ -528,7 +529,6 @@ void loop() {
         } else {
           displayInvalidGPS();
         }
-        time_to_refresh = millis() + SHOW_RX_TIME;
       }
 
   }
@@ -590,7 +590,7 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-  time_to_refresh = millis() + SHOW_RX_TIME;
+  //writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "", 1);
   #ifdef SHOW_GPS_DATA
   Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
     Serial.print(" / SAT: ");
