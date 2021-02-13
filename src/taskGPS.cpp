@@ -1,7 +1,12 @@
 #include <taskGPS.h>
+#include "TTGO_T-Beam_LoRa_APRS_config.h"
 
 // Pins for GPS
-static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
+#ifdef T_BEAM_V1_0
+static const int RXPin = 12, TXPin = 34;
+#else
+static const int RXPin = 15, TXPin = 12;
+#endif
 static const uint32_t GPSBaud = 9600; //GPS
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object

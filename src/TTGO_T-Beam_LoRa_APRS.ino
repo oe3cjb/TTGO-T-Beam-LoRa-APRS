@@ -99,6 +99,7 @@ float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_s
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
+ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
