@@ -143,28 +143,14 @@ uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
 
 // initialize OLED display
-#define OLED_RESET 4         // not used
+#define OLED_RESET 16         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 #ifdef ENABLE_BLUETOOTH
-BluetoothSerial SerialBT;
+  BluetoothSerial SerialBT;
 #endif
 
 // + FUNCTIONS-----------------------------------------------------------+//
-
-// This custom version of delay() ensures that the gps object
-// is being "fed".
-static void smartDelay(unsigned long ms){
-  #ifdef KISS_PROTOCOLL
-    delay(10);
-    return;
-  #endif
-  unsigned long start = millis();
-  do{
-      while (gpsSerial.available())
-        gps.encode(gpsSerial.read());
-  } while (millis() - start < ms);
-}
 
 char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
   /* Creates a Base-91 representation of the value in v in the string */
@@ -310,6 +296,8 @@ void batt_read(){
 }
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
+  batt_read();
+  delay(100);
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -327,7 +315,6 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.setCursor(0,56);
   display.println(Line5);
   display.display();
-  //smartDelay(warten);
 }
 // + SETUP --------------------------------------------------------------+//
 
@@ -342,10 +329,10 @@ void setup(){
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
 
-   #ifdef T_BEAM_V1_0
+  #ifdef T_BEAM_V1_0
     if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+    
     } 
-
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // Lora power
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // provides power to GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
@@ -431,7 +418,7 @@ void loop() {
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
-      loraReceivedLength = sizeof(lora_RXBUFF); // reset max length before receiving!
+      loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
         loraReceivedFrameString = "";
         for (int i=0 ; i < loraReceivedLength ; i++) {
@@ -500,8 +487,6 @@ void loop() {
     }
     old_course = new_course;
   }
-
-  batt_read();
 
   if (button_ctr==2) {
     nextTX = 0;

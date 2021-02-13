@@ -14,9 +14,9 @@
 //#define SHOW_ALT                                        // send Altitude in frame
 #define SHOW_BATT                                       // send battery voltage at the end of comment (we need beggining for QSY message format)
 #define SHOW_RX_PACKET                                  // uncomment to show received LoRa APS packets for the time given below
-#define SHOW_RX_TIME 10000                              // show RX packet for milliseconds (5000 = 5secs)
+#define SHOW_RX_TIME 30000                              // show RX packet for milliseconds (5000 = 5secs)
 #define TXFREQ  433.775                                 // Transmit frequency in MHz
-#define TXdbmW  17                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
+#define TXdbmW  10                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
 //#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
 #define ENABLE_BLUETOOTH
 //#define BLUETOOTH_PIN "0000"
