@@ -114,7 +114,6 @@ void displayInvalidGPS();
 
 void handleKISSData(char character);
 
-// SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
 AXP20X_Class axp;
