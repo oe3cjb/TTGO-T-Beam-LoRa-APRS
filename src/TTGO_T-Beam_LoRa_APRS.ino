@@ -24,7 +24,7 @@
 #include <KISS_TO_TNC2.h>
 
 #ifdef ENABLE_BLUETOOTH
-#include "BluetoothSerial.h"
+  #include "BluetoothSerial.h"
 #endif
 
 // I2C LINES
@@ -108,6 +108,7 @@ float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
+ulong time_to_refresh = 0;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -326,7 +327,7 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.setCursor(0,56);
   display.println(Line5);
   display.display();
-  smartDelay(warten);
+  //smartDelay(warten);
 }
 // + SETUP --------------------------------------------------------------+//
 
@@ -400,6 +401,7 @@ void setup(){
 #endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
+  time_to_refresh = millis() + SHOW_RX_TIME;
 }
 
 // +---------------------------------------------------------------------+//
@@ -444,6 +446,7 @@ void loop() {
           #endif
         #endif
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
+        time_to_refresh = millis() + SHOW_RX_TIME;
       }
     #endif
   }
@@ -513,6 +516,7 @@ void loop() {
       digitalWrite(TXLED, HIGH);
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
+      time_to_refresh = millis() + SHOW_RX_TIME;
       #ifdef SHOW_GPS_DATA
         Serial.print("((TX)) / LAT: ");
         Serial.print(LatShown);
@@ -533,42 +537,47 @@ void loop() {
   }
   
   }else{
-      if (gps.location.age() < 2000) {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
-      } else {
-        displayInvalidGPS();
+      if (millis() > time_to_refresh){
+        if (gps.location.age() < 2000) {
+          writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
+        } else {
+          displayInvalidGPS();
+        }
+        time_to_refresh = millis() + SHOW_RX_TIME;
       }
+
   }
   #ifdef KISS_PROTOCOLL
-  #ifdef KISS_DEBUG
-  static auto last_debug_send_time = millis();
-  if (millis() - last_debug_send_time > 1000*10) {
-    last_debug_send_time = millis();
-    String debug_message = "";
-    debug_message += "Bat V: " + String(axp.getBattVoltage());
-    debug_message += ", ";
-    debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
-    debug_message += ", ";
-    debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
-    debug_message += ", ";
-    debug_message += "Bat %: " + String(axp.getBattPercentage());
-    debug_message += ", ";
-    debug_message += "USB V: " + String(axp.getVbusVoltage());
-    debug_message += ", ";
-    debug_message += "USB A: " + String(axp.getVbusCurrent());
-    debug_message += ", ";
-    debug_message += "Temp C: " + String(axp.getTemp());
+    #ifdef KISS_DEBUG
+    static auto last_debug_send_time = millis();
+    if (millis() - last_debug_send_time > 1000*10) {
+      last_debug_send_time = millis();
+      String debug_message = "";
+      debug_message += "Bat V: " + String(axp.getBattVoltage());
+      debug_message += ", ";
+      debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
+      debug_message += ", ";
+      debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
+      debug_message += ", ";
+      debug_message += "Bat %: " + String(axp.getBattPercentage());
+      debug_message += ", ";
+      debug_message += "USB V: " + String(axp.getVbusVoltage());
+      debug_message += ", ";
+      debug_message += "USB A: " + String(axp.getVbusCurrent());
+      debug_message += ", ";
+      debug_message += "Temp C: " + String(axp.getTemp());
 
-    Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
-  }
-#endif
+      Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+    }
+    #endif
   #endif
 }
 
 void handleKISSData(char character) {
   inTNCData.concat(character);
   if (character == (char)FEND && inTNCData.length() > 3){
-    writedisplaytext("(KISSTX))","","","","","",1);
+    writedisplaytext("((KISSTX))","","","","","",1);
+    time_to_refresh = millis() + SHOW_RX_TIME;
     #ifdef KISS_PROTOCOLL
     const String &TNC2DataFrame = decode_kiss(inTNCData);
 
@@ -596,14 +605,14 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-#ifdef SHOW_GPS_DATA
+  time_to_refresh = millis() + SHOW_RX_TIME;
+  #ifdef SHOW_GPS_DATA
   Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
     Serial.print(" / SAT: ");
     Serial.print(String(gps.satellites.value()));
     Serial.print(" / BAT: ");
     Serial.println(String(BattVolts,1));
-#endif
-
+  #endif
 }
 
 // end of main loop
