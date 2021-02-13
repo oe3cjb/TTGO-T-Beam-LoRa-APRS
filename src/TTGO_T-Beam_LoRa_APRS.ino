@@ -271,6 +271,7 @@ void sendpacket(){
 }
 
 void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, const String& message){
+  digitalWrite(TXLED, LOW);
   byte i;
   byte ltemp;
 
@@ -289,6 +290,7 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, message.length());
   rf95.waitPacketSent();
+  digitalWrite(TXLED, HIGH);
 }
 
 void batt_read(){
@@ -297,6 +299,10 @@ void batt_read(){
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
   batt_read();
+  if (BattVolts < 3.5){
+    axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+  }
+  
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -390,6 +396,8 @@ void setup(){
   writedisplaytext("","","","","","",0);
   time_to_refresh = millis() + SHOW_RX_TIME;
   displayInvalidGPS();
+  digitalWrite(TXLED, HIGH);
+  axp.setChgLEDMode(AXP20X_LED_OFF);
 }
 
 // +---------------------------------------------------------------------+//
@@ -418,6 +426,7 @@ void loop() {
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
+    axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
@@ -436,6 +445,7 @@ void loop() {
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
       }
     #endif
+    axp.setChgLEDMode(AXP20X_LED_OFF);
   }
 
   LatShown = String(gps.location.lat(),5);
@@ -498,7 +508,6 @@ void loop() {
 
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
-      digitalWrite(TXLED, HIGH);
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
       #ifdef SHOW_GPS_DATA
@@ -514,7 +523,7 @@ void loop() {
         Serial.print(String(gps.satellites.value()));
         Serial.print(" / BAT: ");
         Serial.print(String(BattVolts,1));
-        digitalWrite(TXLED, LOW);
+        //digitalWrite(TXLED, LOW);
       #endif
     } else {
       if (millis() > time_to_refresh){
