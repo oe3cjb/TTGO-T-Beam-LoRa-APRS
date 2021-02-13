@@ -16,10 +16,11 @@
 #define SHOW_RX_PACKET                                  // uncomment to show received LoRa APS packets for the time given below
 #define SHOW_RX_TIME 10000                              // show RX packet for milliseconds (5000 = 5secs)
 #define TXFREQ  433.775                                 // Transmit frequency in MHz
-#define TXdbmW  20                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
+#define TXdbmW  17                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
 //#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
 #define ENABLE_BLUETOOTH
 //#define BLUETOOTH_PIN "0000"
+#define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
 //#define KISS_DEBUG
 
 unsigned long max_time_to_nextTX = 180000L;   // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!

@@ -45,10 +45,19 @@ int button_ctr=0;
 
 
 // LED for signalling
-const byte TXLED  = 33;      //pin number for LED on TX Tracker
+#ifdef T_BEAM_V1_0
+   const byte TXLED  = 4;      //pin number for LED on TX Tracker
+#else
+   const byte TXLED  = 14;      //pin number for LED on TX Tracker
+ #endif
 
 // Button of TTGO T-Beam
-#define BUTTON  38      //pin number for Button on TTGO T-Beam
+#ifdef T_BEAM_V1_0
+//   const byte BUTTON  = 38;      //pin number for Button on TTGO T-Beam
+   #define BUTTON  38      //pin number for Button on TTGO T-Beam
+#else
+   #define BUTTON  39      //pin number for Button on TTGO T-Beam
+#endif
 
 // Pins for LoRa module
 const byte lora_PReset = 23; //pin where LoRa device reset line is connected
@@ -111,8 +120,9 @@ void displayInvalidGPS();
 
 void handleKISSData(char character);
 
-
+#ifdef T_BEAM_V1_0
 AXP20X_Class axp;
+#endif
 
 // checkRX
 uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
@@ -312,8 +322,9 @@ void setup(){
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
 
-  if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-  } 
+   #ifdef T_BEAM_V1_0
+    if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+    }
 
   axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
   axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
@@ -323,7 +334,7 @@ void setup(){
   axp.setDCDC1Voltage(3300);
   axp.adc1Enable(0xfe, true);
   axp.adc2Enable(0x80, true);
-
+  #endif
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
   }
