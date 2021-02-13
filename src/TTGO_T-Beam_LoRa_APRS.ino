@@ -75,6 +75,7 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 String Tcall;                //your Call Sign for normal position reports
 String sTable="/";           //Primer
 String relay_path;
+boolean gps_state = true;
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -405,6 +406,22 @@ void setup(){
 // +---------------------------------------------------------------------+//
 
 void loop() {
+  if(digitalRead(BUTTON)==LOW){
+    delay(2000);
+    if(digitalRead(BUTTON)==LOW){
+        if(gps_state == true){
+          gps_state = false;
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);
+          writedisplaytext("((GPSOFF))","","","","","",1);
+
+        }else{
+          gps_state = true;
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          writedisplaytext("((GPS ON))","","","","","",1);
+        }
+    }
+  }
+
   while (gpsSerial.available() > 0) {
     gps.encode(gpsSerial.read());
   }
@@ -587,7 +604,12 @@ void handleKISSData(char character) {
 }
 
 String getSatAndBatInfo() {
-  String line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+  String line5;
+  if(gps_state == true){
+    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+  }else{
+    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+  }  
   #ifdef ENABLE_BLUETOOTH
     if (SerialBT.connected()){
       line5 += "BT";
