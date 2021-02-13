@@ -203,7 +203,7 @@ void recalcGPS(){
     outString += ">APLM0:!";
   #endif
   outString += APRS_SYMBOL_TABLE;
-  
+
   ax25_base91enc(helper_base91, 4, aprs_lat);
   for (i=0; i<4; i++) {
     outString += helper_base91[i];
@@ -228,18 +228,18 @@ void recalcGPS(){
 
   #ifdef SHOW_BATT            // battery is not frame part move after comment
     outString += " Batt=";
-    outString += String(BattVolts,2);
+    outString += String(BattVolts, 2);
     outString += ("V");
   #endif
+
   #ifdef KISS_PROTOCOL
     Serial.print(encode_kiss(outString));
     #ifdef ENABLE_BLUETOOTH
-    if (SerialBT.connected()){
-      SerialBT.print(encode_kiss(outString));
-    }
+      if (SerialBT.connected()) {
+        SerialBT.print(encode_kiss(outString));
+      }
     #endif
-
-#else
+  #else
     Serial.println(outString);
   #endif
 }
@@ -327,27 +327,27 @@ void setup(){
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
 
-   #ifdef T_BEAM_V1_0
+  #ifdef T_BEAM_V1_0
     if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
     }
-
-  axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-  axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
-  axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-  axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-  axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-  axp.setDCDC1Voltage(3300);
-  axp.adc1Enable(0xfe, true);
-  axp.adc2Enable(0x80, true);
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+    axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
+    axp.setDCDC1Voltage(3300);
+    axp.adc1Enable(0xfe, true);
+    axp.adc2Enable(0x80, true);
   #endif
+
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
   }
-  
+
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Tcall = CALLSIGN;
   relay_path = DIGI_PATH;
-  
+
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
     for(;;); // Don't proceed, loop forever
@@ -370,13 +370,13 @@ void setup(){
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(20);    // was 5
   delay(250);
-#ifdef ENABLE_BLUETOOTH
-  #ifdef BLUETOOTH_PIN
-    SerialBT.setPin(BLUETOOTH_PIN);
+  #ifdef ENABLE_BLUETOOTH
+    #ifdef BLUETOOTH_PIN
+      SerialBT.setPin(BLUETOOTH_PIN);
+    #endif
+    SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
+    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
   #endif
-  SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
-  writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
-#endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
 }
@@ -454,7 +454,7 @@ void loop() {
     if (new_course < 0) {
         new_course=360+new_course;
       }
-      
+
     if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
       if (abs(new_course-old_course-360)>=ANGLE) {
         nextTX = 0;
@@ -507,7 +507,7 @@ void loop() {
   } else {
       displayInvalidGPS();
   }
-  
+
   }else{
       if (gps.location.age() < 2000) {
         writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
@@ -516,32 +516,31 @@ void loop() {
       }
   }
   #ifdef KISS_PROTOCOL
-  #ifdef KISS_DEBUG
-  static auto last_debug_send_time = millis();
-  if (millis() - last_debug_send_time > 1000*5) {
-    last_debug_send_time = millis();
-    String debug_message = "";
-    debug_message += "Bat V: " + String(axp.getBattVoltage());
-    debug_message += ", ";
-    debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
-    debug_message += ", ";
-    debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
-    debug_message += ", ";
-    debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
-    debug_message += ", ";
-    debug_message += "USB V: " + String(axp.getVbusVoltage());
-    debug_message += ", ";
-    debug_message += "USB A: " + String(axp.getVbusCurrent());
-    debug_message += ", ";
-    debug_message += "Temp C: " + String(axp.getTemp());
+    #ifdef KISS_DEBUG
+      static auto last_debug_send_time = millis();
+      if (millis() - last_debug_send_time > 1000*5) {
+        last_debug_send_time = millis();
+        String debug_message = "";
+        debug_message += "Bat V: " + String(axp.getBattVoltage());
+        debug_message += ", ";
+        debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
+        debug_message += ", ";
+        debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
+        debug_message += ", ";
+        debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
+        debug_message += ", ";
+        debug_message += "USB V: " + String(axp.getVbusVoltage());
+        debug_message += ", ";
+        debug_message += "USB A: " + String(axp.getVbusCurrent());
+        debug_message += ", ";
+        debug_message += "Temp C: " + String(axp.getTemp());
 
-    Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
-    #ifdef ENABLE_BLUETOOTH
-      SerialBT.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+        Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+        #ifdef ENABLE_BLUETOOTH
+          SerialBT.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+        #endif
+      }
     #endif
-
-  }
-#endif
   #endif
   vTaskDelay(1);
 }
@@ -551,9 +550,8 @@ void handleKISSData(char character) {
   if (character == (char)FEND && inTNCData.length() > 3){
     writedisplaytext("(KISSTX))","","","","","",1);
     #ifdef KISS_PROTOCOL
-    const String &TNC2DataFrame = decode_kiss(inTNCData);
-
-    Serial.print(inTNCData);
+      const String &TNC2DataFrame = decode_kiss(inTNCData);
+      Serial.print(inTNCData);
       #ifdef ENABLE_BLUETOOTH
         if (SerialBT.connected()) {
           SerialBT.print(inTNCData);
@@ -579,10 +577,10 @@ void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
 #ifdef SHOW_GPS_DATA
   Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
-    Serial.print(" / SAT: ");
-    Serial.print(String(gps.satellites.value()));
-    Serial.print(" / BAT: ");
-    Serial.println(String(BattVolts,1));
+  Serial.print(" / SAT: ");
+  Serial.print(String(gps.satellites.value()));
+  Serial.print(" / BAT: ");
+  Serial.println(String(BattVolts,1));
 #endif
 
 }
