@@ -11,8 +11,8 @@
 #define DIGI_PATH "WIDE1-1"                             // one hope please (WIDE1-1)
 #define APRS_SYMBOL_TABLE "/"
 #define APRS_SYMBOL "["                                 // other symbols are: "[" => RUNNER, "b" => BICYCLE, "<" => MOTORCYCLE, "R" => Recreation Vehicle
-#define MY_COMMENT "LoRa tracker TTGO"                  // add your coment here - if empty then no comment is sent
-//#define SHOW_ALT                                        // send Altitude in frame
+#define MY_COMMENT "LoRa tracker"                       // add your coment here - if empty then no comment is sent
+//#define SHOW_ALT                                      // send Altitude in frame
 #define SHOW_BATT                                       // send battery voltage at the end of comment (we need beggining for QSY message format)
 #define SHOW_RX_PACKET                                  // uncomment to show received LoRa APS packets for the time given below
 #define SHOW_RX_TIME 30000                              // show RX packet for milliseconds (5000 = 5secs)
@@ -20,8 +20,9 @@
 #define TXdbmW  20                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
 //#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
 #define ENABLE_BLUETOOTH
-//#define BLUETOOTH_PIN "0000"
-#define KISS_DEBUG
+#define BLUETOOTH_PIN "0000"
+//#define KISS_DEBUG
+//#define LOCAL_KISS_ECHO                                 // echoing KISS frame back
 #define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
 
-unsigned long max_time_to_nextTX = 180000L;   // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+unsigned long max_time_to_nextTX = 360000L;             // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!

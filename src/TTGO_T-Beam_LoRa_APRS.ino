@@ -334,10 +334,14 @@ void handleKISSData(char character) {
     #ifdef KISS_PROTOCOLL
     const String &TNC2DataFrame = decode_kiss(inTNCData);
 
-    Serial.print(inTNCData);
+      #ifdef LOCAL_KISS_ECHO
+        Serial.print(inTNCData);
+      #endif
       #ifdef ENABLE_BLUETOOTH
         if (SerialBT.connected()) {
-          SerialBT.print(inTNCData);
+          #ifdef LOCAL_KISS_ECHO
+            SerialBT.print(inTNCData);
+          #endif
         }
       #endif
     #endif
@@ -489,7 +493,6 @@ void loop() {
         }
       }
     #endif
-
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
@@ -598,14 +601,13 @@ void loop() {
       }
     }
   }else{
-      if (millis() > time_to_refresh){
-        if (gps.location.age() < 2000) {
-          writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
-        } else {
-          displayInvalidGPS();
-        }
+    if (millis() > time_to_refresh){
+      if (gps.location.age() < 2000) {
+        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
+      } else {
+        displayInvalidGPS();
       }
-
+    }
   }
   #ifdef KISS_PROTOCOLL
     #ifdef KISS_DEBUG
@@ -632,5 +634,4 @@ void loop() {
     #endif
   #endif
 }
-
 // end of main loop
