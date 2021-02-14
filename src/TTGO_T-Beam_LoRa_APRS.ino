@@ -1,5 +1,6 @@
 // Tracker for LoRA APRS
 // from OE1ACM and OE3CJB redesigned by SQ9MDD
+// KISS ans Bluetooth by SQ5RWU
 // TTGO T-Beam v1.0 only
 //
 // licensed under CC BY-NC-SA
@@ -323,6 +324,55 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.display();
   time_to_refresh = millis() + SHOW_RX_TIME;
 }
+
+
+void handleKISSData(char character) {
+  inTNCData.concat(character);
+  if (character == (char)FEND && inTNCData.length() > 3){
+    writedisplaytext("((KISSTX))","","","","","",1);
+    time_to_refresh = millis() + SHOW_RX_TIME;
+    #ifdef KISS_PROTOCOLL
+    const String &TNC2DataFrame = decode_kiss(inTNCData);
+
+    Serial.print(inTNCData);
+      #ifdef ENABLE_BLUETOOTH
+        if (SerialBT.connected()) {
+          SerialBT.print(inTNCData);
+        }
+      #endif
+    #endif
+    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
+    inTNCData = "";
+  }
+}
+
+String getSatAndBatInfo() {
+  String line5;
+  if(gps_state == true){
+    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+  }else{
+    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+  }  
+  #ifdef ENABLE_BLUETOOTH
+    if (SerialBT.connected()){
+      line5 += "BT";
+    }
+  #endif
+  return line5;
+}
+
+void displayInvalidGPS() {
+  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
+  //writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "", 1);
+  #ifdef SHOW_GPS_DATA
+  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
+    Serial.print(" / SAT: ");
+    Serial.print(String(gps.satellites.value()));
+    Serial.print(" / BAT: ");
+    Serial.println(String(BattVolts,1));
+  #endif
+}
+
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
@@ -411,13 +461,13 @@ void loop() {
     if(digitalRead(BUTTON)==LOW){
         if(gps_state == true){
           gps_state = false;
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
           writedisplaytext("((GPSOFF))","","","","","",1);
 
         }else{
           gps_state = true;
           axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-          writedisplaytext("((GPS ON))","","","","","",1);
+          writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
         }
     }
   }
@@ -580,53 +630,6 @@ void loop() {
       Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
     }
     #endif
-  #endif
-}
-
-void handleKISSData(char character) {
-  inTNCData.concat(character);
-  if (character == (char)FEND && inTNCData.length() > 3){
-    writedisplaytext("((KISSTX))","","","","","",1);
-    time_to_refresh = millis() + SHOW_RX_TIME;
-    #ifdef KISS_PROTOCOLL
-    const String &TNC2DataFrame = decode_kiss(inTNCData);
-
-    Serial.print(inTNCData);
-      #ifdef ENABLE_BLUETOOTH
-        if (SerialBT.connected()) {
-          SerialBT.print(inTNCData);
-        }
-      #endif
-    #endif
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
-    inTNCData = "";
-  }
-}
-
-String getSatAndBatInfo() {
-  String line5;
-  if(gps_state == true){
-    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
-  }else{
-    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
-  }  
-  #ifdef ENABLE_BLUETOOTH
-    if (SerialBT.connected()){
-      line5 += "BT";
-    }
-  #endif
-  return line5;
-}
-
-void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-  //writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "", 1);
-  #ifdef SHOW_GPS_DATA
-  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
-    Serial.print(" / SAT: ");
-    Serial.print(String(gps.satellites.value()));
-    Serial.print(" / BAT: ");
-    Serial.println(String(BattVolts,1));
   #endif
 }
 
