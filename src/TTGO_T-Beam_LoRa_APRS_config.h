@@ -24,10 +24,12 @@
 //#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
 #define ENABLE_BLUETOOTH                                // bluetooth KISS interface enable
 //#define BLUETOOTH_PIN "0000"
-//#define KISS_DEBUG
+//#define ENABLE_TNC_SELF_TELEMETRY
 //#define LOCAL_KISS_ECHO                               // echoing KISS frame back
 #define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
 //#define KISS_DEBUG
 
 #define MAX_TIME_TO_NEXT_TX 360000L                     // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
 #define FIX_BEACON_INTERVAL 1800000L           // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default
+#define TNC_SELF_TELEMETRY_INTERVAL (5*60*1000)
+
