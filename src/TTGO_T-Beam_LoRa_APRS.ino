@@ -1,5 +1,6 @@
 // Tracker for LoRA APRS
 // from OE1ACM and OE3CJB redesigned by SQ9MDD
+// KISS ans Bluetooth by SQ5RWU
 // TTGO T-Beam v1.0 only
 //
 // licensed under CC BY-NC-SA
@@ -24,7 +25,7 @@
 #include "taskGPS.h"
 
 #ifdef ENABLE_BLUETOOTH
-#include "BluetoothSerial.h"
+  #include "BluetoothSerial.h"
 #endif
 
 // I2C LINES
@@ -40,8 +41,8 @@ String Textzeile1, Textzeile2;
 #ifdef KISS_PROTOCOL
 String inTNCData = "";
 #endif
-int button=0;
-int button_ctr=0;
+//int button=0;
+//int button_ctr=0;
 
 
 // LED for signalling
@@ -67,6 +68,8 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 String Tcall;                //your Call Sign for normal position reports
 String sTable="/";           //Primer
 String relay_path;
+boolean gps_state = true;
+boolean key_up = true;
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -101,6 +104,8 @@ int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
+ulong time_to_refresh = 0;
+ulong next_fixed_beacon = 0;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -109,7 +114,6 @@ float avg_c_y, avg_c_x;
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
 
-static void smartDelay(unsigned long);
 void recalcGPS(void);
 void sendpacket(void);
 void loraSend(byte, byte, byte, byte, byte, long, byte, float);
@@ -132,20 +136,14 @@ uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
 
 // initialize OLED display
-#define OLED_RESET 4         // not used
+#define OLED_RESET 16         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 #ifdef ENABLE_BLUETOOTH
-BluetoothSerial SerialBT;
+  BluetoothSerial SerialBT;
 #endif
 
 // + FUNCTIONS-----------------------------------------------------------+//
-
-// This custom version of delay() ensures that the gps object
-// is being "fed".
-static void smartDelay(unsigned long ms){
-  vTaskDelay(ms/portTICK_PERIOD_MS);
-}
 
 char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
   /* Creates a Base-91 representation of the value in v in the string */
@@ -184,10 +182,10 @@ void recalcGPS(){
   if(Tlat < 0) { Tlat= -Tlat; }
 
   if(Tlon < 0) { Tlon= -Tlon; }
-  aprs_lat = 900000000 - Tlat * 10000000;
-  aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
-  aprs_lon = 900000000 + Tlon * 10000000 / 2;
-  aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
+    aprs_lat = 900000000 - Tlat * 10000000;
+    aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
+    aprs_lon = 900000000 + Tlon * 10000000 / 2;
+    aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
   //}
 
   outString = "";
@@ -202,22 +200,29 @@ void recalcGPS(){
   #elif
     outString += ">APLM0:!";
   #endif
-  outString += APRS_SYMBOL_TABLE;
 
-  ax25_base91enc(helper_base91, 4, aprs_lat);
-  for (i=0; i<4; i++) {
-    outString += helper_base91[i];
+  if(gps_state==true && gps.location.isValid()){
+    outString += APRS_SYMBOL_TABLE;
+    ax25_base91enc(helper_base91, 4, aprs_lat);
+    for (i=0; i<4; i++) {
+      outString += helper_base91[i];
+    }
+    ax25_base91enc(helper_base91, 4, aprs_lon);
+    for (i=0; i<4; i++) {
+      outString += helper_base91[i];
+    }
+    outString += APRS_SYMBOL;
+    ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+    outString += helper_base91[0];
+    ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+    outString += helper_base91[0];
+    outString += "\x48";
+  }else{
+    outString += LATIDUDE_PRESET;
+    outString += APRS_SYMBOL_TABLE;
+    outString += LONGITUDE_PRESET;
+    outString += APRS_SYMBOL;
   }
-  ax25_base91enc(helper_base91, 4, aprs_lon);
-  for (i=0; i<4; i++) {
-    outString += helper_base91[i];
-  }
-  outString += APRS_SYMBOL;
-  ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
-  outString += helper_base91[0];
-  ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
-  outString += helper_base91[0];
-  outString += "\x48";
 
   #ifdef SHOW_ALT
     outString += "/A=";
@@ -249,23 +254,16 @@ void sendpacket(){
   batt_read();
   Outputstring = "";
 
-  if ( gps.location.isValid()   || gps.location.isUpdated() ) {
+  //if ( gps.location.isValid()   || gps.location.isUpdated() ) {
     recalcGPS();                        //
     Outputstring =outString;
     message = Outputstring;
     loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, message);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-  }  else {
-    Outputstring = (Tcall);
-    Outputstring += " No GPS-Fix";
-    Outputstring += " Batt=";
-    Outputstring += String(BattVolts,2);
-    Outputstring += ("V ");
-    message = Outputstring;
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, 5, TXFREQ, message);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-  }
+  //}
 }
 
 void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, const String& message){
+  digitalWrite(TXLED, LOW);
   byte i;
   byte ltemp;
 
@@ -284,6 +282,7 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, message.length());
   rf95.waitPacketSent();
+  digitalWrite(TXLED, HIGH);
 }
 
 void batt_read(){
@@ -295,6 +294,11 @@ void batt_read(){
 }
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
+  batt_read();
+  if (BattVolts < 3.5){
+    axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+  }
+
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -312,8 +316,60 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.setCursor(0,56);
   display.println(Line5);
   display.display();
-  smartDelay(warten);
+  time_to_refresh = millis() + SHOW_RX_TIME;
 }
+
+
+void handleKISSData(char character) {
+  inTNCData.concat(character);
+  if (character == (char)FEND && inTNCData.length() > 3){
+    writedisplaytext("((KISSTX))","","","","","",1);
+    time_to_refresh = millis() + SHOW_RX_TIME;
+    #ifdef KISS_PROTOCOLL
+    const String &TNC2DataFrame = decode_kiss(inTNCData);
+
+      #ifdef LOCAL_KISS_ECHO
+        Serial.print(inTNCData);
+      #endif
+      #ifdef ENABLE_BLUETOOTH
+        if (SerialBT.connected()) {
+          #ifdef LOCAL_KISS_ECHO
+            SerialBT.print(inTNCData);
+          #endif
+        }
+      #endif
+    #endif
+    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
+    inTNCData = "";
+  }
+}
+
+String getSatAndBatInfo() {
+  String line5;
+  if(gps_state == true){
+    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+  }else{
+    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+  }
+  #ifdef ENABLE_BLUETOOTH
+    if (SerialBT.connected()){
+      line5 += "BT";
+    }
+  #endif
+  return line5;
+}
+
+void displayInvalidGPS() {
+  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
+  #ifdef SHOW_GPS_DATA
+  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
+    Serial.print(" / SAT: ");
+    Serial.print(String(gps.satellites.value()));
+    Serial.print(" / BAT: ");
+    Serial.println(String(BattVolts,1));
+  #endif
+}
+
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
@@ -379,6 +435,10 @@ void setup(){
   #endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
+  time_to_refresh = millis() + SHOW_RX_TIME;
+  displayInvalidGPS();
+  digitalWrite(TXLED, HIGH);
+  axp.setChgLEDMode(AXP20X_LED_OFF);
 }
 
 // +---------------------------------------------------------------------+//
@@ -386,6 +446,51 @@ void setup(){
 // +---------------------------------------------------------------------+//
 
 void loop() {
+  if(digitalRead(BUTTON)==LOW && key_up == true){
+    key_up = false;
+    delay(100);
+    if(digitalRead(BUTTON)==LOW){
+      delay(300);
+      if(digitalRead(BUTTON)==HIGH){
+        if(gps_state == true && gps.location.isValid()){
+            writedisplaytext("((MAN TX))","","","","","",1);
+            sendpacket();
+        }else{
+            writedisplaytext("((FIX TX))","","","","","",1);
+            sendpacket();
+        }
+      }
+    }
+    delay(1500);
+    if(digitalRead(BUTTON)==LOW){
+        if(gps_state == true){
+          gps_state = false;
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          writedisplaytext("((GPSOFF))","","","","","",1);
+          next_fixed_beacon = millis() + fix_beacon_interval;
+
+        }else{
+          gps_state = true;
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
+        }
+    }
+  }
+  if(digitalRead(BUTTON)==HIGH && key_up == false){
+    key_up = true;
+  }
+
+  #ifdef FIXED_BEACON_EN
+    if(millis() >= next_fixed_beacon && gps_state == false){
+      next_fixed_beacon = millis() + fix_beacon_interval;
+      writedisplaytext("((AUT TX))","","","","","",1);
+      sendpacket();
+    }
+  #endif
+
+  while (gpsSerial.available() > 0) {
+    gps.encode(gpsSerial.read());
+  }
 
   #ifdef KISS_PROTOCOL
     while (Serial.available() > 0 ){
@@ -400,12 +505,12 @@ void loop() {
         }
       }
     #endif
-
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
+    axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
-      loraReceivedLength = sizeof(lora_RXBUFF); // reset max length before receiving!
+      loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
         loraReceivedFrameString = "";
         for (int i=0 ; i < loraReceivedLength ; i++) {
@@ -422,6 +527,7 @@ void loop() {
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
       }
     #endif
+    axp.setChgLEDMode(AXP20X_LED_OFF);
   }
 
   LatShown = String(gps.location.lat(),5);
@@ -474,11 +580,9 @@ void loop() {
     old_course = new_course;
   }
 
-  batt_read();
-
-  if (button_ctr==2) {
-    nextTX = 0;
-  }
+  //if (button_ctr==2) {
+  //  nextTX = 0;
+  //}
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
@@ -486,7 +590,6 @@ void loop() {
 
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
-      digitalWrite(TXLED, HIGH);
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
       #ifdef SHOW_GPS_DATA
@@ -502,18 +605,21 @@ void loop() {
         Serial.print(String(gps.satellites.value()));
         Serial.print(" / BAT: ");
         Serial.print(String(BattVolts,1));
-        digitalWrite(TXLED, LOW);
+        //digitalWrite(TXLED, LOW);
       #endif
-  } else {
-      displayInvalidGPS();
-  }
-
+    } else {
+      if (millis() > time_to_refresh){
+        displayInvalidGPS();
+      }
+    }
   }else{
+    if (millis() > time_to_refresh){
       if (gps.location.age() < 2000) {
         writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
       } else {
         displayInvalidGPS();
       }
+    }
   }
   #ifdef KISS_PROTOCOL
     #ifdef KISS_DEBUG
