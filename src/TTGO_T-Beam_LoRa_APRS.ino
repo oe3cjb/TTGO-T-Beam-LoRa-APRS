@@ -36,13 +36,9 @@
 #define SSD1306_ADDRESS 0x3C
 
 //other global Variables
-String Textzeile1, Textzeile2;
-
 #ifdef KISS_PROTOCOL
 String inTNCData = "";
 #endif
-//int button=0;
-//int button_ctr=0;
 
 
 // LED for signalling
@@ -117,7 +113,6 @@ static const adc_unit_t unit = ADC_UNIT_1;
 
 void recalcGPS(void);
 void sendpacket(void);
-void loraSend(byte, byte, byte, byte, byte, long, byte, float);
 void batt_read(void);
 void writedisplaytext(String, String, String, String, String, String, int);
 void setup_data(void);
@@ -242,7 +237,7 @@ void recalcGPS(){
   #ifdef KISS_PROTOCOL
     Serial.print(encode_kiss(outString));
     #ifdef ENABLE_BLUETOOTH
-      if (SerialBT.connected()) {
+      if (SerialBT.hasClient()) {
         SerialBT.print(encode_kiss(outString));
       }
     #endif
@@ -339,7 +334,7 @@ void handleKISSData(char character) {
         Serial.print(inTNCData);
       #endif
       #ifdef ENABLE_BLUETOOTH
-        if (SerialBT.connected()) {
+        if (SerialBT.hasClient()) {
           #ifdef LOCAL_KISS_ECHO
             SerialBT.print(inTNCData);
           #endif
@@ -359,7 +354,7 @@ String getSatAndBatInfo() {
     line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
   }
   #ifdef ENABLE_BLUETOOTH
-    if (SerialBT.connected()){
+    if (SerialBT.hasClient()){
       line5 += "BT";
     }
   #endif
@@ -369,7 +364,7 @@ String getSatAndBatInfo() {
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
   #ifdef SHOW_GPS_DATA
-  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
+    Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
     Serial.print(" / SAT: ");
     Serial.print(String(gps.satellites.value()));
     Serial.print(" / BAT: ");
@@ -508,7 +503,7 @@ void loop() {
       handleKISSData(character);
     }
     #ifdef ENABLE_BLUETOOTH
-      if (SerialBT.connected()) {
+      if (SerialBT.hasClient()) {
         while (SerialBT.available() > 0 ){
           char character = SerialBT.read();
           handleKISSData(character);
@@ -531,7 +526,7 @@ void loop() {
         #ifdef KISS_PROTOCOL
           Serial.print(encode_kiss(loraReceivedFrameString));
           #ifdef ENABLE_BLUETOOTH
-            if (SerialBT.connected()){
+            if (SerialBT.hasClient()){
               SerialBT.print(encode_kiss(loraReceivedFrameString));
             }
           #endif
