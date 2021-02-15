@@ -296,7 +296,9 @@ void batt_read(){
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
   batt_read();
   if (BattVolts < 3.5){
-    axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+    #endif
   }
 
   display.clearDisplay();
@@ -442,7 +444,9 @@ void setup(){
   time_to_refresh = millis() + SHOW_RX_TIME;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
-  axp.setChgLEDMode(AXP20X_LED_OFF);
+  #ifdef T_BEAM_V1_0
+    axp.setChgLEDMode(AXP20X_LED_OFF);
+  #endif
 }
 
 // +---------------------------------------------------------------------+//
@@ -469,13 +473,17 @@ void loop() {
     if(digitalRead(BUTTON)==LOW){
         if(gps_state == true){
           gps_state = false;
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          #endif
           writedisplaytext("((GPSOFF))","","","","","",1);
           next_fixed_beacon = millis() + fix_beacon_interval;
 
         }else{
           gps_state = true;
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          #endif
           writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
         }
     }
@@ -508,7 +516,9 @@ void loop() {
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
-    axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+    #endif
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
@@ -527,7 +537,9 @@ void loop() {
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
       }
     #endif
-    axp.setChgLEDMode(AXP20X_LED_OFF);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_OFF);
+    #endif
   }
 
   LatShown = String(gps.location.lat(),5);
@@ -623,19 +635,23 @@ void loop() {
       if (millis() - last_debug_send_time > 1000*5) {
         last_debug_send_time = millis();
         String debug_message = "";
-        debug_message += "Bat V: " + String(axp.getBattVoltage());
-        debug_message += ", ";
-        debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
-        debug_message += ", ";
-        debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
-        debug_message += ", ";
-        debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
-        debug_message += ", ";
-        debug_message += "USB V: " + String(axp.getVbusVoltage());
-        debug_message += ", ";
-        debug_message += "USB A: " + String(axp.getVbusCurrent());
-        debug_message += ", ";
-        debug_message += "Temp C: " + String(axp.getTemp());
+        #ifdef T_BEAM_V1_0
+          debug_message += "Bat V: " + String(axp.getBattVoltage());
+          debug_message += ", ";
+          debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
+          debug_message += ", ";
+          debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
+          debug_message += ", ";
+          debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
+          debug_message += ", ";
+          debug_message += "USB V: " + String(axp.getVbusVoltage());
+          debug_message += ", ";
+          debug_message += "USB A: " + String(axp.getVbusCurrent());
+          debug_message += ", ";
+          debug_message += "Temp C: " + String(axp.getTemp());
+        #else
+          debug_message += "Bat V: " + String(BattVolts);
+        #endif
 
         Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
         #ifdef ENABLE_BLUETOOTH
