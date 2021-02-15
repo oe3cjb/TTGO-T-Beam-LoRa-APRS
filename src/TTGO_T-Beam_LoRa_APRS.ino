@@ -71,6 +71,10 @@ String LatShown="";
 String LongFixed="";
 String LatFixed="";
 
+#if defined(ENABLE_TNC_SELF_TELEMETRY) && defined(KISS_PROTOCOL)
+  time_t nextTelemetryFrame;
+#endif
+
 //byte arrays
 byte  lora_TXBUFF[BG_RF95_MAX_MESSAGE_LEN];      //buffer for packet to send
 byte  lora_RXBUFF[BG_RF95_MAX_MESSAGE_LEN];      //buffer for packet to send
@@ -163,12 +167,8 @@ void prepareAPRSFrame(){
   //}
 
   outString = "";
-  for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
-    if (Tcall.charAt(i) != ' ') {
-      outString += Tcall.charAt(i);
-    }
-  }
-  // outString = (Tcall);
+  outString += Tcall;
+
   #ifdef DIGI_PATH
     outString += ">APLM0," + relay_path + ":!";
   #elif
@@ -328,6 +328,39 @@ void sendToTNC(const String& TNC2FormatedFrame) {
 }
 #endif
 
+String prepareCallsign(const String& callsign){
+  String tmpString = "";
+  for (int i=0; i<callsign.length();++i){  // remove unneeded "spaces" from callsign field
+    if (callsign.charAt(i) != ' ') {
+      tmpString += callsign.charAt(i);
+    }
+  }
+  return tmpString;
+}
+
+#if defined(ENABLE_TNC_SELF_TELEMETRY) && defined(KISS_PROTOCOL)
+void sendTelemetryFrame() {
+  #ifdef T_BEAM_V1_0
+    uint8_t b_volt = (axp.getBattVoltage() - 3000) / 5.1;
+    uint8_t b_in_c = (axp.getBattChargeCurrent()) / 10;
+    uint8_t b_out_c = (axp.getBattDischargeCurrent()) / 10;
+    uint8_t ac_volt = (axp.getVbusVoltage() - 3000) / 28;
+    uint8_t ac_c = (axp.getVbusCurrent()) / 10;
+
+    String telemetryParamsNames = String(":") + Tcall + ":PARM.B Volt,B In,B Out,AC V,AC C";
+    String telemetryUnitNames = String(":") + Tcall + ":UNIT.mV,mA,mA,mV,mA";
+    String telemetryEquations = String(":") + Tcall + ":EQNS.0,5.1,3000,0,10,0,0,10,0,0,28,3000,0,10,0";
+    String telemetryData = String("T#MIC") + String(b_volt) + ","+ String(b_in_c) + ","+ String(b_out_c) + ","+ String(ac_volt) + ","+ String(ac_c) + ",00000000";
+    String telemetryBase = "";
+    telemetryBase += Tcall + ">APLM0" + ":";
+    sendToTNC(telemetryBase + telemetryParamsNames);
+    sendToTNC(telemetryBase + telemetryUnitNames);
+    sendToTNC(telemetryBase + telemetryEquations);
+    sendToTNC(telemetryBase + telemetryData);
+  #else
+  #endif
+}
+#endif
 
 // + SETUP --------------------------------------------------------------+//
 
@@ -361,7 +394,7 @@ void setup(){
   }
 
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
-  Tcall = CALLSIGN;
+  Tcall = prepareCallsign(String(CALLSIGN));
   relay_path = DIGI_PATH;
 
   if (!rf95.init()) {
@@ -580,6 +613,12 @@ void loop() {
       }
     }
   }
+  #if defined(ENABLE_TNC_SELF_TELEMETRY) && defined(KISS_PROTOCOL)
+    if (nextTelemetryFrame < millis()){
+      nextTelemetryFrame = millis() + TNC_SELF_TELEMETRY_INTERVAL;
+      sendTelemetryFrame();
+    }
+  #endif
   #ifdef KISS_PROTOCOL
     #ifdef KISS_DEBUG
       static auto last_debug_send_time = millis();
