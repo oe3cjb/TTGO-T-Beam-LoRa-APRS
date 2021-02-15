@@ -160,22 +160,19 @@ char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
 void recalcGPS(){
   String Ns, Ew, helper;
   char helper_base91[] = {"0000\0"};
-  float Tlat=52.0000, Tlon=20.0000;
-  int i, Talt, lenalt;
+  double Tlat=52.0000, Tlon=20.0000;
   uint32_t aprs_lat, aprs_lon;
-  float Tspeed=0, Tcourse=0;
-  String Speedx, Coursex, Altx;
+  double Tspeed=0, Tcourse=0;
+  String Speedx, Coursex;
+  int i;
+  #ifdef SHOW_ALT
+    String Altx;
+    int Talt;
+  #endif
 
   Tlat=gps.location.lat();
   Tlon=gps.location.lng();
-  Talt=gps.altitude.meters() * 3.28;
-  Altx = Talt;
-  lenalt = Altx.length();
-  Altx = "";
-  for (i = 0; i < (6-lenalt); i++) {
-    Altx += "0";
-  }
-  Altx += Talt;
+
   Tcourse=gps.course.deg();
   Tspeed=gps.speed.knots();
   if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
@@ -202,7 +199,7 @@ void recalcGPS(){
     outString += ">APLM0:!";
   #endif
 
-  if(gps_state==true && gps.location.isValid()){
+  if(gps_state && gps.location.isValid()){
     outString += APRS_SYMBOL_TABLE;
     ax25_base91enc(helper_base91, 4, aprs_lat);
     for (i=0; i<4; i++) {
@@ -217,10 +214,15 @@ void recalcGPS(){
     outString += helper_base91[0];
     ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
     outString += helper_base91[0];
-    outString += "\x48";
+    outString += "H";
     #ifdef SHOW_ALT
+      Talt=gps.altitude.meters() * 3.28d;
+      Altx = Talt;
       outString += "/A=";
-      outString += Altx;
+      for (i = 0; i < (6-Altx.length()); ++i) {
+        outString += "0";
+      }
+      outString += Talt;
     #endif
   }else{
     outString += LATIDUDE_PRESET;
