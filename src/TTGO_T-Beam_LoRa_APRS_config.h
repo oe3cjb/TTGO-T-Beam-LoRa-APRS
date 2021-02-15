@@ -9,8 +9,9 @@
 #define KISS_PROTOCOLL                                  // If enabled send and receive data in SIMPLE KISS format to serial port
 #define CALLSIGN "SQ9MDD-11"                            // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define DIGI_PATH "WIDE1-1"                             // one hope please (WIDE1-1)
-#define LATIDUDE_PRESET "5215.03N"                      // please in APRS notation: DDMM.mmN or DDMM.mmS
-#define LONGITUDE_PRESET "02055.59E"                    // please in APRS notation: DDDMM.mmE or DDDMM.mmW
+#define FIXED_BEACON_EN                                 // allows cyclic sending of a bicon when GPS is turned off
+#define LATIDUDE_PRESET "5215.03N"                      // please in APRS notation: DDMM.mmN or DDMM.mmS (used for manual or fixed beacon sending)
+#define LONGITUDE_PRESET "02055.59E"                    // please in APRS notation: DDDMM.mmE or DDDMM.mmW (used for manual or fixed beacon sending)
 #define APRS_SYMBOL_TABLE "/"
 #define APRS_SYMBOL "["                                 // other symbols are: "[" => RUNNER, "b" => BICYCLE, "<" => MOTORCYCLE, "R" => Recreation Vehicle
 #define MY_COMMENT "LoRa tracker"                       // add your coment here - if empty then no comment is sent
@@ -27,4 +28,5 @@
 //#define LOCAL_KISS_ECHO                               // echoing KISS frame back
 #define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
 
-unsigned long max_time_to_nextTX = 360000L;             // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+unsigned long max_time_to_nextTX  = 360000L;            // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
+unsigned long fix_beacon_interval = 1800000L;           // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default

@@ -112,6 +112,7 @@ int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
 ulong time_to_refresh = 0;
+ulong next_fixed_beacon = 0;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -480,6 +481,7 @@ void loop() {
           gps_state = false;
           axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
           writedisplaytext("((GPSOFF))","","","","","",1);
+          next_fixed_beacon = millis() + fix_beacon_interval;
 
         }else{
           gps_state = true;
@@ -491,6 +493,14 @@ void loop() {
   if(digitalRead(BUTTON)==HIGH && key_up == false){ 
     key_up = true;
   }
+  
+  #ifdef FIXED_BEACON_EN
+    if(millis() >= next_fixed_beacon && gps_state == false){
+      next_fixed_beacon = millis() + fix_beacon_interval;
+      writedisplaytext("((AUT TX))","","","","","",1);
+      sendpacket();
+    }
+  #endif
 
   while (gpsSerial.available() > 0) {
     gps.encode(gpsSerial.read());
