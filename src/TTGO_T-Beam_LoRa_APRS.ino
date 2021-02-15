@@ -41,8 +41,8 @@ String Textzeile1, Textzeile2;
 #ifdef KISS_PROTOCOLL
 String inTNCData = "";
 #endif
-int button=0;
-int button_ctr=0;
+//int button=0;
+//int button_ctr=0;
 
 // Pins for GPS
 #ifdef T_BEAM_V1_0
@@ -77,6 +77,7 @@ String Tcall;                //your Call Sign for normal position reports
 String sTable="/";           //Primer
 String relay_path;
 boolean gps_state = true;
+boolean key_up = true;
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -190,10 +191,10 @@ void recalcGPS(){
   if(Tlat < 0) { Tlat= -Tlat; }
 
   if(Tlon < 0) { Tlon= -Tlon; }
-  aprs_lat = 900000000 - Tlat * 10000000;
-  aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
-  aprs_lon = 900000000 + Tlon * 10000000 / 2;
-  aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
+    aprs_lat = 900000000 - Tlat * 10000000;
+    aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
+    aprs_lon = 900000000 + Tlon * 10000000 / 2;
+    aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
   //}
 
   outString = "";
@@ -208,22 +209,29 @@ void recalcGPS(){
   #elif
     outString += ">APLM0:!";
   #endif
-  outString += APRS_SYMBOL_TABLE;
   
-  ax25_base91enc(helper_base91, 4, aprs_lat);
-  for (i=0; i<4; i++) {
-    outString += helper_base91[i];
+  if(gps_state==true && gps.location.isValid()){
+    outString += APRS_SYMBOL_TABLE;
+    ax25_base91enc(helper_base91, 4, aprs_lat);
+    for (i=0; i<4; i++) {
+      outString += helper_base91[i];
+    }
+    ax25_base91enc(helper_base91, 4, aprs_lon);
+    for (i=0; i<4; i++) {
+      outString += helper_base91[i];
+    }
+    outString += APRS_SYMBOL;
+    ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+    outString += helper_base91[0];
+    ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+    outString += helper_base91[0];
+    outString += "\x48";
+  }else{
+    outString += LATIDUDE_PRESET;
+    outString += APRS_SYMBOL_TABLE;
+    outString += LONGITUDE_PRESET;
+    outString += APRS_SYMBOL;
   }
-  ax25_base91enc(helper_base91, 4, aprs_lon);
-  for (i=0; i<4; i++) {
-    outString += helper_base91[i];
-  }
-  outString += APRS_SYMBOL;
-  ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
-  outString += helper_base91[0];
-  ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
-  outString += helper_base91[0];
-  outString += "\x48";
 
   #ifdef SHOW_ALT
     outString += "/A=";
@@ -256,20 +264,12 @@ void sendpacket(){
   batt_read();
   Outputstring = "";
 
-  if ( gps.location.isValid()   || gps.location.isUpdated() ) {
+  //if ( gps.location.isValid()   || gps.location.isUpdated() ) {
     recalcGPS();                        //
     Outputstring =outString;
     message = Outputstring;
     loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, message);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-  }  else {
-    Outputstring = (Tcall);
-    Outputstring += " No GPS-Fix";
-    Outputstring += " Batt=";
-    Outputstring += String(BattVolts,2);
-    Outputstring += ("V ");
-    message = Outputstring;
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, 5, TXFREQ, message);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-  }
+  //}
 }
 
 void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, const String& message){
@@ -367,7 +367,6 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-  //writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", "", 1);
   #ifdef SHOW_GPS_DATA
   Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
     Serial.print(" / SAT: ");
@@ -460,8 +459,22 @@ void setup(){
 // +---------------------------------------------------------------------+//
 
 void loop() {
-  if(digitalRead(BUTTON)==LOW){
-    delay(2000);
+  if(digitalRead(BUTTON)==LOW && key_up == true){
+    key_up = false;
+    delay(100);
+    if(digitalRead(BUTTON)==LOW){
+      delay(300);
+      if(digitalRead(BUTTON)==HIGH){
+        if(gps_state == true && gps.location.isValid()){
+            writedisplaytext("((MAN TX))","","","","","",1);
+            sendpacket();
+        }else{
+            writedisplaytext("((FIX TX))","","","","","",1);
+            sendpacket();
+        }
+      }
+    }
+    delay(1500);
     if(digitalRead(BUTTON)==LOW){
         if(gps_state == true){
           gps_state = false;
@@ -474,6 +487,9 @@ void loop() {
           writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
         }
     }
+  }
+  if(digitalRead(BUTTON)==HIGH && key_up == false){ 
+    key_up = true;
   }
 
   while (gpsSerial.available() > 0) {
@@ -568,9 +584,9 @@ void loop() {
     old_course = new_course;
   }
 
-  if (button_ctr==2) {
-    nextTX = 0;
-  }
+  //if (button_ctr==2) {
+  //  nextTX = 0;
+  //}
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
