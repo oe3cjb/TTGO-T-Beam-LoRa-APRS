@@ -10,7 +10,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <BG_RF95.h>         // library from OE1ACM
-#include <TinyGPS++.h>
 #include <math.h>
 #include <driver/adc.h>
 #include <Wire.h>
@@ -23,6 +22,7 @@
 #include <gfxfont.h>
 #include <axp20x.h>
 #include <KISS_TO_TNC2.h>
+#include "taskGPS.h"
 
 #ifdef ENABLE_BLUETOOTH
   #include "BluetoothSerial.h"
@@ -38,20 +38,12 @@
 //other global Variables
 String Textzeile1, Textzeile2;
 
-#ifdef KISS_PROTOCOLL
+#ifdef KISS_PROTOCOL
 String inTNCData = "";
 #endif
 //int button=0;
 //int button_ctr=0;
 
-// Pins for GPS
-#ifdef T_BEAM_V1_0
-  static const int RXPin = 12, TXPin = 34;  //  changed BG A3 A2
-#else
-   static const int RXPin = 15, TXPin = 12;  //  changed BG A3 A2
-#endif
-
-static const uint32_t GPSBaud = 9600; //GPS
 
 // LED for signalling
 #ifdef T_BEAM_V1_0
@@ -110,9 +102,11 @@ float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_s
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
+ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
+ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -132,11 +126,8 @@ void displayInvalidGPS();
 
 void handleKISSData(char character);
 
-// SoftwareSerial ss(RXPin, TXPin);   // The serial connection to the GPS device
-HardwareSerial gpsSerial(1);        // TTGO has HW serial
-TinyGPSPlus gps;             // The TinyGPS++ object
 #ifdef T_BEAM_V1_0
-  AXP20X_Class axp;
+AXP20X_Class axp;
 #endif
 
 // checkRX
@@ -210,7 +201,7 @@ void recalcGPS(){
   #elif
     outString += ">APLM0:!";
   #endif
-  
+
   if(gps_state==true && gps.location.isValid()){
     outString += APRS_SYMBOL_TABLE;
     ax25_base91enc(helper_base91, 4, aprs_lat);
@@ -227,6 +218,10 @@ void recalcGPS(){
     ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
     outString += helper_base91[0];
     outString += "\x48";
+    #ifdef SHOW_ALT
+      outString += "/A=";
+      outString += Altx;
+    #endif
   }else{
     outString += LATIDUDE_PRESET;
     outString += APRS_SYMBOL_TABLE;
@@ -234,27 +229,21 @@ void recalcGPS(){
     outString += APRS_SYMBOL;
   }
 
-  #ifdef SHOW_ALT
-    outString += "/A=";
-    outString += Altx;
-  #endif
-
   outString += MY_COMMENT;
 
   #ifdef SHOW_BATT            // battery is not frame part move after comment
     outString += " Batt=";
-    outString += String(BattVolts,2);
+    outString += String(BattVolts, 2);
     outString += ("V");
   #endif
 
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     Serial.print(encode_kiss(outString));
     #ifdef ENABLE_BLUETOOTH
-    if (SerialBT.connected()){
-      SerialBT.print(encode_kiss(outString));
-    }
+      if (SerialBT.connected()) {
+        SerialBT.print(encode_kiss(outString));
+      }
     #endif
-
   #else
     Serial.println(outString);
   #endif
@@ -297,15 +286,21 @@ void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byt
 }
 
 void batt_read(){
+#ifdef T_BEAM_V1_0
   BattVolts = axp.getBattVoltage()/1000;
+#else
+  BattVolts = analogRead(35)*7.221/4096;
+#endif
 }
 
 void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
   batt_read();
   if (BattVolts < 3.5){
-    axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+    #endif
   }
-  
+
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -326,13 +321,16 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   time_to_refresh = millis() + SHOW_RX_TIME;
 }
 
-
+/**
+ * Handle incoming TNC KISS data character
+ * @param character
+ */
 void handleKISSData(char character) {
   inTNCData.concat(character);
   if (character == (char)FEND && inTNCData.length() > 3){
     writedisplaytext("((KISSTX))","","","","","",1);
     time_to_refresh = millis() + SHOW_RX_TIME;
-    #ifdef KISS_PROTOCOLL
+    #ifdef KISS_PROTOCOL
     const String &TNC2DataFrame = decode_kiss(inTNCData);
 
       #ifdef LOCAL_KISS_ECHO
@@ -357,7 +355,7 @@ String getSatAndBatInfo() {
     line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
   }else{
     line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
-  }  
+  }
   #ifdef ENABLE_BLUETOOTH
     if (SerialBT.connected()){
       line5 += "BT";
@@ -392,24 +390,26 @@ void setup(){
 
   #ifdef T_BEAM_V1_0
     if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-    
-    } 
-    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // Lora power
-    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // provides power to GPS
+    }
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enables power to OLED LCD
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
     axp.setDCDC1Voltage(3300);
+    // Enable ADC to measure battery current, USB voltage etc.
+    axp.adc1Enable(0xfe, true);
+    axp.adc2Enable(0x80, true);
   #endif
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
   }
-  
+
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Tcall = CALLSIGN;
   relay_path = DIGI_PATH;
-  
+
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
     for(;;); // Don't proceed, loop forever
@@ -419,40 +419,34 @@ void setup(){
     max_time_to_nextTX=nextTX;
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
-  gpsSerial.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
-  writedisplaytext("LoRa-APRS","","Init:","GPS Serial OK!","","",250);
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  while (millis() < 5000 && gps.charsProcessed() < 10) {}
-  if (millis() > 5000 && gps.charsProcessed() < 10) {
-    writedisplaytext(" "+Tcall,"","Init:","ERROR!","No GPS data!","Please restart TTGO",0);
-    while (true) {}
-  }
-  writedisplaytext(" "+Tcall,"","Init:","Data from GPS OK!","","",250);
-  #ifdef T_BEAM_V1_0
-    writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(axp.getBattVoltage()/1000,1),"",250);
-  #else
+  xTaskCreate(taskGPS, "taskGPS", 10000, nullptr, 1, nullptr);
+  writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
+  #ifndef T_BEAM_V1_0
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
-    writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(analogRead(35)*7.221/4096,1),"",250);
   #endif
-
+  batt_read();
+  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"",250);
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
-  rf95.setTxPower(20);    // was 5
+  rf95.setTxPower(TXdbmW);
   delay(250);
-#ifdef ENABLE_BLUETOOTH
-  #ifdef BLUETOOTH_PIN
-    SerialBT.setPin(BLUETOOTH_PIN);
+  #ifdef ENABLE_BLUETOOTH
+    #ifdef BLUETOOTH_PIN
+      SerialBT.setPin(BLUETOOTH_PIN);
+    #endif
+    SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
+    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
   #endif
-  SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
-  writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
-#endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
   time_to_refresh = millis() + SHOW_RX_TIME;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
-  axp.setChgLEDMode(AXP20X_LED_OFF);
+  #ifdef T_BEAM_V1_0
+    axp.setChgLEDMode(AXP20X_LED_OFF);
+  #endif
 }
 
 // +---------------------------------------------------------------------+//
@@ -479,21 +473,25 @@ void loop() {
     if(digitalRead(BUTTON)==LOW){
         if(gps_state == true){
           gps_state = false;
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          #endif
           writedisplaytext("((GPSOFF))","","","","","",1);
           next_fixed_beacon = millis() + fix_beacon_interval;
 
         }else{
           gps_state = true;
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          #ifdef T_BEAM_V1_0
+            axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+          #endif
           writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
         }
     }
   }
-  if(digitalRead(BUTTON)==HIGH && key_up == false){ 
+  if(digitalRead(BUTTON)==HIGH && key_up == false){
     key_up = true;
   }
-  
+
   #ifdef FIXED_BEACON_EN
     if(millis() >= next_fixed_beacon && gps_state == false){
       next_fixed_beacon = millis() + fix_beacon_interval;
@@ -502,11 +500,7 @@ void loop() {
     }
   #endif
 
-  while (gpsSerial.available() > 0) {
-    gps.encode(gpsSerial.read());
-  }
-
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     while (Serial.available() > 0 ){
       char character = Serial.read();
       handleKISSData(character);
@@ -522,7 +516,9 @@ void loop() {
   #endif
 
   if (rf95.waitAvailableTimeout(100)) {
-    axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+    #endif
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
@@ -530,7 +526,7 @@ void loop() {
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
-        #ifdef KISS_PROTOCOLL
+        #ifdef KISS_PROTOCOL
           Serial.print(encode_kiss(loraReceivedFrameString));
           #ifdef ENABLE_BLUETOOTH
             if (SerialBT.connected()){
@@ -541,7 +537,9 @@ void loop() {
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
       }
     #endif
-    axp.setChgLEDMode(AXP20X_LED_OFF);
+    #ifdef T_BEAM_V1_0
+      axp.setChgLEDMode(AXP20X_LED_OFF);
+    #endif
   }
 
   LatShown = String(gps.location.lat(),5);
@@ -574,7 +572,7 @@ void loop() {
     if (new_course < 0) {
         new_course=360+new_course;
       }
-      
+
     if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
       if (abs(new_course-old_course-360)>=ANGLE) {
         nextTX = 0;
@@ -593,10 +591,6 @@ void loop() {
     }
     old_course = new_course;
   }
-
-  //if (button_ctr==2) {
-  //  nextTX = 0;
-  //}
 
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
@@ -635,29 +629,37 @@ void loop() {
       }
     }
   }
-  #ifdef KISS_PROTOCOLL
+  #ifdef KISS_PROTOCOL
     #ifdef KISS_DEBUG
-    static auto last_debug_send_time = millis();
-    if (millis() - last_debug_send_time > 1000*10) {
-      last_debug_send_time = millis();
-      String debug_message = "";
-      debug_message += "Bat V: " + String(axp.getBattVoltage());
-      debug_message += ", ";
-      debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
-      debug_message += ", ";
-      debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
-      debug_message += ", ";
-      debug_message += "Bat %: " + String(axp.getBattPercentage());
-      debug_message += ", ";
-      debug_message += "USB V: " + String(axp.getVbusVoltage());
-      debug_message += ", ";
-      debug_message += "USB A: " + String(axp.getVbusCurrent());
-      debug_message += ", ";
-      debug_message += "Temp C: " + String(axp.getTemp());
+      static auto last_debug_send_time = millis();
+      if (millis() - last_debug_send_time > 1000*5) {
+        last_debug_send_time = millis();
+        String debug_message = "";
+        #ifdef T_BEAM_V1_0
+          debug_message += "Bat V: " + String(axp.getBattVoltage());
+          debug_message += ", ";
+          debug_message += "Bat IN A: " + String(axp.getBattChargeCurrent());
+          debug_message += ", ";
+          debug_message += "Bat OUT A: " + String(axp.getBattDischargeCurrent());
+          debug_message += ", ";
+          debug_message += "USB Plugged: " + String(axp.isVBUSPlug());
+          debug_message += ", ";
+          debug_message += "USB V: " + String(axp.getVbusVoltage());
+          debug_message += ", ";
+          debug_message += "USB A: " + String(axp.getVbusCurrent());
+          debug_message += ", ";
+          debug_message += "Temp C: " + String(axp.getTemp());
+        #else
+          debug_message += "Bat V: " + String(BattVolts);
+        #endif
 
-      Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
-    }
+        Serial.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+        #ifdef ENABLE_BLUETOOTH
+          SerialBT.print(encapsulateKISS(debug_message, CMD_HARDWARE));
+        #endif
+      }
     #endif
   #endif
+  vTaskDelay(1);
 }
 // end of main loop
