@@ -1,0 +1,13 @@
+#include <Arduino.h>
+#include "TTGO_T-Beam_LoRa_APRS_config.h"
+#include <KISS_TO_TNC2.h>
+
+#if defined(ENABLE_BLUETOOTH)
+  #include "BluetoothSerial.h"
+  extern BluetoothSerial SerialBT;
+#endif
+extern QueueHandle_t tncToSendQueue;
+extern QueueHandle_t tncReceivedQueue;
+
+void taskTNC(void *parameter);
+

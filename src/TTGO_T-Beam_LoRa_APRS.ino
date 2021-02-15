@@ -21,12 +21,11 @@
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
 #include <axp20x.h>
-#include <KISS_TO_TNC2.h>
 #include "taskGPS.h"
-
-#ifdef ENABLE_BLUETOOTH
-  #include "BluetoothSerial.h"
+#ifdef KISS_PROTOCOL
+#include "taskTNC.h"
 #endif
+
 
 // I2C LINES
 #define I2C_SDA 21
@@ -36,10 +35,6 @@
 #define SSD1306_ADDRESS 0x3C
 
 //other global Variables
-#ifdef KISS_PROTOCOL
-String inTNCData = "";
-#endif
-
 
 // LED for signalling
 #ifdef T_BEAM_V1_0
@@ -111,16 +106,6 @@ float avg_c_y, avg_c_x;
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
 
-void recalcGPS(void);
-void sendpacket(void);
-void batt_read(void);
-void writedisplaytext(String, String, String, String, String, String, int);
-void setup_data(void);
-
-void displayInvalidGPS();
-
-void handleKISSData(char character);
-
 #ifdef T_BEAM_V1_0
 AXP20X_Class axp;
 #endif
@@ -135,10 +120,6 @@ BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ 
 #define OLED_RESET 16         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
-#ifdef ENABLE_BLUETOOTH
-  BluetoothSerial SerialBT;
-#endif
-
 // + FUNCTIONS-----------------------------------------------------------+//
 
 char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
@@ -152,7 +133,7 @@ char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
   return(s);
 }
 
-void recalcGPS(){
+void prepareAPRSFrame(){
   String Ns, Ew, helper;
   char helper_base91[] = {"0000\0"};
   double Tlat=52.0000, Tlon=20.0000;
@@ -235,49 +216,35 @@ void recalcGPS(){
   #endif
 
   #ifdef KISS_PROTOCOL
-    Serial.print(encode_kiss(outString));
-    #ifdef ENABLE_BLUETOOTH
-      if (SerialBT.hasClient()) {
-        SerialBT.print(encode_kiss(outString));
-      }
-    #endif
+    sendToTNC(outString);
   #else
     Serial.println(outString);
   #endif
 }
 
 void sendpacket(){
-  String message;
   batt_read();
-  Outputstring = "";
 
-  //if ( gps.location.isValid()   || gps.location.isUpdated() ) {
-    recalcGPS();                        //
-    Outputstring =outString;
-    message = Outputstring;
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, message);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
-  //}
+  prepareAPRSFrame();
+  loraSend(TXdbmW, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
 }
 
-void loraSend(byte lora_LTXStart, byte lora_LTXEnd, byte lora_LTXPacketType, byte lora_LTXDestination, byte lora_LTXSource, long lora_LTXTimeout, byte lora_LTXPower, float lora_FREQ, const String& message){
+/**
+ * Send message as APRS LoRa packet
+ * @param lora_LTXPower
+ * @param lora_FREQ
+ * @param message
+ */
+void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
   digitalWrite(TXLED, LOW);
-  byte i;
-  byte ltemp;
-
   lastTX = millis();
 
-  ltemp = message.length();
-  for (i = 0; i <= ltemp; i++){
-    lora_TXBUFF[i] = message.charAt(i);
-  }
-
-  i--;
-  lora_TXEnd = i;
-  lora_TXBUFF[i] ='\0';
+  int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
+  message.toCharArray((char*)lora_TXBUFF, messageSize + 1, 0);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
   rf95.setFrequency(lora_FREQ);
   rf95.setTxPower(lora_LTXPower);
-  rf95.sendAPRS(lora_TXBUFF, message.length());
+  rf95.sendAPRS(lora_TXBUFF, messageSize);
   rf95.waitPacketSent();
   digitalWrite(TXLED, HIGH);
 }
@@ -318,33 +285,6 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   time_to_refresh = millis() + SHOW_RX_TIME;
 }
 
-/**
- * Handle incoming TNC KISS data character
- * @param character
- */
-void handleKISSData(char character) {
-  inTNCData.concat(character);
-  if (character == (char)FEND && inTNCData.length() > 3){
-    writedisplaytext("((KISSTX))","","","","","",1);
-    time_to_refresh = millis() + SHOW_RX_TIME;
-    #ifdef KISS_PROTOCOL
-    const String &TNC2DataFrame = decode_kiss(inTNCData);
-
-      #ifdef LOCAL_KISS_ECHO
-        Serial.print(inTNCData);
-      #endif
-      #ifdef ENABLE_BLUETOOTH
-        if (SerialBT.hasClient()) {
-          #ifdef LOCAL_KISS_ECHO
-            SerialBT.print(inTNCData);
-          #endif
-        }
-      #endif
-    #endif
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
-    inTNCData = "";
-  }
-}
 
 String getSatAndBatInfo() {
   String line5;
@@ -353,7 +293,7 @@ String getSatAndBatInfo() {
   }else{
     line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
   }
-  #ifdef ENABLE_BLUETOOTH
+  #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
     if (SerialBT.hasClient()){
       line5 += "BT";
     }
@@ -371,6 +311,23 @@ void displayInvalidGPS() {
     Serial.println(String(BattVolts,1));
   #endif
 }
+
+#if defined(KISS_PROTOCOL)
+/**
+ *
+ * @param TNC2FormatedFrame
+ */
+void sendToTNC(const String& TNC2FormatedFrame) {
+  if (tncToSendQueue){
+    auto *buffer = new String();
+    buffer->concat(TNC2FormatedFrame);
+    if (xQueueSend(tncReceivedQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS){
+      delete buffer;
+    }
+  }
+}
+#endif
+
 
 // + SETUP --------------------------------------------------------------+//
 
@@ -429,7 +386,11 @@ void setup(){
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(TXdbmW);
   delay(250);
-  #ifdef ENABLE_BLUETOOTH
+  #ifdef KISS_PROTOCOL
+    xTaskCreatePinnedToCore(taskTNC, "taskTNC", 10000, nullptr, 1, nullptr, xPortGetCoreID());
+  #endif
+
+  #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
     #ifdef BLUETOOTH_PIN
       SerialBT.setPin(BLUETOOTH_PIN);
     #endif
@@ -498,19 +459,17 @@ void loop() {
   #endif
 
   #ifdef KISS_PROTOCOL
-    while (Serial.available() > 0 ){
-      char character = Serial.read();
-      handleKISSData(character);
-    }
-    #ifdef ENABLE_BLUETOOTH
-      if (SerialBT.hasClient()) {
-        while (SerialBT.available() > 0 ){
-          char character = SerialBT.read();
-          handleKISSData(character);
-        }
+    String *TNC2DataFrame = nullptr;
+    if (tncToSendQueue) {
+      if (xQueueReceive(tncToSendQueue, &TNC2DataFrame, (1 / portTICK_PERIOD_MS)) == pdPASS) {
+        writedisplaytext("((KISSTX))","","","","","",1);
+        time_to_refresh = millis() + SHOW_RX_TIME;
+        loraSend(TXdbmW, TXFREQ, *TNC2DataFrame);
+        delete TNC2DataFrame;
       }
-    #endif
+    }
   #endif
+
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef T_BEAM_V1_0
@@ -523,15 +482,10 @@ void loop() {
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
-        #ifdef KISS_PROTOCOL
-          Serial.print(encode_kiss(loraReceivedFrameString));
-          #ifdef ENABLE_BLUETOOTH
-            if (SerialBT.hasClient()){
-              SerialBT.print(encode_kiss(loraReceivedFrameString));
-            }
-          #endif
-        #endif
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
+        #ifdef KISS_PROTOCOL
+          sendToTNC(loraReceivedFrameString);
+        #endif
       }
     #endif
     #ifdef T_BEAM_V1_0
