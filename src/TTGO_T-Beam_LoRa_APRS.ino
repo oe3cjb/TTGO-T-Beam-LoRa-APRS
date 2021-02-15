@@ -106,6 +106,7 @@ ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
+ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -318,13 +319,16 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   time_to_refresh = millis() + SHOW_RX_TIME;
 }
 
-
+/**
+ * Handle incoming TNC KISS data character
+ * @param character
+ */
 void handleKISSData(char character) {
   inTNCData.concat(character);
   if (character == (char)FEND && inTNCData.length() > 3){
     writedisplaytext("((KISSTX))","","","","","",1);
     time_to_refresh = millis() + SHOW_RX_TIME;
-    #ifdef KISS_PROTOCOLL
+    #ifdef KISS_PROTOCOL
     const String &TNC2DataFrame = decode_kiss(inTNCData);
 
       #ifdef LOCAL_KISS_ECHO
@@ -391,6 +395,7 @@ void setup(){
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
     axp.setDCDC1Voltage(3300);
+    // Enable ADC to measure battery current, USB voltage etc.
     axp.adc1Enable(0xfe, true);
     axp.adc2Enable(0x80, true);
   #endif
@@ -413,7 +418,7 @@ void setup(){
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  xTaskCreate(taskGPS, "taskGPS", 10000, NULL, 1, NULL);
+  xTaskCreate(taskGPS, "taskGPS", 10000, nullptr, 1, nullptr);
   writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
   #ifndef T_BEAM_V1_0
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -423,7 +428,7 @@ void setup(){
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"",250);
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
-  rf95.setTxPower(20);    // was 5
+  rf95.setTxPower(TXdbmW);
   delay(250);
   #ifdef ENABLE_BLUETOOTH
     #ifdef BLUETOOTH_PIN
@@ -486,10 +491,6 @@ void loop() {
       sendpacket();
     }
   #endif
-
-  while (gpsSerial.available() > 0) {
-    gps.encode(gpsSerial.read());
-  }
 
   #ifdef KISS_PROTOCOL
     while (Serial.available() > 0 ){
@@ -579,10 +580,6 @@ void loop() {
     old_course = new_course;
   }
 
-  //if (button_ctr==2) {
-  //  nextTX = 0;
-  //}
-
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
   }
@@ -649,45 +646,4 @@ void loop() {
   #endif
   vTaskDelay(1);
 }
-
-void handleKISSData(char character) {
-  inTNCData.concat(character);
-  if (character == (char)FEND && inTNCData.length() > 3){
-    writedisplaytext("(KISSTX))","","","","","",1);
-    #ifdef KISS_PROTOCOL
-      const String &TNC2DataFrame = decode_kiss(inTNCData);
-      Serial.print(inTNCData);
-      #ifdef ENABLE_BLUETOOTH
-        if (SerialBT.connected()) {
-          SerialBT.print(inTNCData);
-        }
-      #endif
-    #endif
-    loraSend(lora_TXStart, lora_TXEnd, 60, 255, 1, 10, TXdbmW, TXFREQ, TNC2DataFrame);
-    inTNCData = "";
-  }
-}
-
-String getSatAndBatInfo() {
-  String line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
-  #ifdef ENABLE_BLUETOOTH
-    if (SerialBT.connected()){
-      line5 += "BT";
-    }
-  #endif
-  return line5;
-}
-
-void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-#ifdef SHOW_GPS_DATA
-  Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
-  Serial.print(" / SAT: ");
-  Serial.print(String(gps.satellites.value()));
-  Serial.print(" / BAT: ");
-  Serial.println(String(BattVolts,1));
-#endif
-
-}
-
 // end of main loop
