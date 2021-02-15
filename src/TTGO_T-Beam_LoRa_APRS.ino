@@ -217,17 +217,16 @@ void recalcGPS(){
     ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
     outString += helper_base91[0];
     outString += "\x48";
+    #ifdef SHOW_ALT
+      outString += "/A=";
+      outString += Altx;
+    #endif
   }else{
     outString += LATIDUDE_PRESET;
     outString += APRS_SYMBOL_TABLE;
     outString += LONGITUDE_PRESET;
     outString += APRS_SYMBOL;
   }
-
-  #ifdef SHOW_ALT
-    outString += "/A=";
-    outString += Altx;
-  #endif
 
   outString += MY_COMMENT;
 
