@@ -61,6 +61,7 @@ String sTable="/";           //Primer
 String relay_path;
 boolean gps_state = true;
 boolean key_up = true;
+boolean t_lock = false;
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -102,6 +103,7 @@ ulong nextTX=60000L;                  // preset time period between TX = 60000ms
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
+ulong time_delay = 0;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -447,9 +449,10 @@ void setup(){
 void loop() {
   if(digitalRead(BUTTON)==LOW && key_up == true){
     key_up = false;
-    delay(100);
+    delay(50);
     if(digitalRead(BUTTON)==LOW){
       delay(300);
+      time_delay = millis() + 1500;
       if(digitalRead(BUTTON)==HIGH){
         if(gps_state == true && gps.location.isValid()){
             writedisplaytext("((MAN TX))","","","","","",1);
@@ -458,10 +461,13 @@ void loop() {
             writedisplaytext("((FIX TX))","","","","","",1);
             sendpacket();
         }
+        key_up = true;
       }
     }
-    delay(1500);
-    if(digitalRead(BUTTON)==LOW){
+  }
+    //delay(1500);
+    if(digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false){
+      t_lock = true;
         if(gps_state == true){
           gps_state = false;
           #ifdef T_BEAM_V1_0
@@ -478,9 +484,10 @@ void loop() {
           writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
         }
     }
-  }
+  
   if(digitalRead(BUTTON)==HIGH && key_up == false){
     key_up = true;
+    t_lock = false;
   }
 
   #ifdef FIXED_BEACON_EN
