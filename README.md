@@ -1,4 +1,4 @@
-<h2>Simple LoRA tracker with KISS TNC capability</h2>
+<h2>LoRA tracker with KISS TNC capability</h2>
 
 Initial work: OE1ACM, OE3CJB<br>
 Redesigned: SQ9MDD<br>
