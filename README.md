@@ -4,7 +4,7 @@ Tracker can be used on its own.
 You can also connect it via blueetooth with APRSdroid.
 After connection with APRX based DIGI it can be used as KISS-TNC
 
-![schemat](pics/digi-schemat.png?raw=true)
+![schemat](https://github.com/SQ9MDD/TTGO-T-Beam-LoRa-APRS/pics/digi-schemat.png?raw=true)
 
 ## Contributors
 
