@@ -24,3 +24,12 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 ### long press: on or off the GPS power supply 
 * if the "FIXED_BEACON_EN" option is enabled in the configuration, a beacon will be sent every set time interval
 
+## screens information
+* ((TX)) - position frame sent automatically
+* ((RX)) - informs about the received frame 
+* ((GPSOFF)) - GPS power-off information
+* ((GPS ON)) - GPS power-on information
+* ((MAN TX)) - information about sending a manually initialized GPS position frame
+* ((FIX TX)) - information about the forced manual sending of a frame with the position saved in the configuration when GPS is off or no fix
+* ((AUT TX)) - information about sending automatic positioning frame when GPS is turned off
+* ((KISSTX)) - information about sending the frame sent by KISS
