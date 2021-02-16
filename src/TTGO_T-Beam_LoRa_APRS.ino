@@ -45,7 +45,6 @@
 
 // Button of TTGO T-Beam
 #ifdef T_BEAM_V1_0
-//   const byte BUTTON  = 38;      //pin number for Button on TTGO T-Beam
    #define BUTTON  38      //pin number for Button on TTGO T-Beam
 #else
    #define BUTTON  39      //pin number for Button on TTGO T-Beam
@@ -57,11 +56,16 @@ const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device
 
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
-String sTable="/";           //Primer
+String aprsSymbolTable = APRS_SYMBOL_TABLE;
+String aprsSymbol = APRS_SYMBOL;
 String relay_path;
+String aprsComment = MY_COMMENT;
+String aprsLatPreset = LATIDUDE_PRESET;
+String aprsLonPreset = LONGITUDE_PRESET;
 boolean gps_state = true;
 boolean key_up = true;
 boolean t_lock = false;
+boolean fixed_beacon_enabled = false;
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -103,11 +107,13 @@ ulong nextTX=60000L;                  // preset time period between TX = 60000ms
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
+ulong showRXTime = SHOW_RX_TIME;
 ulong time_delay = 0;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
+uint8_t txPower = TXdbmW;
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
@@ -171,14 +177,14 @@ void prepareAPRSFrame(){
   outString = "";
   outString += Tcall;
 
-  #ifdef DIGI_PATH
+  if (relay_path) {
     outString += ">APLM0," + relay_path + ":!";
-  #elif
+  } else {
     outString += ">APLM0:!";
-  #endif
+  }
 
   if(gps_state && gps.location.isValid()){
-    outString += APRS_SYMBOL_TABLE;
+    outString += aprsSymbolTable;
     ax25_base91enc(helper_base91, 4, aprs_lat);
     for (i=0; i<4; i++) {
       outString += helper_base91[i];
@@ -187,7 +193,7 @@ void prepareAPRSFrame(){
     for (i=0; i<4; i++) {
       outString += helper_base91[i];
     }
-    outString += APRS_SYMBOL;
+    outString += aprsSymbol;
     ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
     outString += helper_base91[0];
     ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
@@ -203,13 +209,13 @@ void prepareAPRSFrame(){
       outString += Talt;
     #endif
   }else{
-    outString += LATIDUDE_PRESET;
-    outString += APRS_SYMBOL_TABLE;
-    outString += LONGITUDE_PRESET;
-    outString += APRS_SYMBOL;
+    outString += aprsLonPreset;
+    outString += aprsSymbolTable;
+    outString += aprsLatPreset;
+    outString += aprsSymbol;
   }
 
-  outString += MY_COMMENT;
+  outString += aprsComment;
 
   #ifdef SHOW_BATT            // battery is not frame part move after comment
     outString += " Batt=";
@@ -228,7 +234,7 @@ void sendpacket(){
   batt_read();
 
   prepareAPRSFrame();
-  loraSend(TXdbmW, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
+  loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
 }
 
 /**
@@ -284,7 +290,7 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.setCursor(0,56);
   display.println(Line5);
   display.display();
-  time_to_refresh = millis() + SHOW_RX_TIME;
+  time_to_refresh = millis() + showRXTime;
 }
 
 
@@ -367,6 +373,10 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
+  #ifdef FIXED_BEACON_EN
+    fixed_beacon_enabled = true;
+  #endif
+
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
     average_course[i]=0;
   }
@@ -397,7 +407,11 @@ void setup(){
 
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
   Tcall = prepareCallsign(String(CALLSIGN));
-  relay_path = DIGI_PATH;
+  #ifdef DIGI_PATH
+    relay_path = DIGI_PATH;
+  #else
+    relay_path = "";
+  #endif
 
   if (!rf95.init()) {
     writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
@@ -419,7 +433,7 @@ void setup(){
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"",250);
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
-  rf95.setTxPower(TXdbmW);
+  rf95.setTxPower(txPower);
   delay(250);
   #ifdef KISS_PROTOCOL
     xTaskCreatePinnedToCore(taskTNC, "taskTNC", 10000, nullptr, 1, nullptr, xPortGetCoreID());
@@ -429,12 +443,12 @@ void setup(){
     #ifdef BLUETOOTH_PIN
       SerialBT.setPin(BLUETOOTH_PIN);
     #endif
-    SerialBT.begin(String("TTGO LORA APRS ") + CALLSIGN);
+    SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
     writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
   #endif
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
-  time_to_refresh = millis() + SHOW_RX_TIME;
+  time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
   #ifdef T_BEAM_V1_0
@@ -485,26 +499,28 @@ void loop() {
         }
     }
   
-  if(digitalRead(BUTTON)==HIGH && key_up == false){
+  if(digitalRead(BUTTON)==HIGH && !key_up){
     key_up = true;
     t_lock = false;
   }
 
-  #ifdef FIXED_BEACON_EN
-    if(millis() >= next_fixed_beacon && gps_state == false){
+
+  if (fixed_beacon_enabled) {
+    if (millis() >= next_fixed_beacon && !gps_state) {
       next_fixed_beacon = millis() + fix_beacon_interval;
-      writedisplaytext("((AUT TX))","","","","","",1);
+      writedisplaytext("((AUT TX))", "", "", "", "", "", 1);
       sendpacket();
     }
-  #endif
+  }
+
 
   #ifdef KISS_PROTOCOL
     String *TNC2DataFrame = nullptr;
     if (tncToSendQueue) {
       if (xQueueReceive(tncToSendQueue, &TNC2DataFrame, (1 / portTICK_PERIOD_MS)) == pdPASS) {
         writedisplaytext("((KISSTX))","","","","","",1);
-        time_to_refresh = millis() + SHOW_RX_TIME;
-        loraSend(TXdbmW, TXFREQ, *TNC2DataFrame);
+        time_to_refresh = millis() + showRXTime;
+        loraSend(txPower, TXFREQ, *TNC2DataFrame);
         delete TNC2DataFrame;
       }
     }
@@ -522,7 +538,7 @@ void loop() {
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
-        writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", SHOW_RX_TIME);
+        writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", showRXTime);
         #ifdef KISS_PROTOCOL
           sendToTNC(loraReceivedFrameString);
         #endif
