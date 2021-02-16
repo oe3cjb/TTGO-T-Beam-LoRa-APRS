@@ -1,4 +1,4 @@
-#LoRA tracker with KISS TNC capability
+# LoRA tracker with KISS TNC capability
 
 Tracker can be used on its own. 
 You can also connect it via blueetooth with APRSdroid.
