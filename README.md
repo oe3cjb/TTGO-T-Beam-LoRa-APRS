@@ -4,7 +4,7 @@ Tracker can be used on its own.
 You can also connect it via blueetooth with APRSdroid.
 After connection with APRX based DIGI it can be used as KISS-TNC
 
-![TTGO scenarios](pics/digi-schemat.png)
+![schemat](pics/digi-schemat.png)
 
 ## Contributors
 
