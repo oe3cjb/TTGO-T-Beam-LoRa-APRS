@@ -23,9 +23,8 @@
 #include <axp20x.h>
 #include "taskGPS.h"
 #ifdef KISS_PROTOCOL
-#include "taskTNC.h"
+  #include "taskTNC.h"
 #endif
-
 
 // I2C LINES
 #define I2C_SDA 21
@@ -33,8 +32,6 @@
 
 // DISPLAY address
 #define SSD1306_ADDRESS 0x3C
-
-//other global Variables
 
 // LED for signalling
 #ifdef T_BEAM_V1_0
@@ -114,12 +111,10 @@ ulong time_delay = 0;
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
 uint8_t txPower = TXdbmW;
-
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
-
 #ifdef T_BEAM_V1_0
-AXP20X_Class axp;
+  AXP20X_Class axp;
 #endif
 
 // checkRX
@@ -214,15 +209,12 @@ void prepareAPRSFrame(){
     outString += aprsLatPreset;
     outString += aprsSymbol;
   }
-
   outString += aprsComment;
-
   #ifdef SHOW_BATT            // battery is not frame part move after comment
     outString += " Batt=";
     outString += String(BattVolts, 2);
     outString += ("V");
   #endif
-
   #ifdef KISS_PROTOCOL
     sendToTNC(outString);
   #else
@@ -232,7 +224,6 @@ void prepareAPRSFrame(){
 
 void sendpacket(){
   batt_read();
-
   prepareAPRSFrame();
   loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
 }
@@ -272,7 +263,6 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
       axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
     #endif
   }
-
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
@@ -311,13 +301,6 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
-  #ifdef SHOW_GPS_DATA
-    Serial.print("(TX) at valid GPS / LAT: not valid / Lon: not valid / SPD: --- / CRS: ---");
-    Serial.print(" / SAT: ");
-    Serial.print(String(gps.satellites.value()));
-    Serial.print(" / BAT: ");
-    Serial.println(String(BattVolts,1));
-  #endif
 }
 
 #if defined(KISS_PROTOCOL)
@@ -365,7 +348,6 @@ void sendTelemetryFrame() {
     sendToTNC(telemetryBase + telemetryUnitNames);
     sendToTNC(telemetryBase + telemetryEquations);
     sendToTNC(telemetryBase + telemetryData);
-  #else
   #endif
 }
 #endif
@@ -479,31 +461,30 @@ void loop() {
       }
     }
   }
-    //delay(1500);
-    if(digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false){
-      t_lock = true;
-        if(gps_state == true){
-          gps_state = false;
-          #ifdef T_BEAM_V1_0
-            axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
-          #endif
-          writedisplaytext("((GPSOFF))","","","","","",1);
-          next_fixed_beacon = millis() + fix_beacon_interval;
 
-        }else{
-          gps_state = true;
-          #ifdef T_BEAM_V1_0
-            axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-          #endif
-          writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
-        }
-    }
+  if(digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false){
+    t_lock = true;
+      if(gps_state == true){
+        gps_state = false;
+        #ifdef T_BEAM_V1_0
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+        #endif
+        writedisplaytext("((GPSOFF))","","","","","",1);
+        next_fixed_beacon = millis() + fix_beacon_interval;
+
+      }else{
+        gps_state = true;
+        #ifdef T_BEAM_V1_0
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
+        #endif
+        writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
+      }
+  }
   
   if(digitalRead(BUTTON)==HIGH && !key_up){
     key_up = true;
     t_lock = false;
   }
-
 
   if (fixed_beacon_enabled) {
     if (millis() >= next_fixed_beacon && !gps_state) {
@@ -512,7 +493,6 @@ void loop() {
       sendpacket();
     }
   }
-
 
   #ifdef KISS_PROTOCOL
     String *TNC2DataFrame = nullptr;
@@ -525,7 +505,6 @@ void loop() {
       }
     }
   #endif
-
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef T_BEAM_V1_0
@@ -558,28 +537,22 @@ void loop() {
   }
   average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
   nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
-
   if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
   if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
-
   average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
-
   ++point_avg_course;
   if (point_avg_course>(ANGLE_AVGS-1)) {
     point_avg_course=0;
     avg_c_y = 0;
     avg_c_x = 0;
-
     for (int i=0;i<ANGLE_AVGS;i++) {
       avg_c_y += sin(average_course[i]/180*3.1415);
       avg_c_x += cos(average_course[i]/180*3.1415);
     }
-
     new_course = atan2f(avg_c_y,avg_c_x)*180/3.1415;
     if (new_course < 0) {
         new_course=360+new_course;
       }
-
     if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
       if (abs(new_course-old_course-360)>=ANGLE) {
         nextTX = 0;
@@ -598,30 +571,13 @@ void loop() {
     }
     old_course = new_course;
   }
-
   if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
     nextTX = 0;
   }
-
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
       sendpacket();
-      #ifdef SHOW_GPS_DATA
-        Serial.print("((TX)) / LAT: ");
-        Serial.print(LatShown);
-        Serial.print(" / LON: ");
-        Serial.print(LongShown);
-        Serial.print(" / SPD: ");
-        Serial.print(String(gps.speed.kmph(),1));
-        Serial.print(" / CRS: ");
-        Serial.print(String(gps.course.deg(),1));
-        Serial.print(" / SAT: ");
-        Serial.print(String(gps.satellites.value()));
-        Serial.print(" / BAT: ");
-        Serial.print(String(BattVolts,1));
-        //digitalWrite(TXLED, LOW);
-      #endif
     } else {
       if (millis() > time_to_refresh){
         displayInvalidGPS();
@@ -675,4 +631,3 @@ void loop() {
   #endif
   vTaskDelay(1);
 }
-// end of main loop
