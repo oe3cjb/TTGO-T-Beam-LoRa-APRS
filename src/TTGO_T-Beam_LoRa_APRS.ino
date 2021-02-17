@@ -514,6 +514,8 @@ void loop() {
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
       if (rf95.recvAPRS(lora_RXBUFF, &loraReceivedLength)) {
         loraReceivedFrameString = "";
+        //int rssi = rf95.lastSNR();
+        //Serial.println(rssi);
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
