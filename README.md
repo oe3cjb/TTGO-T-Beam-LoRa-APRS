@@ -7,13 +7,15 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 ![diagram](https://github.com/SQ9MDD/TTGO-T-Beam-LoRa-APRS/blob/master/img/digi-schemat.png)
 
 ## Contributors
-* Initial work: OE1ACM, OE3CJB<br>
-* Redesigned: SQ9MDD<br>
-* KISS TNC Over Seriall or Bluetooth: SQ5RWU<br><br>
+* Initial work: OE1ACM, OE3CJB
+* Redesigned: SQ9MDD
+* KISS TNC Over Seriall or Bluetooth: SQ5RWU
+* Lora32 board spupport DJ1AN
 
 ## Supported boards
 * TTGO T-beam v.0.7
 * TTGO T-beam v.1.0 
+* Lora32 board
 
 
 ## User key functions:
