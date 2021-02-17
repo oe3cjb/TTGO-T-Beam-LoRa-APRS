@@ -14,7 +14,7 @@
 #define LONGITUDE_PRESET "02055.59E"                    // please in APRS notation: DDDMM.mmE or DDDMM.mmW (used for manual or fixed beacon sending)
 #define APRS_SYMBOL_TABLE "/"
 #define APRS_SYMBOL "["                                 // other symbols are: "[" => RUNNER, "b" => BICYCLE, "<" => MOTORCYCLE, "R" => Recreation Vehicle
-#define MY_COMMENT "LoRa tracker"                       // add your coment here - if empty then no comment is sent
+#define MY_COMMENT "Lora Tracker"                       // add your coment here - if empty then no comment is sent
 //#define SHOW_ALT                                      // send Altitude in frame
 #define SHOW_BATT                                       // send battery voltage at the end of comment (we need beggining for QSY message format)
 #define SHOW_RX_PACKET                                  // uncomment to show received LoRa APS packets for the time given below

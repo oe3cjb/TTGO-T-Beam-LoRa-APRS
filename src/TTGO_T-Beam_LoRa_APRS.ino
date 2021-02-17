@@ -204,9 +204,9 @@ void prepareAPRSFrame(){
       outString += Talt;
     #endif
   }else{
-    outString += aprsLonPreset;
-    outString += aprsSymbolTable;
     outString += aprsLatPreset;
+    outString += aprsSymbolTable;
+    outString += aprsLonPreset;
     outString += aprsSymbol;
   }
   outString += aprsComment;
