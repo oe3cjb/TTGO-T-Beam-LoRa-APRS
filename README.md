@@ -10,7 +10,7 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 * Initial work: OE1ACM, OE3CJB
 * Redesigned: SQ9MDD
 * KISS TNC Over Seriall or Bluetooth: SQ5RWU
-* Lora32 board spupport DJ1AN
+* Lora32 board support DJ1AN
 
 ## Supported boards
 * TTGO T-beam v.0.7
