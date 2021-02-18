@@ -25,7 +25,10 @@
 #ifdef KISS_PROTOCOL
 #include "taskTNC.h"
 #endif
-
+#ifdef ENABLE_WIFI
+  #include "taskWebServer.h"
+#endif
+#include "version.h"
 
 // I2C LINES
 #define I2C_SDA 21
@@ -66,6 +69,16 @@ boolean gps_state = true;
 boolean key_up = true;
 boolean t_lock = false;
 boolean fixed_beacon_enabled = false;
+#ifdef SHOW_ALT
+boolean showAltitude = true;
+#else
+boolean showAltitude = false;
+#endif
+#ifdef SHOW_BATT
+boolean showBattery = true;
+#else
+boolean showBattery = false;
+#endif
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -115,6 +128,11 @@ float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
 uint8_t txPower = TXdbmW;
 
+#ifdef ENABLE_WIFI
+tWebServerCfg webServerCfg;
+#endif
+
+
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
 
@@ -153,10 +171,9 @@ void prepareAPRSFrame(){
   double Tspeed=0, Tcourse=0;
   String Speedx, Coursex;
   int i;
-  #ifdef SHOW_ALT
-    String Altx;
-    int Talt;
-  #endif
+
+  String Altx;
+  int Talt;
 
   Tlat=gps.location.lat();
   Tlon=gps.location.lng();
@@ -183,31 +200,31 @@ void prepareAPRSFrame(){
     outString += ">APLM0:!";
   }
 
-  if(gps_state && gps.location.isValid()){
+  if(gps_state && gps.location.isValid()) {
     outString += aprsSymbolTable;
     ax25_base91enc(helper_base91, 4, aprs_lat);
-    for (i=0; i<4; i++) {
+    for (i = 0; i < 4; i++) {
       outString += helper_base91[i];
     }
     ax25_base91enc(helper_base91, 4, aprs_lon);
-    for (i=0; i<4; i++) {
+    for (i = 0; i < 4; i++) {
       outString += helper_base91[i];
     }
     outString += aprsSymbol;
-    ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse/4 );
+    ax25_base91enc(helper_base91, 1, (uint32_t) Tcourse / 4);
     outString += helper_base91[0];
-    ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed)/0.07696));
+    ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed) / 0.07696));
     outString += helper_base91[0];
     outString += "H";
-    #ifdef SHOW_ALT
-      Talt=gps.altitude.meters() * 3.28d;
+    if (showAltitude) {
+      Talt = gps.altitude.meters() * 3.28d;
       Altx = Talt;
       outString += "/A=";
-      for (i = 0; i < (6-Altx.length()); ++i) {
+      for (i = 0; i < (6 - Altx.length()); ++i) {
         outString += "0";
       }
       outString += Talt;
-    #endif
+    }
   }else{
     outString += aprsLonPreset;
     outString += aprsSymbolTable;
@@ -217,11 +234,11 @@ void prepareAPRSFrame(){
 
   outString += aprsComment;
 
-  #ifdef SHOW_BATT            // battery is not frame part move after comment
+  if (showBattery) {
     outString += " Batt=";
     outString += String(BattVolts, 2);
     outString += ("V");
-  #endif
+  }
 
   #ifdef KISS_PROTOCOL
     sendToTNC(outString);
@@ -373,8 +390,77 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
+  #ifdef DIGI_PATH
+  relay_path = DIGI_PATH;
+  #else
+  relay_path = "";
+  #endif
   #ifdef FIXED_BEACON_EN
-    fixed_beacon_enabled = true;
+  fixed_beacon_enabled = true;
+  #endif
+
+  #ifdef ENABLE_PREFERENCES
+    preferences.begin("cfg", false);
+    aprsSymbolTable = preferences.getString(PREF_APRS_SYMBOL_TABLE);
+    if (aprsSymbolTable.isEmpty()){
+      preferences.putString(PREF_APRS_SYMBOL_TABLE, APRS_SYMBOL_TABLE);
+      aprsSymbolTable = preferences.getString(PREF_APRS_SYMBOL_TABLE);
+    }
+
+    aprsSymbol = preferences.getString(PREF_APRS_SYMBOL);
+    if (aprsSymbol.isEmpty()){
+      preferences.putString(PREF_APRS_SYMBOL, APRS_SYMBOL);
+      aprsSymbol = preferences.getString(PREF_APRS_SYMBOL, APRS_SYMBOL);
+    }
+
+    if (!preferences.getBool(PREF_APRS_COMMENT_INIT)){
+      preferences.putBool(PREF_APRS_COMMENT_INIT, true);
+      preferences.putString(PREF_APRS_COMMENT, MY_COMMENT);
+    }
+    aprsComment = preferences.getString(PREF_APRS_COMMENT);
+
+    if (!preferences.getBool(PREF_APRS_RELAY_PATH_INIT)){
+      preferences.putBool(PREF_APRS_RELAY_PATH_INIT, true);
+      preferences.putString(PREF_APRS_RELAY_PATH, DIGI_PATH);
+    }
+    relay_path = preferences.getString(PREF_APRS_RELAY_PATH);
+
+    if (!preferences.getBool(PREF_APRS_SHOW_ALTITUDE_INIT)){
+      preferences.putBool(PREF_APRS_SHOW_ALTITUDE_INIT, true);
+      preferences.putBool(PREF_APRS_SHOW_ALTITUDE, showAltitude);
+    }
+    showAltitude = preferences.getBool(PREF_APRS_SHOW_ALTITUDE);
+
+    if (!preferences.getBool(PREF_APRS_SHOW_BATTERY_INIT)){
+      preferences.putBool(PREF_APRS_SHOW_BATTERY_INIT, true);
+      preferences.putBool(PREF_APRS_SHOW_BATTERY, showBattery);
+    }
+    showBattery = preferences.getBool(PREF_APRS_SHOW_BATTERY);
+
+    if (!preferences.getBool(PREF_APRS_LATITUDE_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_LATITUDE_PRESET_INIT, true);
+      preferences.putString(PREF_APRS_LATITUDE_PRESET, LATIDUDE_PRESET);
+    }
+    aprsLatPreset = preferences.getString(LATIDUDE_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_LONGITUDE_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_LONGITUDE_PRESET_INIT, true);
+      preferences.putString(PREF_APRS_LONGITUDE_PRESET, LONGITUDE_PRESET);
+    }
+    aprsLonPreset = preferences.getString(PREF_APRS_LONGITUDE_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_FIXED_BEACON_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET_INIT, true);
+      preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET, fixed_beacon_enabled);
+    }
+    fixed_beacon_enabled = preferences.getBool(PREF_APRS_FIXED_BEACON_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
+    }
+    fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_PRESET) * 1000;
+
   #endif
 
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -406,11 +492,14 @@ void setup(){
   }
 
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
+
   Tcall = prepareCallsign(String(CALLSIGN));
-  #ifdef DIGI_PATH
-    relay_path = DIGI_PATH;
-  #else
-    relay_path = "";
+  #ifdef ENABLE_PREFERENCES
+    Tcall = preferences.getString(PREF_APRS_CALLSIGN);
+    if (Tcall.isEmpty()){
+      preferences.putString(PREF_APRS_CALLSIGN, String(CALLSIGN));
+      Tcall = preferences.getString(PREF_APRS_CALLSIGN);
+    }
   #endif
 
   if (!rf95.init()) {
@@ -446,6 +535,12 @@ void setup(){
     SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
     writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
   #endif
+  #ifdef ENABLE_WIFI
+    webServerCfg = {.callsign = Tcall};
+    xTaskCreate(taskWebServer, "taskWebServer", 50000, (void*)(&webServerCfg), 1, nullptr);
+    writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","",250);
+  #endif
+
   writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
   writedisplaytext("","","","","","",0);
   time_to_refresh = millis() + showRXTime;
