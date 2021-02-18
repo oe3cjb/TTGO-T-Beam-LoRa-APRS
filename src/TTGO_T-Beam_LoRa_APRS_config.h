@@ -21,7 +21,6 @@
 #define SHOW_RX_TIME 2000                              // show RX packet for milliseconds (5000 = 5secs)
 #define TXFREQ  433.775                                 // Transmit frequency in MHz
 #define TXdbmW  20                                      // Transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
-//#define SHOW_GPS_DATA                                 // uncomment to show on serial port, received data from GPS and debug information
 #define ENABLE_BLUETOOTH                                // bluetooth KISS interface enable
 //#define BLUETOOTH_PIN "0000"
 //#define ENABLE_TNC_SELF_TELEMETRY
