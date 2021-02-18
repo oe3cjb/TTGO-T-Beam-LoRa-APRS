@@ -36,6 +36,9 @@ String jsonLineFromPreferenceBool(const char *preferenceName, bool last=false){
 String jsonLineFromPreferenceInt(const char *preferenceName, bool last=false){
   return String("\"") + preferenceName + "\":" + (preferences.getInt(preferenceName)) + (last ?  + R"()" :  + R"(,)");
 }
+String jsonLineFromString(const char *name, const char *value, bool last=false){
+  return String("\"") + name + "\":" + jsonEscape(value) + (last ?  + R"()" :  + R"(,)");
+}
 
 void handle_NotFound(){
   sendCacheHeader();
@@ -114,7 +117,11 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_BATTERY);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
-  jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE, true);
+  jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
+  jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
+  jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
+  jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
+
   jsonData += "}";
   server.send(200,"application/json", jsonData);
 }
