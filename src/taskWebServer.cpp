@@ -183,7 +183,7 @@ void handle_SaveAPRSCfg() {
     WiFi.softAP(apSSID.c_str(), apPassword.c_str());
   } else {
     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
-    Serial.println("Connecting to" + wifi_ssid);
+    Serial.println("Connecting to " + wifi_ssid);
     while (WiFi.status() != WL_CONNECTED) {
       Serial.println("Not connected");
       vTaskDelay(500/portTICK_PERIOD_MS);
@@ -195,6 +195,7 @@ void handle_SaveAPRSCfg() {
     tncServer.begin();
   #endif
   if (MDNS.begin(webServerCfg->callsign.c_str())) {
+    MDNS.setInstanceName(webServerCfg->callsign + " TTGO LoRa APRS TNC " + TXFREQ + "MHz");
     MDNS.addService("http", "tcp", 80);
     #ifdef KISS_PROTOCOL
       MDNS.addService("kiss-tnc", "tcp", NETWORK_TNC_PORT);
