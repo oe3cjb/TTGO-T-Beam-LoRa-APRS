@@ -7,6 +7,24 @@
 String inTNCData = "";
 QueueHandle_t tncToSendQueue = nullptr;
 QueueHandle_t tncReceivedQueue = nullptr;
+#ifdef ENABLE_WIFI
+  std::list<WiFiClient *> clientsList;
+
+  typedef void (*f_connectedClientCallback_t) (WiFiClient *, const String *);
+  
+  void iterateWifiClients(std::list<WiFiClient *> clients, f_connectedClientCallback_t callback, const String *data){
+    auto clientsIterator = clients.begin();
+    while (clientsIterator != clients.end()){
+      if ((*clientsIterator)->connected()){
+        callback(*clientsIterator, data);
+        clientsIterator++;
+      } else {
+        clientsIterator = clients.erase(clientsIterator);
+      }
+    }
+  }
+#endif
+
 
 /**
  * Handle incoming TNC KISS data character
@@ -25,10 +43,12 @@ void handleKISSData(char character) {
         }
       #endif
       #ifdef ENABLE_WIFI
-        if (client.connected()){
-          client.print(inTNCData);
-          client.flush();
-        }
+        iterateWifiClients(clientsList, [](WiFiClient *client, const String *data){
+          if (client->connected()){
+            client->print(*data);
+            client->flush();
+          }
+        }, &inTNCData);
       #endif
     #endif
     auto *buffer = new String();
@@ -40,30 +60,11 @@ void handleKISSData(char character) {
   }
 }
 
-#ifdef ENABLE_WIFI
-typedef void (*f_connectedClientCallback_t) (WiFiClient *, const String *);
-
-void iterateWifiClients(std::list<WiFiClient *> clients, f_connectedClientCallback_t callback, const String *data){
-  auto clientsIterator = clients.begin();
-  while (clientsIterator != clients.end()){
-    if ((*clientsIterator)->connected()){
-      callback(*clientsIterator, data);
-      clientsIterator++;
-    } else {
-      clientsIterator = clients.erase(clientsIterator);
-    }
-  }
-}
-#endif
-
 
 [[noreturn]] void taskTNC(void *parameter) {
   tncToSendQueue = xQueueCreate(4,sizeof(String *));
   tncReceivedQueue = xQueueCreate(4,sizeof(String *));
   String *loraReceivedFrameString = nullptr;
-  #ifdef ENABLE_WIFI
-    std::list<WiFiClient *> clients;
-  #endif
 
   while (true) {
     while (Serial.available() > 0) {
@@ -81,9 +82,9 @@ void iterateWifiClients(std::list<WiFiClient *> clients, f_connectedClientCallba
     #ifdef ENABLE_WIFI
       WiFiClient new_client = tncServer.available();
       if (new_client.connected()){
-        clients.push_back(new WiFiClient(new_client));
+        clientsList.push_back(new WiFiClient(new_client));
       }
-      iterateWifiClients(clients, [](WiFiClient * client, const String * unused){
+      iterateWifiClients(clientsList, [](WiFiClient * client, const String * unused){
         while (client->available() > 0) {
           char character = client->read();
           handleKISSData(character);
@@ -100,7 +101,7 @@ void iterateWifiClients(std::list<WiFiClient *> clients, f_connectedClientCallba
         }
       #endif
       #ifdef ENABLE_WIFI
-        iterateWifiClients(clients, [](WiFiClient *client, const String *data){
+        iterateWifiClients(clientsList, [](WiFiClient *client, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();
