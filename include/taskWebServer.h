@@ -5,9 +5,16 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 
+#ifndef TASK_WEBSERVER
+#define TASK_WEBSERVER
+
+
 #define ENABLE_PREFERENCES
 
 extern Preferences preferences;
+#ifdef KISS_PROTOCOL
+  extern WiFiServer tncServer;
+#endif
 // MAX 15 chars for preferenece key!!!
 static const char *const PREF_APRS_CALLSIGN = "aprs_callsign";
 static const char *const PREF_APRS_RELAY_PATH = "aprs_relay_path";
@@ -34,3 +41,4 @@ typedef struct {
 } tWebServerCfg;
 
 [[noreturn]] void taskWebServer(void *parameter);
+#endif

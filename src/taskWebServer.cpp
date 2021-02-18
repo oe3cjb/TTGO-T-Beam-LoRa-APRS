@@ -14,6 +14,9 @@ String apSSID = "";
 String apPassword = "xxxxxxxxxx";
 WebServer server(80);
 Preferences preferences;
+#ifdef KISS_PROTOCOL
+  WiFiServer tncServer(NETWORK_TNC_PORT);
+#endif
 
 void sendCacheHeader() { server.sendHeader("Cache-Control", "max-age=3600"); }
 void sendGzipHeader() { server.sendHeader("Content-Encoding", "gzip"); }
@@ -181,8 +184,14 @@ void handle_SaveAPRSCfg() {
   }
 
   server.begin();
+  #ifdef KISS_PROTOCOL
+    tncServer.begin();
+  #endif
   if (MDNS.begin(webServerCfg->callsign.c_str())) {
     MDNS.addService("http", "tcp", 80);
+    #ifdef KISS_PROTOCOL
+      MDNS.addService("kiss-tnc", "tcp", NETWORK_TNC_PORT);
+    #endif
   }
 
   while (true){
