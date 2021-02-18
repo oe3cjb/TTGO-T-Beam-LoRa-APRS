@@ -3,7 +3,7 @@
 bool validateTNC2Frame(const String &tnc2FormattedFrame);
 
 String encode_address_ax25(String tnc2Address);
-String decode_address_ax25(const String& ax25Address, bool &isLast);
+String decode_address_ax25(const String &ax25Address, bool &isLast, bool isRelay);
 
 bool validateKISSFrame(const String &kissFormattedFrame);
 
@@ -113,12 +113,12 @@ String decode_kiss(const String& kissFormattedFrame) {
     if (validateKISSFrame(kissFormattedFrame)){
         String ax25Frame = decapsulateKISS(kissFormattedFrame);
         bool isLast = false;
-        String dst_addr = decode_address_ax25(ax25Frame.substring(0, 7), isLast);
-        String src_addr = decode_address_ax25(ax25Frame.substring(7, 14), isLast);
+        String dst_addr = decode_address_ax25(ax25Frame.substring(0, 7), isLast, false);
+        String src_addr = decode_address_ax25(ax25Frame.substring(7, 14), isLast, false);
         TNC2Frame = src_addr + ">" + dst_addr;
         int digi_info_index = 14;
         while (!isLast && digi_info_index + 7 < ax25Frame.length()){
-            String digi_addr = decode_address_ax25(ax25Frame.substring(digi_info_index, digi_info_index+7), isLast);
+            String digi_addr = decode_address_ax25(ax25Frame.substring(digi_info_index, digi_info_index + 7), isLast, true);
             TNC2Frame += ',' + digi_addr;
             digi_info_index += 7;
         }
@@ -162,7 +162,7 @@ String encode_address_ax25(String tnc2Address) {
  * @param ax25Address
  * @return
  */
-String decode_address_ax25(const String& ax25Address, bool &isLast) {
+String decode_address_ax25(const String &ax25Address, bool &isLast, bool isRelay) {
     String TNCAddress = "";
     for (int i = 0; i < 6; ++i) {
         uint8_t currentCharacter = ax25Address.charAt(i);
@@ -181,7 +181,7 @@ String decode_address_ax25(const String& ax25Address, bool &isLast) {
         TNCAddress += '-';
         TNCAddress += ssid;
     }
-    if (hasBeenDigipited){
+    if (isRelay && hasBeenDigipited){
         TNCAddress += '*';
     }
     return TNCAddress;
