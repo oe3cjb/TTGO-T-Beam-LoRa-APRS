@@ -4,21 +4,20 @@
 #ifdef ENABLE_BLUETOOTH
   BluetoothSerial SerialBT;
 #endif
-String inTNCData = "";
-QueueHandle_t tncToSendQueue = nullptr;
+
 QueueHandle_t tncReceivedQueue = nullptr;
 #ifdef ENABLE_WIFI
   #define MAX_WIFI_CLIENTS 6
   WiFiClient * clients[MAX_WIFI_CLIENTS];
 
-  typedef void (*f_connectedClientCallback_t) (WiFiClient *, const String *);
+  typedef void (*f_connectedClientCallback_t) (WiFiClient *, int, const String *);
   
   void iterateWifiClients(f_connectedClientCallback_t callback, const String *data){
     for (int i=0; i<MAX_WIFI_CLIENTS; i++) {
       auto client = clients[i];
       if (client != nullptr) {
         if (client->connected()) {
-          callback(client, data);
+          callback(client, i, data);
         } else {
           #ifdef ENABLE_WIFI_CLIENT_DEBUG
             Serial.println(String("Disconnected client ") + client->remoteIP().toString() + ":" + client->remotePort());
@@ -30,16 +29,30 @@ QueueHandle_t tncReceivedQueue = nullptr;
     }
   }
 #endif
+#ifdef ENABLE_WIFI
+  #define IN_TNC_BUFFERS (2+MAX_WIFI_CLIENTS)
+#else
+  #define IN_TNC_BUFFERS 2
+#endif
+
+String inTNCDataBuffers[IN_TNC_BUFFERS];
+
+QueueHandle_t tncToSendQueue = nullptr;
 
 
 /**
  * Handle incoming TNC KISS data character
  * @param character
  */
-void handleKISSData(char character) {
-  inTNCData.concat(character);
-  if (character == (char) FEND && inTNCData.length() > 3) {
-    const String &TNC2DataFrame = decode_kiss(inTNCData);
+void handleKISSData(char character, int bufferIndex) {
+  String *inTNCData = &inTNCDataBuffers[bufferIndex];
+  if (inTNCData->length() == 0 && character != (char) FEND){
+    // kiss frame begins with C0
+    return;
+  }
+  inTNCData->concat(character);
+  if (character == (char) FEND && inTNCData->length() > 3) {
+    const String &TNC2DataFrame = decode_kiss(*inTNCData);
 
     #ifdef LOCAL_KISS_ECHO
       Serial.print(inTNCData);
@@ -62,7 +75,11 @@ void handleKISSData(char character) {
     if (xQueueSend(tncToSendQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS){
       delete buffer;
     }
-    inTNCData = "";
+    inTNCData->clear();
+  }
+  if (inTNCData->length() > 255){
+    // just in case of garbage input reset data
+    inTNCData->clear();
   }
 }
 
@@ -75,13 +92,13 @@ void handleKISSData(char character) {
   while (true) {
     while (Serial.available() > 0) {
       char character = Serial.read();
-      handleKISSData(character);
+      handleKISSData(character, 0);
     }
     #ifdef ENABLE_BLUETOOTH
       if (SerialBT.hasClient()) {
         while (SerialBT.available() > 0) {
           char character = SerialBT.read();
-          handleKISSData(character);
+          handleKISSData(character, 1);
         }
       }
     #endif
@@ -119,10 +136,10 @@ void handleKISSData(char character) {
           new_client.stop();
         }
       }
-      iterateWifiClients([](WiFiClient * client, const String * unused){
+      iterateWifiClients([](WiFiClient * client, int clientIdx, const String * unused){
         while (client->available() > 0) {
           char character = client->read();
-          handleKISSData(character);
+          handleKISSData(character, 2+clientIdx);
         }
       }, nullptr);
 
@@ -136,7 +153,7 @@ void handleKISSData(char character) {
         }
       #endif
       #ifdef ENABLE_WIFI
-        iterateWifiClients([](WiFiClient *client, const String *data){
+        iterateWifiClients([](WiFiClient *client, int clientIdx, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();
