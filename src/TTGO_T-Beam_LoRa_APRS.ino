@@ -427,7 +427,7 @@ void setup(){
       preferences.putBool(PREF_APRS_LATITUDE_PRESET_INIT, true);
       preferences.putString(PREF_APRS_LATITUDE_PRESET, LATIDUDE_PRESET);
     }
-    aprsLatPreset = preferences.getString(LATIDUDE_PRESET);
+    aprsLatPreset = preferences.getString(PREF_APRS_LATITUDE_PRESET);
 
     if (!preferences.getBool(PREF_APRS_LONGITUDE_PRESET_INIT)){
       preferences.putBool(PREF_APRS_LONGITUDE_PRESET_INIT, true);
