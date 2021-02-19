@@ -498,7 +498,7 @@ void setup(){
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
-  xTaskCreate(taskGPS, "taskGPS", 10000, nullptr, 1, nullptr);
+  xTaskCreate(taskGPS, "taskGPS", 5000, nullptr, 1, nullptr);
   writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
   #ifndef T_BEAM_V1_0
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -523,7 +523,7 @@ void setup(){
   #endif
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
-    xTaskCreate(taskWebServer, "taskWebServer", 50000, (void*)(&webServerCfg), 1, nullptr);
+    xTaskCreate(taskWebServer, "taskWebServer", 40000, (void*)(&webServerCfg), 1, nullptr);
     writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","",250);
   #endif
 

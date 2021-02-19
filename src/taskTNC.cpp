@@ -1,5 +1,5 @@
-#include <list>
 #include "taskTNC.h"
+
 
 #ifdef ENABLE_BLUETOOTH
   BluetoothSerial SerialBT;
@@ -8,18 +8,24 @@ String inTNCData = "";
 QueueHandle_t tncToSendQueue = nullptr;
 QueueHandle_t tncReceivedQueue = nullptr;
 #ifdef ENABLE_WIFI
-  std::list<WiFiClient *> clientsList;
+  #define MAX_WIFI_CLIENTS 6
+  WiFiClient * clients[MAX_WIFI_CLIENTS];
 
   typedef void (*f_connectedClientCallback_t) (WiFiClient *, const String *);
   
-  void iterateWifiClients(std::list<WiFiClient *> clients, f_connectedClientCallback_t callback, const String *data){
-    auto clientsIterator = clients.begin();
-    while (clientsIterator != clients.end()){
-      if ((*clientsIterator)->connected()){
-        callback(*clientsIterator, data);
-        clientsIterator++;
-      } else {
-        clientsIterator = clients.erase(clientsIterator);
+  void iterateWifiClients(f_connectedClientCallback_t callback, const String *data){
+    for (int i=0; i<MAX_WIFI_CLIENTS; i++) {
+      auto client = clients[i];
+      if (client != nullptr) {
+        if (client->connected()) {
+          callback(client, data);
+        } else {
+          #ifdef ENABLE_WIFI_CLIENT_DEBUG
+            Serial.println(String("Disconnected client ") + client->remoteIP().toString() + ":" + client->remotePort());
+          #endif
+          delete client;
+          clients[i] = nullptr;
+        }
       }
     }
   }
@@ -43,7 +49,7 @@ void handleKISSData(char character) {
         }
       #endif
       #ifdef ENABLE_WIFI
-        iterateWifiClients(clientsList, [](WiFiClient *client, const String *data){
+        iterateWifiClients([](WiFiClient *client, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();
@@ -82,9 +88,38 @@ void handleKISSData(char character) {
     #ifdef ENABLE_WIFI
       WiFiClient new_client = tncServer.available();
       if (new_client.connected()){
-        clientsList.push_back(new WiFiClient(new_client));
+        bool new_client_handled = false;
+        for (int i=0; i < MAX_WIFI_CLIENTS; i++) {
+          auto client = clients[i];
+          if (client == nullptr) {
+            client = new WiFiClient(new_client);
+            clients[i] = client;
+            new_client_handled = true;
+            #ifdef ENABLE_WIFI_CLIENT_DEBUG
+              Serial.println(String("New client #") +String(i) + ": " + client->remoteIP().toString() + ":" + client->remotePort());
+            #endif
+            break;
+          }
+        }
+        #ifdef ENABLE_WIFI_CLIENT_DEBUG
+          for (int i = 0; i < MAX_WIFI_CLIENTS; ++i) {
+            auto client = clients[i];
+
+            if (client != nullptr){
+              Serial.println(String("Client #") +String(i) + ": " + client->remoteIP().toString() + ":" + client->remotePort());
+            }
+          }
+        #endif
+
+
+        if (!new_client_handled){
+          #ifdef ENABLE_WIFI_CLIENT_DEBUG
+            Serial.println(String("Refusing client "));
+          #endif
+          new_client.stop();
+        }
       }
-      iterateWifiClients(clientsList, [](WiFiClient * client, const String * unused){
+      iterateWifiClients([](WiFiClient * client, const String * unused){
         while (client->available() > 0) {
           char character = client->read();
           handleKISSData(character);
@@ -101,7 +136,7 @@ void handleKISSData(char character) {
         }
       #endif
       #ifdef ENABLE_WIFI
-        iterateWifiClients(clientsList, [](WiFiClient *client, const String *data){
+        iterateWifiClients([](WiFiClient *client, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();

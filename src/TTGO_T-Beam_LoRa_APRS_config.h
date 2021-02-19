@@ -29,6 +29,8 @@
 //#define KISS_DEBUG
 #define ENABLE_WIFI
 #define NETWORK_TNC_PORT 8001
+//#define ENABLE_WIFI_CLIENT_DEBUG
+
 
 #define MAX_TIME_TO_NEXT_TX 360000L                     // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
 #define FIX_BEACON_INTERVAL 1800000L           // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default
