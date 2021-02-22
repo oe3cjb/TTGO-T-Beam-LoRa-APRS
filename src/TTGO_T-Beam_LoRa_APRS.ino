@@ -489,16 +489,19 @@ void setup(){
   }
   #ifdef ENABLE_PREFERENCES
     if (clear_preferences == 2){
-      writedisplaytext("LoRa-APRS","","","Factory reset!!","","",0);
+      writedisplaytext("LoRa-APRS","","","Factory reset","","",0);
       delay(1000);
       if(digitalRead(BUTTON)==LOW){
         clear_preferences = 3;
         preferences.clear();
-        writedisplaytext("LoRa-APRS","","Factory reset","OK","","",0);
+        preferences.end();
+        writedisplaytext("LoRa-APRS","","Factory reset","Done!","","",0);
         delay(2000);
-
+        ESP.restart();
+      } else {
+        writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","",0);
+        delay(2000);
       }
-      ESP.restart();
     }
   #endif
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
