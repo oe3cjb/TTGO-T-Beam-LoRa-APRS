@@ -185,7 +185,8 @@ void handle_SaveAPRSCfg() {
     WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
     Serial.println("Connecting to " + wifi_ssid);
     while (WiFi.status() != WL_CONNECTED) {
-      Serial.println("Not connected");
+      Serial.print("Not connected: ");
+      Serial.println((int)WiFi.status());
       vTaskDelay(500/portTICK_PERIOD_MS);
     }
   }
