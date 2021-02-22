@@ -386,6 +386,11 @@ void setup(){
   #endif
 
   #ifdef ENABLE_PREFERENCES
+    int clear_preferences = 0;
+    if(digitalRead(BUTTON)==LOW){
+      clear_preferences = 1;
+    }
+
     preferences.begin("cfg", false);
     aprsSymbolTable = preferences.getString(PREF_APRS_SYMBOL_TABLE);
     if (aprsSymbolTable.isEmpty()){
@@ -446,7 +451,14 @@ void setup(){
       preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
     }
     fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_PRESET) * 1000;
+    if (clear_preferences){
+      delay(1000);
+      if(digitalRead(BUTTON)==LOW){
+        clear_preferences = 2;
+        preferences.clear();
+      }
 
+    }
   #endif
 
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -476,7 +488,13 @@ void setup(){
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
      for(;;);                                                             // Don't proceed, loop forever
   }
-
+  #ifdef ENABLE_PREFERENCES
+    if (clear_preferences == 2){
+      writedisplaytext("LoRa-APRS","","","Factory reset!!","","",0);
+      delay(3000);
+      ESP.restart();
+    }
+  #endif
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
 
   Tcall = prepareCallsign(String(CALLSIGN));
