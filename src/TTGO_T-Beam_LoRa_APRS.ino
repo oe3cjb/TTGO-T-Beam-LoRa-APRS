@@ -450,7 +450,7 @@ void setup(){
       preferences.putBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT, true);
       preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
     }
-    fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_PRESET) * 1000;
+    fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET) * 1000;
     if (clear_preferences){
       delay(1000);
       if(digitalRead(BUTTON)==LOW){
