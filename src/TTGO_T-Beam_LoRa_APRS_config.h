@@ -25,7 +25,8 @@
 //#define BLUETOOTH_PIN "0000"
 //#define ENABLE_TNC_SELF_TELEMETRY
 //#define LOCAL_KISS_ECHO                               // echoing KISS frame back
-#define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
+//#define T_BEAM_V1_0                                     // if enabled t-beam v1.0 disabled t-beam V.0.7
+                                                          // AUTOMATICALLY SET BY platformio.ini env!
 //#define KISS_DEBUG
 #define ENABLE_WIFI
 #define NETWORK_TNC_PORT 8001
