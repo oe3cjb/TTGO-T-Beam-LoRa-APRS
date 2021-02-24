@@ -6,8 +6,11 @@
   #include "BluetoothSerial.h"
   extern BluetoothSerial SerialBT;
 #endif
+#if defined(ENABLE_WIFI)
+  #include "taskWebServer.h"
+#endif
 extern QueueHandle_t tncToSendQueue;
 extern QueueHandle_t tncReceivedQueue;
 
-void taskTNC(void *parameter);
+[[noreturn]] void taskTNC(void *parameter);
 

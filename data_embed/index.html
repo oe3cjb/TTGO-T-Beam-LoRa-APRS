@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>TTGO-T-Beam-LoRa-APRS <!--VERSION--></title>
+    <link rel="stylesheet" href="/style.css" type="text/css">
+    <script src="/js.js" type="text/javascript"></script>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<div class="container">
+    <section>
+        <div class="grid-container full">
+            <h2 class="u-full-width">WiFi Settings</h2>
+        </div>
+        <article>
+            <form action="/save_wifi_cfg" method="post">
+                <div class="grid-container quarters">
+                    <div>
+                        <div id="wifi_list">
+                        </div>
+                        <input type="button" value="Scan WiFi" id="scan_wifi_btn" onclick="scanWifi();">
+                    </div>
+                    <div>
+                        <label for="wifi_ssid">SSID</label>
+                        <input class="u-full-width" type="text" name="wifi_ssid" placeholder="Your Wifi SSID"
+                               id="wifi_ssid">
+                    </div>
+                    <div>
+                        <label for="wifi_password">Password</label>
+                        <input class="u-full-width" type="password" name="wifi_password" id="wifi_password">
+                    </div>
+                    <div>
+                        <input class="button-primary" type="submit" value="Save">
+                    </div>
+                </div>
+            </form>
+        </article>
+    </section>
+    <section>
+        <div class="grid-container full">
+            <h2 class="u-full-width">APRS Settings</h2>
+        </div>
+        <article>
+            <form action="/save_aprs_cfg" method="post">
+                <div class="grid-container quarters">
+                    <div>
+                        <label for="aprs_callsign">Callsign and SSID</label>
+                        <input class="u-full-width" type="text" minlength="3" name="aprs_callsign"
+                               placeholder="NOCALL-1" id="aprs_callsign">
+                    </div>
+                    <div>
+                        <label for="aprs_relay_path">Relay Path</label>
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_relay_path"
+                               id="aprs_relay_path">
+                    </div>
+                    <div>
+                        <label for="aprs_s_table">Symbol Table</label>
+                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_s_table"
+                               id="aprs_s_table">
+                    </div>
+                    <div>
+                        <label for="aprs_symbol">Symbol</label>
+                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_symbol"
+                               id="aprs_symbol">
+                    </div>
+                    <div>
+                        <label for="aprs_comment">Comment</label>
+                        <input class="u-full-width" type="text" minlength="0" maxlength="64" name="aprs_comment"
+                               id="aprs_comment">
+                    </div>
+                    <div>
+                        <label for="aprs_batt">Show Battery</label>
+                        <input name="aprs_batt" id="aprs_batt" type="checkbox" value="1">
+                    </div>
+                    <div>
+                        <label for="aprs_alt">Show Altitude</label>
+                        <input name="aprs_alt" id="aprs_alt" type="checkbox" value="1">
+                    </div>
+                </div>
+                <div class="grid-container quarters">
+                    <div>
+                        <label for="aprs_fixed_beac">Fixed Beacon (when&nbsp;no&nbsp;GPS)</label>
+                        <input name="aprs_fixed_beac" id="aprs_fixed_beac" type="checkbox" value="1">
+                    </div>
+                    <div>
+                        <label for="aprs_fb_interv">Fixed Beacon Interval (s)</label>
+                        <input name="aprs_fb_interv" id="aprs_fb_interv" type="number" min="120">
+                    </div>
+                    <div>
+                        <label for="aprs_lat_p">Latitude Preset</label>
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_lat_p" id="aprs_lat_p">
+                    </div>
+                    <div>
+                        <label for="aprs_lon_p">Longitude Preset</label>
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_lon_p" id="aprs_lon_p">
+                    </div>
+                </div>
+                <div class="grid-container full">
+                    <div>
+                        <input class="button-primary u-full-width" type="submit" value="Save">
+                    </div>
+                </div>
+            </form>
+        </article>
+    </section>
+    <section>
+        <div class="grid-container full">
+            <h2 class="u-full-width">Actions</h2>
+        </div>
+        <article>
+            <div class="grid-container quarters">
+                <form action="/reboot" method="post">
+                    <div>
+                        <input class="button-primary" type="submit" value="Reboot">
+                    </div>
+                </form>
+                <form action="/restore" method="post">
+                    <div>
+                        <input class="button-primary" type="submit" value="Factory reset">
+                    </div>
+                </form>
+            </div>
+        </article>
+    </section>
+</div>
+<footer>
+    <p><!--VERSION--></p>
+</footer>
+</body>
+</html>
