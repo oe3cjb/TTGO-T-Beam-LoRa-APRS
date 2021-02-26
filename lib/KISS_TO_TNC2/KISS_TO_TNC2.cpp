@@ -135,10 +135,16 @@ String decode_kiss(const String& kissFormattedFrame) {
  * @return
  */
 String encode_address_ax25(String tnc2Address) {
+    bool hasBeenDigipited = tnc2Address.indexOf('*') != -1;
+
     if (tnc2Address.indexOf('-') == -1){
+        if (hasBeenDigipited){
+            // ex. TCPIP* in tnc2Address
+            // so we skip last char
+            tnc2Address = tnc2Address.substring(0, tnc2Address.length()-1);
+        }
         tnc2Address += "-0";
     }
-    bool hasBeenDigipited = tnc2Address.indexOf('*') != -1;
 
     int separatorIndex = tnc2Address.indexOf('-');
     int ssid = tnc2Address.substring(separatorIndex + 1).toInt();
