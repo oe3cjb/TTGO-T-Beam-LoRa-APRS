@@ -23,7 +23,7 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 * if there is a GPS-FIX immediate sending of a frame with the position from the GPS
 * if there is no GPS-FIX, immediate sending of the frame with the position saved in the configuration
 
-### long press Oon boot 
+### long press On boot 
 * reset to factory 
 
 ### long press: on or off the GPS power supply 
