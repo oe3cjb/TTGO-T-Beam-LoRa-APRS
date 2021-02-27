@@ -276,7 +276,7 @@ void batt_read(){
 #endif
 }
 
-void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5, int warten) {
+void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3, String Line4, String Line5) {
   batt_read();
   if (BattVolts < 3.5 && BattVolts > 3.2){
     #ifdef T_BEAM_V1_0
@@ -320,7 +320,7 @@ String getSatAndBatInfo() {
 }
 
 void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo(), 1);
+  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
 }
 
 #if defined(KISS_PROTOCOL)
@@ -489,22 +489,22 @@ void setup(){
   }
   #ifdef ENABLE_PREFERENCES
     if (clear_preferences == 2){
-      writedisplaytext("LoRa-APRS","","","Factory reset","","",0);
+      writedisplaytext("LoRa-APRS","","","Factory reset","","");
       delay(1000);
       if(digitalRead(BUTTON)==LOW){
         clear_preferences = 3;
         preferences.clear();
         preferences.end();
-        writedisplaytext("LoRa-APRS","","Factory reset","Done!","","",0);
+        writedisplaytext("LoRa-APRS","","Factory reset","Done!","","");
         delay(2000);
         ESP.restart();
       } else {
-        writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","",0);
+        writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
         delay(2000);
       }
     }
   #endif
-  writedisplaytext("LoRa-APRS","","Init:","Display OK!","","",1000);
+  writedisplaytext("LoRa-APRS","","Init:","Display OK!","","");
 
   Tcall = prepareCallsign(String(CALLSIGN));
   #ifdef ENABLE_PREFERENCES
@@ -516,23 +516,23 @@ void setup(){
   #endif
 
   if (!rf95.init()) {
-    writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","",250);
+    writedisplaytext("LoRa-APRS","","Init:","RF95 FAILED!",":-(","");
     for(;;); // Don't proceed, loop forever
   }
 
   if (max_time_to_nextTX < nextTX){
     max_time_to_nextTX=nextTX;
   }
-  writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","",250);
-  writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","",250);
+  writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","");
+  writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","");
   xTaskCreate(taskGPS, "taskGPS", 5000, nullptr, 1, nullptr);
-  writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","",250);
+  writedisplaytext(" "+Tcall,"","Init:","GPS Task Created!","","");
   #ifndef T_BEAM_V1_0
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_7,ADC_ATTEN_DB_6);
   #endif
   batt_read();
-  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"",250);
+  writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"");
   rf95.setFrequency(433.775);
   rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
   rf95.setTxPower(txPower);
@@ -546,16 +546,16 @@ void setup(){
       SerialBT.setPin(BLUETOOTH_PIN);
     #endif
     SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
-    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","",250);
+    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
   #endif
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
     xTaskCreate(taskWebServer, "taskWebServer", 40000, (void*)(&webServerCfg), 1, nullptr);
-    writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","",250);
+    writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","");
   #endif
 
-  writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","",250);
-  writedisplaytext("","","","","","",0);
+  writedisplaytext("LoRa-APRS","","Init:","FINISHED OK!","   =:-)   ","");
+  writedisplaytext("","","","","","");
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
@@ -577,10 +577,10 @@ void loop() {
       time_delay = millis() + 1500;
       if(digitalRead(BUTTON)==HIGH){
         if(gps_state == true && gps.location.isValid()){
-            writedisplaytext("((MAN TX))","","","","","",1);
+            writedisplaytext("((MAN TX))","","","","","");
             sendpacket();
         }else{
-            writedisplaytext("((FIX TX))","","","","","",1);
+            writedisplaytext("((FIX TX))","","","","","");
             sendpacket();
         }
         key_up = true;
@@ -595,7 +595,7 @@ void loop() {
         #ifdef T_BEAM_V1_0
           axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
         #endif
-        writedisplaytext("((GPSOFF))","","","","","",1);
+        writedisplaytext("((GPSOFF))","","","","","");
         next_fixed_beacon = millis() + fix_beacon_interval;
 
       }else{
@@ -603,7 +603,7 @@ void loop() {
         #ifdef T_BEAM_V1_0
           axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
         #endif
-        writedisplaytext("((GPS ON))","","","","","",1);                // GPS ON
+        writedisplaytext("((GPS ON))","","","","","");                // GPS ON
       }
   }
   
@@ -615,7 +615,7 @@ void loop() {
   if (fixed_beacon_enabled) {
     if (millis() >= next_fixed_beacon && !gps_state) {
       next_fixed_beacon = millis() + fix_beacon_interval;
-      writedisplaytext("((AUT TX))", "", "", "", "", "", 1);
+      writedisplaytext("((AUT TX))", "", "", "", "", "");
       sendpacket();
     }
   }
@@ -624,7 +624,7 @@ void loop() {
     String *TNC2DataFrame = nullptr;
     if (tncToSendQueue) {
       if (xQueueReceive(tncToSendQueue, &TNC2DataFrame, (1 / portTICK_PERIOD_MS)) == pdPASS) {
-        writedisplaytext("((KISSTX))","","","","","",1);
+        writedisplaytext("((KISSTX))","","","","","");
         time_to_refresh = millis() + showRXTime;
         loraSend(txPower, TXFREQ, *TNC2DataFrame);
         delete TNC2DataFrame;
@@ -645,7 +645,7 @@ void loop() {
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
-        writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "", showRXTime);
+        writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "");
         #ifdef KISS_PROTOCOL
           sendToTNC(loraReceivedFrameString);
         #endif
@@ -704,7 +704,7 @@ void loop() {
   }
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
-      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo(),1);
+      writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo());
       sendpacket();
     } else {
       if (millis() > time_to_refresh){
@@ -714,7 +714,7 @@ void loop() {
   }else{
     if (millis() > time_to_refresh){
       if (gps.location.age() < 2000) {
-        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo() ,1);
+        writedisplaytext(" "+Tcall,"Time to TX: "+String(((lastTX+nextTX)-millis())/1000)+"sec","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph())+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo());
       } else {
         displayInvalidGPS();
       }
