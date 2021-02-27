@@ -68,14 +68,14 @@ boolean key_up = true;
 boolean t_lock = false;
 boolean fixed_beacon_enabled = false;
 #ifdef SHOW_ALT
-boolean showAltitude = true;
+  boolean showAltitude = true;
 #else
-boolean showAltitude = false;
+  boolean showAltitude = false;
 #endif
 #ifdef SHOW_BATT
-boolean showBattery = true;
+  boolean showBattery = true;
 #else
-boolean showBattery = false;
+  boolean showBattery = false;
 #endif
 
 // Variables and Constants
@@ -127,7 +127,7 @@ float avg_c_y, avg_c_x;
 uint8_t txPower = TXdbmW;
 
 #ifdef ENABLE_WIFI
-tWebServerCfg webServerCfg;
+  tWebServerCfg webServerCfg;
 #endif
 
 
@@ -186,7 +186,6 @@ void prepareAPRSFrame(){
     aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
     aprs_lon = 900000000 + Tlon * 10000000 / 2;
     aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
-  //}
 
   outString = "";
   outString += Tcall;
@@ -377,12 +376,13 @@ void sendTelemetryFrame() {
 
 void setup(){
   #ifdef DIGI_PATH
-  relay_path = DIGI_PATH;
+    relay_path = DIGI_PATH;
   #else
-  relay_path = "";
+    relay_path = "";
   #endif
+
   #ifdef FIXED_BEACON_EN
-  fixed_beacon_enabled = true;
+    fixed_beacon_enabled = true;
   #endif
 
   #ifdef ENABLE_PREFERENCES
@@ -471,8 +471,8 @@ void setup(){
   Wire.begin(I2C_SDA, I2C_SCL);
 
   #ifdef T_BEAM_V1_0
-    if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-    }
+    //if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+    //}
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
@@ -485,7 +485,7 @@ void setup(){
   #endif
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
-     for(;;);                                                             // Don't proceed, loop forever
+      for(;;);                                                             // Don't proceed, loop forever
   }
   #ifdef ENABLE_PREFERENCES
     if (clear_preferences == 2){
