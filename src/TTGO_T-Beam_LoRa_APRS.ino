@@ -471,8 +471,8 @@ void setup(){
   Wire.begin(I2C_SDA, I2C_SCL);
 
   #ifdef T_BEAM_V1_0
-    //if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-    //}
+    if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+    }
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
