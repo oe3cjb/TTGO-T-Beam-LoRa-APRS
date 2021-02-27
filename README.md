@@ -24,7 +24,7 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 * if there is no GPS-FIX, immediate sending of the frame with the position saved in the configuration
 
 ### long press On boot 
-* reset to factory 
+* reset to factory default
 
 ### long press: on or off the GPS power supply 
 * if the "FIXED_BEACON_EN" option is enabled in the configuration, a beacon will be sent every set time interval
