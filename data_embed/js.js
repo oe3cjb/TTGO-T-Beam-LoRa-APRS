@@ -40,3 +40,51 @@ window.onload = function () {
     xhttp.open("GET", "/cfg", true);
     xhttp.send();
 };
+
+function onFileChange(obj){
+  var fileName = obj.value.split('\\');
+  document.getElementById('file-input').innerHTML = fileName[fileName.length-1];
+};
+
+function updateFileUpload(event) {
+  event.preventDefault();
+  const file_input = document.getElementById("file-input");
+  const file_progress = document.getElementById("file-progress");
+  const data = new FormData(event.target);
+  const xhr = new XMLHttpRequest();
+  file_progress.classList.add("show");
+  file_progress.value = 0;
+
+  xhr.upload.onload = () => {
+      window.location.reload();
+  };
+
+  // listen for `upload.error` event
+  xhr.upload.onerror = () => {
+      alert("Error!");
+  }
+
+  // listen for `upload.abort` event
+  xhr.upload.onabort = () => {
+      console.error('Upload cancelled.');
+  }
+
+  xhr.upload.onprogress = (event) => {
+      // event.loaded returns how many bytes are downloaded
+      // event.total returns the total number of bytes
+      // event.total is only available if server sends `Content-Length` header
+      console.log(`Uploaded ${event.loaded} of ${event.total} bytes`);
+      let progress = 100 * (event.loaded / event.total);
+      if (progress == 100){
+          file_input.innerHTML = "Upgrade in progress. Please wait until page reloads!";
+          file_progress.removeAttribute('value');
+      } else {
+        file_input.innerHTML = "Uploaded: " + Math.round(progress) +"%";
+        file_progress.value = progress;
+      }
+  }
+
+  xhr.open('POST', '/update');
+
+  xhr.send(data);
+}

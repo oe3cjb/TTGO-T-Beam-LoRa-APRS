@@ -850,3 +850,12 @@ header {
     height: 228px;
     margin: 0 auto;
 }
+
+#file-progress {
+    display: none;
+    width: 80%;
+}
+
+#file-progress.show {
+    display: inline;
+}

@@ -4,6 +4,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
+#include <Update.h>
 
 #ifndef TASK_WEBSERVER
 #define TASK_WEBSERVER

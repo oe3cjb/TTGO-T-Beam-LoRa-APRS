@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>TTGO-T-Beam-LoRa-APRS <!--VERSION--></title>
-    <link rel="stylesheet" href="/style.css" type="text/css">
-    <script src="/js.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script src="js.js" type="text/javascript"></script>
     <link rel="icon" href="data:,">
 </head>
 <body>
@@ -122,6 +122,23 @@
                 <form action="/restore" method="post">
                     <div>
                         <input class="button-primary" type="submit" value="Factory reset">
+                    </div>
+                </form>
+            </div>
+        </article>
+    </section>
+    <section>
+        <div class="grid-container full">
+            <h2 class="u-full-width">Update</h2>
+        </div>
+        <article>
+            <div class="grid-container full">
+                <form action="/update" method="post" enctype="multipart/form-data" id="upload_form" onsubmit="updateFileUpload(event)">
+                    <div>
+                        <label id="file-input" for="file">Choose file...</label>
+                        <div><progress id="file-progress" max="100"></progress></div>
+                        <input type="file" name="update" id="file" onchange="onFileChange(this)">
+                        <input class="button-primary" type="submit" value="Update">
                     </div>
                 </form>
             </div>
