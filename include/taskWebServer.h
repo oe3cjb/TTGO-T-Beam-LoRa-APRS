@@ -16,6 +16,8 @@ extern Preferences preferences;
   extern WiFiServer tncServer;
 #endif
 // MAX 15 chars for preferenece key!!!
+static const char *const PREF_WIFI_SSID = "wifi_ssid";
+static const char *const PREF_WIFI_PASSWORD = "wifi_password";
 static const char *const PREF_APRS_CALLSIGN = "aprs_callsign";
 static const char *const PREF_APRS_RELAY_PATH = "aprs_relay_path";
 static const char *const PREF_APRS_RELAY_PATH_INIT = "aprs_relay_init";
