@@ -105,8 +105,8 @@ void handle_Restore() {
 
 void handle_Cfg() {
   String jsonData = "{";
-  jsonData += R"(PREF_WIFI_SSID:")" + jsonEscape(preferences.getString(PREF_WIFI_SSID)) + R"(",)";
-  jsonData += R"(PREF_WIFI_PASSWORD:")" + jsonEscape((preferences.getString(PREF_WIFI_PASSWORD).isEmpty() ? String("") : "*")) + R"(",)";
+  jsonData += String("\"") + PREF_WIFI_PASSWORD + "\": \"" + jsonEscape((preferences.getString(PREF_WIFI_PASSWORD).isEmpty() ? String("") : "*")) + R"(",)";
+  jsonData += jsonLineFromPreferenceString(PREF_WIFI_SSID);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_CALLSIGN);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_RELAY_PATH);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_SYMBOL_TABLE);
