@@ -8,7 +8,7 @@
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 #define KISS_PROTOCOL                               // If enabled send and receive data in SIMPLE KISS format to serial port
 #define CALLSIGN "NOCALL-0"                         // enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
-#define DIGI_PATH "WIDE1-1"                         // one hope please (WIDE1-1)
+#define DIGI_PATH "ECHO"                            // one hope, please use simple ECHO alias
 #define FIXED_BEACON_EN                             // allows cyclic sending of a bicon when GPS is turned off
 #define LATIDUDE_PRESET "0000.00N"                  // please in APRS notation: DDMM.mmN or DDMM.mmS (used for manual or fixed beacon sending)
 #define LONGITUDE_PRESET "00000.00E"                // please in APRS notation: DDDMM.mmE or DDDMM.mmW (used for manual or fixed beacon sending)
