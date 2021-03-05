@@ -22,6 +22,8 @@
 #define TXFREQ 433.775                              // Set transmit frequency in MHz
 #define TXdbmW 20                                   // Set transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
 #define ENABLE_BLUETOOTH                            // bluetooth KISS interface enable
+#define ENABLE_OLED                                 // enable oled
+//#define ENABLE_LED_SIGNALING                      // enable red and blue led signalling
 //#define BLUETOOTH_PIN "0000"                      // bluetooth pairing pin
 //#define ENABLE_TNC_SELF_TELEMETRY                 //    
 //#define LOCAL_KISS_ECHO                           // echoing KISS frame back
@@ -32,4 +34,4 @@
 //#define ENABLE_WIFI_CLIENT_DEBUG                  //
 #define MAX_TIME_TO_NEXT_TX 360000L                 // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
 #define FIX_BEACON_INTERVAL 1800000L                // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default
-#define TNC_SELF_TELEMETRY_INTERVAL (5 * 60 * 1000) //
+//#define TNC_SELF_TELEMETRY_INTERVAL (5 * 60 * 1000) //

@@ -255,7 +255,9 @@ void sendpacket(){
  * @param message
  */
 void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
-  digitalWrite(TXLED, LOW);
+  #ifdef ENABLE_LED_SIGNALING
+    digitalWrite(TXLED, LOW);
+  #endif
   lastTX = millis();
 
   int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
@@ -265,7 +267,9 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, messageSize);
   rf95.waitPacketSent();
-  digitalWrite(TXLED, HIGH);
+  #ifdef ENABLE_LED_SIGNALING
+    digitalWrite(TXLED, HIGH);
+  #endif
 }
 
 void batt_read(){
@@ -280,7 +284,9 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   batt_read();
   if (BattVolts < 3.5 && BattVolts > 3.2){
     #ifdef T_BEAM_V1_0
+      # ifdef ENABLE_LED_SIGNALING
       axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+      #endif
     #endif
   }
   display.clearDisplay();
@@ -473,11 +479,15 @@ void setup(){
   #ifdef T_BEAM_V1_0
     if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
     }
-    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // LoRa
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
+    #ifdef ENABLE_OLED
+      axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
+    #else
+      axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
+    #endif
     axp.setDCDC1Voltage(3300);
     // Enable ADC to measure battery current, USB voltage etc.
     axp.adc1Enable(0xfe, true);
@@ -634,7 +644,9 @@ void loop() {
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef T_BEAM_V1_0
-      axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+      #ifdef ENABLE_LED_SIGNALING
+        axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+      #endif
     #endif
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
@@ -652,7 +664,9 @@ void loop() {
       }
     #endif
     #ifdef T_BEAM_V1_0
-      axp.setChgLEDMode(AXP20X_LED_OFF);
+      #ifdef ENABLE_LED_SIGNALING
+        axp.setChgLEDMode(AXP20X_LED_OFF);
+      #endif
     #endif
   }
 

@@ -6,9 +6,9 @@ SFE_UBLOX_GPS myGPS;
 
 // Pins for GPS
 #ifdef T_BEAM_V1_0
-static const int RXPin = 12, TXPin = 34;
+  static const int RXPin = 12, TXPin = 34;
 #else
-static const int RXPin = 15, TXPin = 12;
+  static const int RXPin = 15, TXPin = 12;
 #endif
 static const uint32_t GPSBaud = 9600; //GPS
 HardwareSerial gpsSerial(1);        // TTGO has HW serial
