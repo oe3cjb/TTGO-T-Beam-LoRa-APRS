@@ -24,14 +24,14 @@ void taskGPS(void *parameter) {
     // https://github.com/lora-aprs/TTGO-T-Beam_GPS-reset
     if(myGPS.begin(gpsSerial)){
           myGPS.setUART1Output(COM_TYPE_NMEA); //Set the UART port to output NMEA only
-          myGPS.saveConfiguration(); //Save the current settings to flash and BBR
+          //myGPS.saveConfiguration(); //Save the current settings to flash and BBR
           myGPS.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
           myGPS.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
           myGPS.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
           myGPS.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
           myGPS.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
           myGPS.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
-          myGPS.saveConfiguration(); //Save the current settings to flash and BBR    
+          //myGPS.saveConfiguration(); //Save the current settings to flash and BBR    
           delay(1000);
     }
   }
