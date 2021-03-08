@@ -19,9 +19,8 @@
         <article>
             <form action="/save_wifi_cfg" method="post">
                 <div class="grid-container quarters">
-                    <div>
-                        <div id="wifi_list">
-                        </div>
+                    <div id="wifi_list">
+                        <label for="wifi_ssid">Network</label>
                         <input type="button" value="Scan WiFi" id="scan_wifi_btn" onclick="scanWifi();">
                     </div>
                     <div>
@@ -32,10 +31,10 @@
                         <label for="wifi_password">Password</label>
                         <input class="u-full-width" type="password" name="wifi_password" id="wifi_password">
                     </div>
-                    <div>
-                        <input class="button-primary" type="submit" value="Save">
-                    </div>
                 </div>
+                <div class="grid-container full">
+                    <input class="button-primary" type="submit" value="Save">
+                </div>                
             </form>
         </article>
     </section>
@@ -107,6 +106,34 @@
             </form>
         </article>
     </section>
+    <section>
+        <article>
+            <form action="/save_device_cfg" method="post">
+            <div class="grid-container full">
+                <h2 class="u-full-width">Device Settings</h2>
+            </div>
+            <div class="grid-container quarters">
+                <div>
+                    <label for="bt_enabled">Bluetooth enabled</label>
+                    <input name="bt_enabled" id="bt_enabled" type="checkbox" value="1" title="enable or disable bluetooth">
+                </div> 
+                <div>
+                    <label for="oled_enabled">Oled display enabled</label>
+                    <input name="oled_enabled" id="oled_enabled" type="checkbox" value="1" title="enable or disable oled lcd" DISABLED>
+                </div>
+                <div>
+                    <label for="led_enable">LED signaling</label>
+                    <input name="led_enable" id="led_enable" type="checkbox" value="1" title="enable or disable LED" DISABLED>
+                </div>                
+            </div>             
+            <div class="grid-container full">
+                <div>
+                    <input class="button-primary u-full-width" type="submit" value="Save" title="save settings, remember reboot tracker after save">
+                </div>
+            </div>
+            </form>            
+        </article>
+    </section>        
     <section>
         <div class="grid-container full">
             <h2 class="u-full-width">Actions</h2>

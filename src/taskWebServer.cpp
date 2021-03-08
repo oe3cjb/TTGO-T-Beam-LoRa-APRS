@@ -119,6 +119,7 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_GPS_EN);
+  jsonData += jsonLineFromPreferenceBool(PREF_DEV_BT_EN);
   jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
   jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
   jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
@@ -156,9 +157,16 @@ void handle_SaveAPRSCfg() {
   preferences.putBool(PREF_APRS_SHOW_ALTITUDE, server.hasArg(PREF_APRS_SHOW_ALTITUDE));
   preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET, server.hasArg(PREF_APRS_FIXED_BEACON_PRESET));
   preferences.putBool(PREF_APRS_GPS_EN, server.hasArg(PREF_APRS_GPS_EN));
+
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
+}
 
+void handle_saveDeviceCfg(){
+  preferences.putBool(PREF_DEV_BT_EN, server.hasArg(PREF_DEV_BT_EN));
+
+  server.sendHeader("Location", "/");
+  server.send(302,"text/html", "");
 }
 
 [[noreturn]] void taskWebServer(void *parameter) {
@@ -174,6 +182,7 @@ void handle_SaveAPRSCfg() {
   server.on("/reboot", handle_Reboot);
   server.on("/cfg", handle_Cfg);
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
+  server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
   server.onNotFound(handle_NotFound);
 

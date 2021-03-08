@@ -77,6 +77,11 @@ boolean fixed_beacon_enabled = false;
 #else
   boolean showBattery = false;
 #endif
+#ifdef ENABLE_BLUETOOTH
+  boolean enable_bluetooth = true;
+#else
+  boolean enable_bluetooth = false;
+#endif
 
 // Variables and Constants
 String loraReceivedFrameString = "";     //data on buff is copied to this string
@@ -470,6 +475,12 @@ void setup(){
       }
 
     }
+
+    if (!preferences.getBool(PREF_DEV_BT_EN_INIT)){
+      preferences.putBool(PREF_DEV_BT_EN_INIT, true);
+      preferences.putBool(PREF_DEV_BT_EN, enable_bluetooth);
+    }
+    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);      
   #endif
 
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -557,13 +568,16 @@ void setup(){
     xTaskCreatePinnedToCore(taskTNC, "taskTNC", 10000, nullptr, 1, nullptr, xPortGetCoreID());
   #endif
 
-  #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
-    #ifdef BLUETOOTH_PIN
-      SerialBT.setPin(BLUETOOTH_PIN);
-    #endif
-    SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
-    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+  #if defined(KISS_PROTOCOL)
+    if (enable_bluetooth){
+      #ifdef BLUETOOTH_PIN
+        SerialBT.setPin(BLUETOOTH_PIN);
+      #endif
+      SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
+      writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+    }
   #endif
+
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
     xTaskCreate(taskWebServer, "taskWebServer", 40000, (void*)(&webServerCfg), 1, nullptr);
