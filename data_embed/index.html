@@ -26,8 +26,7 @@
                     </div>
                     <div>
                         <label for="wifi_ssid">SSID</label>
-                        <input class="u-full-width" type="text" name="wifi_ssid" placeholder="Your Wifi SSID"
-                               id="wifi_ssid">
+                        <input class="u-full-width" type="text" name="wifi_ssid" placeholder="Your Wifi SSID" id="wifi_ssid">
                     </div>
                     <div>
                         <label for="wifi_password">Password</label>
@@ -49,65 +48,60 @@
                 <div class="grid-container quarters">
                     <div>
                         <label for="aprs_callsign">Callsign and SSID</label>
-                        <input class="u-full-width" type="text" minlength="3" name="aprs_callsign"
-                               placeholder="NOCALL-1" id="aprs_callsign">
+                        <input class="u-full-width" type="text" minlength="3" name="aprs_callsign" placeholder="NOCALL-1" id="aprs_callsign" title="your callsign with SSID">
                     </div>
                     <div>
                         <label for="aprs_relay_path">Relay Path</label>
-                        <input class="u-full-width" type="text" minlength="0" name="aprs_relay_path"
-                               id="aprs_relay_path">
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_relay_path" id="aprs_relay_path" title="APRS path, use the shortest as possible, ECHO or WIDE1-1">
                     </div>
                     <div>
                         <label for="aprs_s_table">Symbol Table</label>
-                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_s_table"
-                               id="aprs_s_table">
+                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_s_table" id="aprs_s_table" title="use primary / or secondary table \ ">
                     </div>
                     <div>
                         <label for="aprs_symbol">Symbol</label>
-                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_symbol"
-                               id="aprs_symbol">
+                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_symbol" id="aprs_symbol" title="[ - jogger, Y - jacht, > - car, b - bike ">
                     </div>
                     <div>
                         <label for="aprs_alt">Show Altitude</label>
-                        <input name="aprs_alt" id="aprs_alt" type="checkbox" value="1">
+                        <input name="aprs_alt" id="aprs_alt" type="checkbox" value="1" title=" show altitude as frame part">
                     </div>                    
                     <div>
                         <label for="aprs_comment">Comment</label>
-                        <input class="u-full-width" type="text" minlength="0" maxlength="64" name="aprs_comment"
-                               id="aprs_comment">
+                        <input class="u-full-width" type="text" minlength="0" maxlength="64" name="aprs_comment" id="aprs_comment" title=" personal comment">
                     </div>
                     <div>
                         <label for="aprs_batt">Show Battery</label>
-                        <input name="aprs_batt" id="aprs_batt" type="checkbox" value="1">
+                        <input name="aprs_batt" id="aprs_batt" type="checkbox" value="1" title=" show battery voltage after personal comment">
                     </div>
                 </div>
                 <div class="grid-container quarters">
                     <div>
-                        <label for="aprs_fixed_beac">Fixed Beacon (when&nbsp;no&nbsp;GPS)</label>
-                        <input name="aprs_fixed_beac" id="aprs_fixed_beac" type="checkbox" value="1">
+                        <label for="aprs_fixed_beac">Fixed Beacon</label>
+                        <input name="aprs_fixed_beac" id="aprs_fixed_beac" type="checkbox" value="1" title="enable fixed beacon when GPS is disabled or no fix"> 
                     </div>
                     <div>
                         <label for="aprs_fb_interv">Fixed Beacon Interval (s)</label>
-                        <input name="aprs_fb_interv" id="aprs_fb_interv" type="number" min="120">
+                        <input name="aprs_fb_interv" id="aprs_fb_interv" type="number" min="120" title="time between sending a beacon if Fixed Beacon option is selected ">
                     </div>
                     <div>
                         <label for="aprs_lat_p">Latitude Preset</label>
-                        <input class="u-full-width" type="text" minlength="0" name="aprs_lat_p" id="aprs_lat_p">
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_lat_p" id="aprs_lat_p" title="latitude for fixed bicon">
                     </div>
                     <div>
                         <label for="aprs_lon_p">Longitude Preset</label>
-                        <input class="u-full-width" type="text" minlength="0" name="aprs_lon_p" id="aprs_lon_p">
+                        <input class="u-full-width" type="text" minlength="0" name="aprs_lon_p" id="aprs_lon_p" title="longtitude for fixed bicon">
                     </div>
                 </div>
                 <div class="grid-container quarters">
                     <div>
                         <label for="gps_enabled">GPS enabled</label>
-                        <input name="gps_enabled" id="gps_enabled" type="checkbox" value="1">
+                        <input name="gps_enabled" id="gps_enabled" type="checkbox" value="1" title="enable or disable GPS">
                     </div>                    
                 </div>
                 <div class="grid-container full">
                     <div>
-                        <input class="button-primary u-full-width" type="submit" value="Save">
+                        <input class="button-primary u-full-width" type="submit" value="Save" title="save settings, remember reboot tracker after save">
                     </div>
                 </div>
             </form>
