@@ -428,6 +428,12 @@ void setup(){
     }
     showAltitude = preferences.getBool(PREF_APRS_SHOW_ALTITUDE);
 
+    if (!preferences.getBool(PREF_APRS_GPS_EN_INIT)){
+      preferences.putBool(PREF_APRS_GPS_EN_INIT, true);
+      preferences.putBool(PREF_APRS_GPS_EN, gps_state);
+    }
+    gps_state = preferences.getBool(PREF_APRS_GPS_EN);    
+
     if (!preferences.getBool(PREF_APRS_SHOW_BATTERY_INIT)){
       preferences.putBool(PREF_APRS_SHOW_BATTERY_INIT, true);
       preferences.putBool(PREF_APRS_SHOW_BATTERY, showBattery);
@@ -607,6 +613,8 @@ void loop() {
         #endif
         writedisplaytext("((GPSOFF))","","","","","");
         next_fixed_beacon = millis() + fix_beacon_interval;
+        preferences.putBool(PREF_APRS_GPS_EN_INIT, false);
+        preferences.putBool(PREF_APRS_GPS_EN, false);        
 
       }else{
         gps_state = true;
@@ -614,6 +622,8 @@ void loop() {
           axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
         #endif
         writedisplaytext("((GPS ON))","","","","","");                // GPS ON
+        preferences.putBool(PREF_APRS_GPS_EN_INIT, true);
+        preferences.putBool(PREF_APRS_GPS_EN, true);  
       }
   }
   

@@ -35,6 +35,8 @@ static const char *const PREF_APRS_FIXED_BEACON_PRESET = "aprs_fixed_beac";
 static const char *const PREF_APRS_FIXED_BEACON_PRESET_INIT = "aprs_fix_b_init";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET = "aprs_fb_interv";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT = "aprs_fb_in_init";
+static const char *const PREF_APRS_GPS_EN = "gps_enabled";
+static const char *const PREF_APRS_GPS_EN_INIT = "gps_state_init";
 
 typedef struct {
   String callsign;

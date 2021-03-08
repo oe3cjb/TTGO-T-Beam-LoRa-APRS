@@ -118,6 +118,7 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_BATTERY);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
+  jsonData += jsonLineFromPreferenceBool(PREF_APRS_GPS_EN);
   jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
   jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
   jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
@@ -154,8 +155,7 @@ void handle_SaveAPRSCfg() {
   preferences.putBool(PREF_APRS_SHOW_BATTERY, server.hasArg(PREF_APRS_SHOW_BATTERY));
   preferences.putBool(PREF_APRS_SHOW_ALTITUDE, server.hasArg(PREF_APRS_SHOW_ALTITUDE));
   preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET, server.hasArg(PREF_APRS_FIXED_BEACON_PRESET));
-
-
+  preferences.putBool(PREF_APRS_GPS_EN, server.hasArg(PREF_APRS_GPS_EN));
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
 
