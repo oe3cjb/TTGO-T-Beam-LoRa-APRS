@@ -67,6 +67,7 @@ boolean gps_state = true;
 boolean key_up = true;
 boolean t_lock = false;
 boolean fixed_beacon_enabled = false;
+boolean show_cmt = true;
 #ifdef SHOW_ALT
   boolean showAltitude = true;
 #else
@@ -81,6 +82,11 @@ boolean fixed_beacon_enabled = false;
   boolean enable_bluetooth = true;
 #else
   boolean enable_bluetooth = false;
+#endif
+#ifdef ENABLE_OLED
+  boolean enabled_oled = true;
+#else
+  boolean enabled_oled = false;
 #endif
 
 // Variables and Constants
@@ -232,8 +238,10 @@ void prepareAPRSFrame(){
     outString += aprsLonPreset;
     outString += aprsSymbol;
   }
-  outString += aprsComment;
-
+  if(show_cmt){
+    outString += aprsComment;
+  }
+  
   if (showBattery) {
     outString += " Batt=";
     outString += String(BattVolts, 2);
@@ -476,11 +484,23 @@ void setup(){
 
     }
 
+    if (!preferences.getBool(PREF_APRS_SHOW_CMT_INIT)){
+      preferences.putBool(PREF_APRS_SHOW_CMT_INIT, true);
+      preferences.putBool(PREF_APRS_SHOW_CMT, show_cmt);
+    }
+    show_cmt = preferences.getBool(PREF_APRS_SHOW_CMT);
+
     if (!preferences.getBool(PREF_DEV_BT_EN_INIT)){
       preferences.putBool(PREF_DEV_BT_EN_INIT, true);
       preferences.putBool(PREF_DEV_BT_EN, enable_bluetooth);
     }
-    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);      
+    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);    
+
+    if (!preferences.getBool(PREF_DEV_OL_EN_INIT)){
+      preferences.putBool(PREF_DEV_OL_EN_INIT, true);
+      preferences.putBool(PREF_DEV_OL_EN,enabled_oled);
+    }
+    enabled_oled  = preferences.getBool(PREF_DEV_OL_EN); 
   #endif
 
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -500,11 +520,6 @@ void setup(){
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-    #ifdef ENABLE_OLED
-      axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
-    #else
-      axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
-    #endif
     axp.setDCDC1Voltage(3300);
     // Enable ADC to measure battery current, USB voltage etc.
     axp.adc1Enable(0xfe, true);
@@ -591,6 +606,11 @@ void setup(){
   digitalWrite(TXLED, HIGH);
   #ifdef T_BEAM_V1_0
     axp.setChgLEDMode(AXP20X_LED_OFF);
+    if (enabled_oled){
+      axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
+    }else{
+      axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
+    }  
   #endif
 }
 
