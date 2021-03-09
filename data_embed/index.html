@@ -59,7 +59,7 @@
                     </div>
                     <div>
                         <label for="aprs_symbol">Symbol</label>
-                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_symbol" id="aprs_symbol" title="[ - jogger, Y - jacht, > - car, b - bike ">
+                        <input class="u-full-width" type="text" minlength="1" maxlength="1" name="aprs_symbol" id="aprs_symbol" title="select an icon, for example: [ - jogger, Y - jacht, > - car, b - bike ">
                     </div>
                     <div>
                         <label for="aprs_alt">Show Altitude</label>
@@ -118,18 +118,24 @@
             </div>
             <div class="grid-container quarters">
                 <div>
+                    <label for="oled_enabled">Display dimmer enabled</label>
+                    <input name="oled_enabled" id="oled_enabled" type="checkbox" value="1" title="enable or disable oled dimmer">
+                </div>                
+                <div>
                     <label for="bt_enabled">Bluetooth enabled</label>
                     <input name="bt_enabled" id="bt_enabled" type="checkbox" value="1" title="enable or disable bluetooth">
                 </div> 
                 <div>
-                    <label for="oled_enabled">Display dimmer enabled</label>
-                    <input name="oled_enabled" id="oled_enabled" type="checkbox" value="1" title="enable or disable oled dimmer">
-                </div>
-                <div>
                     <label for="led_enable">LED signaling</label>
                     <input name="led_enable" id="led_enable" type="checkbox" value="1" title="enable or disable LED" DISABLED>
                 </div>                
-            </div>             
+            </div>   
+            <div class="grid-container quarters">
+                <div>
+                    <label for="sh_rxtime">Display show RX time (s)</label>
+                    <input name="sh_rxtime" id="sh_rxtime" type="number" min="1" max="45" title="show RX packet for seconds">
+                </div>                
+            </div>                      
             <div class="grid-container full">
                 <div>
                     <input class="button-primary u-full-width" type="submit" value="Save" title="save settings, remember reboot tracker after save">

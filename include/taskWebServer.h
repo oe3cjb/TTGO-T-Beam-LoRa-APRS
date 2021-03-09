@@ -43,6 +43,8 @@ static const char *const PREF_DEV_BT_EN = "bt_enabled";
 static const char *const PREF_DEV_BT_EN_INIT = "bt_enabled_init";
 static const char *const PREF_DEV_OL_EN = "oled_enabled";
 static const char *const PREF_DEV_OL_EN_INIT = "ol_enabled_init";
+static const char *const PREF_DEV_SHOW_RX_TIME = "sh_rxtime";
+static const char *const PREF_DEV_SHOW_RX_TIME_INIT = "sh_rxtime_init";
 
 typedef struct {
   String callsign;

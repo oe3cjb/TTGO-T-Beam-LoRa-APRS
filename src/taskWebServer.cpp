@@ -122,6 +122,7 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceBool(PREF_DEV_OL_EN);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_CMT);
   jsonData += jsonLineFromPreferenceBool(PREF_DEV_BT_EN);
+  jsonData += jsonLineFromPreferenceInt(PREF_DEV_SHOW_RX_TIME);
   jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
   jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
   jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
@@ -155,6 +156,7 @@ void handle_SaveAPRSCfg() {
   if (server.hasArg(PREF_APRS_LONGITUDE_PRESET)){
     preferences.putString(PREF_APRS_LONGITUDE_PRESET, server.arg(PREF_APRS_LONGITUDE_PRESET));
   }
+
   preferences.putBool(PREF_APRS_SHOW_BATTERY, server.hasArg(PREF_APRS_SHOW_BATTERY));
   preferences.putBool(PREF_APRS_SHOW_ALTITUDE, server.hasArg(PREF_APRS_SHOW_ALTITUDE));
   preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET, server.hasArg(PREF_APRS_FIXED_BEACON_PRESET));
@@ -168,7 +170,9 @@ void handle_SaveAPRSCfg() {
 void handle_saveDeviceCfg(){
   preferences.putBool(PREF_DEV_BT_EN, server.hasArg(PREF_DEV_BT_EN));
   preferences.putBool(PREF_DEV_OL_EN, server.hasArg(PREF_DEV_OL_EN));
-
+  if (server.hasArg(PREF_DEV_SHOW_RX_TIME)){
+    preferences.putInt(PREF_DEV_SHOW_RX_TIME, server.arg(PREF_DEV_SHOW_RX_TIME).toInt());
+  }
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
 }

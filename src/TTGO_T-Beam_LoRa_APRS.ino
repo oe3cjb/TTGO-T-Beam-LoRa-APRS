@@ -478,11 +478,20 @@ void setup(){
     }
     fixed_beacon_enabled = preferences.getBool(PREF_APRS_FIXED_BEACON_PRESET);
 
+
     if (!preferences.getBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT)){
       preferences.putBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT, true);
       preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
     }
     fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_DEV_SHOW_RX_TIME_INIT)){
+      preferences.putBool(PREF_DEV_SHOW_RX_TIME_INIT, true);
+      preferences.putInt(PREF_DEV_SHOW_RX_TIME, showRXTime/1000);
+    }
+    showRXTime = preferences.getInt(PREF_DEV_SHOW_RX_TIME) * 1000;
+    
+
     if (clear_preferences){
       delay(1000);
       if(digitalRead(BUTTON)==LOW){
