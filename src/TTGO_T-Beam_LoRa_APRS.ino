@@ -318,6 +318,13 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line4);
   display.setCursor(0,56);
   display.println(Line5);
+  if (enabled_oled){
+    //axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
+    display.dim(true);
+  }else{
+    //axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
+    display.dim(false);
+  }   
   display.display();
   time_to_refresh = millis() + showRXTime;
 }
@@ -481,7 +488,6 @@ void setup(){
       if(digitalRead(BUTTON)==LOW){
         clear_preferences = 2;
       }
-
     }
 
     if (!preferences.getBool(PREF_APRS_SHOW_CMT_INIT)){
@@ -524,6 +530,8 @@ void setup(){
     // Enable ADC to measure battery current, USB voltage etc.
     axp.adc1Enable(0xfe, true);
     axp.adc2Enable(0x80, true);
+    axp.setChgLEDMode(AXP20X_LED_OFF);
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // oled do not turn off     
   #endif
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
@@ -604,14 +612,6 @@ void setup(){
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
-  #ifdef T_BEAM_V1_0
-    axp.setChgLEDMode(AXP20X_LED_OFF);
-    if (enabled_oled){
-      axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
-    }else{
-      axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
-    }  
-  #endif
 }
 
 // +---------------------------------------------------------------------+//
