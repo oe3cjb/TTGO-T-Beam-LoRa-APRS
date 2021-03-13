@@ -128,13 +128,27 @@
                 <div>
                     <label for="led_enable">LED signaling</label>
                     <input name="led_enable" id="led_enable" type="checkbox" value="1" title="enable or disable LED" DISABLED>
-                </div>                
+                </div>  
+                <div>
+                    <label for="shutdown_act">Auto shutdown</label>
+                    <input name="shutdown_act" id="shutdown_act" type="checkbox" value="1" title="activate auto shutdown after usb plug off">
+                </div>                               
             </div>   
             <div class="grid-container quarters">
                 <div>
                     <label for="sh_rxtime">Display show RX time (s)</label>
                     <input name="sh_rxtime" id="sh_rxtime" type="number" min="1" max="45" title="show RX packet for seconds">
-                </div>                
+                </div> 
+                <div>
+
+                </div>
+                <div>
+
+                </div>
+                <div>
+                    <label for="shutdown_dt">Auto shutdown delay (s)</label>
+                    <input name="shutdown_dt" id="shutdown_dt" type="number" min="3" max="300" title="auto shutdown delay in seconds">
+                </div>                               
             </div>                      
             <div class="grid-container full">
                 <div>

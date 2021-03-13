@@ -45,6 +45,10 @@ static const char *const PREF_DEV_OL_EN = "oled_enabled";
 static const char *const PREF_DEV_OL_EN_INIT = "ol_enabled_init";
 static const char *const PREF_DEV_SHOW_RX_TIME = "sh_rxtime";
 static const char *const PREF_DEV_SHOW_RX_TIME_INIT = "sh_rxtime_init";
+static const char *const PREF_DEV_AUTO_SHUT = "shutdown_act";
+static const char *const PREF_DEV_AUTO_SHUT_INIT = "shutdown_actini";
+static const char *const PREF_DEV_AUTO_SHUT_PRESET = "shutdown_dt";
+static const char *const PREF_DEV_AUTO_SHUT_PRESET_INIT = "shutdown_dtini";
 
 typedef struct {
   String callsign;

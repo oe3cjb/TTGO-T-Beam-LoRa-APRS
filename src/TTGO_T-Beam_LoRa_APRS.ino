@@ -68,6 +68,7 @@ boolean key_up = true;
 boolean t_lock = false;
 boolean fixed_beacon_enabled = false;
 boolean show_cmt = true;
+
 #ifdef SHOW_ALT
   boolean showAltitude = true;
 #else
@@ -118,6 +119,7 @@ byte  lora_TXPacketL;        //length of packet to send, includes source, destin
 
 unsigned long lastTX = 0L;
 float BattVolts;
+float InpVolts;
 
 // variables for smart beaconing
 float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
@@ -131,6 +133,12 @@ ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
 ulong showRXTime = SHOW_RX_TIME;
 ulong time_delay = 0;
+ulong shutdown_delay = 0;
+ulong shutdown_delay_time = 10000;
+ulong shutdown_countdown_timer = 0;
+boolean shutdown_active =true;
+boolean shutdown_countdown_timer_enable = false;
+boolean shutdown_usb_status_bef = false;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -288,6 +296,7 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
 void batt_read(){
 #ifdef T_BEAM_V1_0
   BattVolts = axp.getBattVoltage()/1000;
+  InpVolts = axp.getVbusVoltage()/1000;
 #else
   BattVolts = analogRead(35)*7.221/4096;
 #endif
@@ -333,9 +342,18 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
 String getSatAndBatInfo() {
   String line5;
   if(gps_state == true){
-    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+    if(InpVolts > 4){
+      line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V *";
+    }else{
+      line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+    }
   }else{
-    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+    if(InpVolts > 4){
+      line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V *";
+    }else{
+      line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+    }
+    
   }
   #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
     if (SerialBT.hasClient()){
@@ -491,6 +509,17 @@ void setup(){
     }
     showRXTime = preferences.getInt(PREF_DEV_SHOW_RX_TIME) * 1000;
     
+    if (!preferences.getBool(PREF_DEV_AUTO_SHUT_PRESET_INIT)){
+      preferences.putBool(PREF_DEV_AUTO_SHUT_PRESET_INIT, true);
+      preferences.putInt(PREF_DEV_AUTO_SHUT_PRESET, shutdown_delay_time/1000);
+    }
+    shutdown_delay_time = preferences.getInt(PREF_DEV_AUTO_SHUT_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_DEV_AUTO_SHUT_INIT)){
+      preferences.putBool(PREF_DEV_AUTO_SHUT_INIT, true);
+      preferences.putBool(PREF_DEV_AUTO_SHUT, shutdown_active);
+    }
+    shutdown_active = preferences.getBool(PREF_DEV_AUTO_SHUT);          
 
     if (clear_preferences){
       delay(1000);
@@ -682,6 +711,29 @@ void loop() {
       sendpacket();
     }
   }
+
+  
+
+  #ifdef T_BEAM_V1_0
+    if(shutdown_active){
+      if(InpVolts> 4){
+        shutdown_usb_status_bef = true;
+        shutdown_countdown_timer_enable = false;
+      }
+
+      if(InpVolts < 4 && shutdown_usb_status_bef == true){
+        shutdown_usb_status_bef = false;
+        shutdown_countdown_timer_enable = true;
+        shutdown_countdown_timer = millis() + shutdown_delay_time;
+      }
+
+      if(shutdown_countdown_timer_enable){
+        if(millis() >= shutdown_countdown_timer){
+          axp.shutdown();
+        }
+      }
+    }
+  #endif
 
   #ifdef KISS_PROTOCOL
     String *TNC2DataFrame = nullptr;
