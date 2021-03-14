@@ -47,8 +47,10 @@
 // Button of TTGO T-Beam
 #ifdef T_BEAM_V1_0
    #define BUTTON  38      //pin number for Button on TTGO T-Beam
-#else
+#elif T_BEAM_V0_7
    #define BUTTON  39      //pin number for Button on TTGO T-Beam
+#else LORA32_21
+  #define BUTTON 15        //pin number for BUTTO
 #endif
 
 // Variables for APRS packaging
@@ -157,7 +159,7 @@ uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 
 // Singleton instance of the radio driver
   BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
-  
+
 // initialize OLED display
 #define OLED_RESET 16         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
@@ -325,10 +327,10 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line5);
   if (enabled_oled){
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
-    display.dim(true);
+    display.dim(false);
   }else{
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
-    display.dim(false);
+    display.dim(true);
   }   
   display.display();
   time_to_refresh = millis() + showRXTime;
@@ -548,7 +550,13 @@ void setup(){
   }
 
   pinMode(TXLED, OUTPUT);
-  pinMode(BUTTON, INPUT);
+  #ifdef T_BEAM_V1_0
+    pinMode(BUTTON, INPUT);
+  #elif T_BEAM_V0_7
+    pinMode(BUTTON, INPUT);
+  #else
+    pinMode(BUTTON, INPUT_PULLUP);
+  #endif
   digitalWrite(TXLED, LOW);                                               // turn blue LED off
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
@@ -575,7 +583,7 @@ void setup(){
     if (clear_preferences == 2){
       writedisplaytext("LoRa-APRS","","","Factory reset","","");
       delay(1000);
-      #ifdef T_BEAM_V1_0
+      //#ifdef T_BEAM_V1_0
         if(digitalRead(BUTTON)==LOW){
           clear_preferences = 3;
           preferences.clear();
@@ -587,7 +595,7 @@ void setup(){
           writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
           delay(2000);
         }
-      #endif
+      //#endif
     }
   #endif
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","");
@@ -639,7 +647,7 @@ void setup(){
 
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
-    xTaskCreate(taskWebServer, "taskWebServer", 40000, (void*)(&webServerCfg), 1, nullptr);
+    xTaskCreate(taskWebServer, "taskWebServer", 42000, (void*)(&webServerCfg), 1, nullptr);
     writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","");
   #endif
 
@@ -648,6 +656,7 @@ void setup(){
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
+  Serial.begin(115200);
   Serial.println('boot');
 }
 
