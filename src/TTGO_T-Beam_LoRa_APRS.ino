@@ -365,6 +365,7 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
+  Serial.println(axp.getTemp());
 }
 
 #if defined(KISS_PROTOCOL)
@@ -579,17 +580,19 @@ void setup(){
     if (clear_preferences == 2){
       writedisplaytext("LoRa-APRS","","","Factory reset","","");
       delay(1000);
-      if(digitalRead(BUTTON)==LOW){
-        clear_preferences = 3;
-        preferences.clear();
-        preferences.end();
-        writedisplaytext("LoRa-APRS","","Factory reset","Done!","","");
-        delay(2000);
-        ESP.restart();
-      } else {
-        writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
-        delay(2000);
-      }
+      #ifdef T_BEAM_V1_0
+        if(digitalRead(BUTTON)==LOW){
+          clear_preferences = 3;
+          preferences.clear();
+          preferences.end();
+          writedisplaytext("LoRa-APRS","","Factory reset","Done!","","");
+          delay(2000);
+          ESP.restart();
+        } else {
+          writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
+          delay(2000);
+        }
+      #endif
     }
   #endif
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","");
