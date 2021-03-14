@@ -21,7 +21,7 @@
 #define SHOW_RX_TIME 10000                              //this option is available via WWW //   show RX packet for milliseconds (5000 = 5secs)
 #define TXFREQ 433.775                                  // Set transmit frequency in MHz
 #define TXdbmW 20                                       // Set transmit power in dBm         17-50mW, 18-63mW, 19-80mW, 20-100mW
-#define ENABLE_BLUETOOTH                                //this option is available via WWW //   bluetooth KISS interface enable
+//#define ENABLE_BLUETOOTH                                //this option is available via WWW //   bluetooth KISS interface enable
 #define ENABLE_OLED                                     //this option is available via WWW //   enable oled
 //#define ENABLE_LED_SIGNALING                          // enable red and blue led signalling
 //#define BLUETOOTH_PIN "0000"                          // bluetooth pairing pin

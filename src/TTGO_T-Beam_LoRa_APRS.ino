@@ -327,10 +327,10 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line5);
   if (enabled_oled){
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
-    display.dim(false);
+    display.dim(true);
   }else{
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
-    display.dim(true);
+    display.dim(false);
   }   
   display.display();
   time_to_refresh = millis() + showRXTime;
@@ -640,8 +640,10 @@ void setup(){
       #ifdef BLUETOOTH_PIN
         SerialBT.setPin(BLUETOOTH_PIN);
       #endif
-      SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
-      writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+      #ifdef ENABLE_BLUETOOTH
+        SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
+        writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+      #endif
     }
   #endif
 
