@@ -365,7 +365,7 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
-  Serial.println(axp.getTemp());
+  //Serial.println(axp.getTemp());
 }
 
 #if defined(KISS_PROTOCOL)
