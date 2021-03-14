@@ -51,10 +51,6 @@
    #define BUTTON  39      //pin number for Button on TTGO T-Beam
 #endif
 
-// Pins for LoRa module
-const byte lora_PReset = 23; //pin where LoRa device reset line is connected
-const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device is connected.
-
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
 String aprsSymbolTable = APRS_SYMBOL_TABLE;
@@ -160,8 +156,8 @@ static const adc_unit_t unit = ADC_UNIT_1;
 uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 
 // Singleton instance of the radio driver
-BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
-
+  BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
+  
 // initialize OLED display
 #define OLED_RESET 16         // not used
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
@@ -365,7 +361,6 @@ String getSatAndBatInfo() {
 
 void displayInvalidGPS() {
   writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
-  //Serial.println(axp.getTemp());
 }
 
 #if defined(KISS_PROTOCOL)
@@ -653,6 +648,7 @@ void setup(){
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
+  Serial.println('boot');
 }
 
 // +---------------------------------------------------------------------+//
