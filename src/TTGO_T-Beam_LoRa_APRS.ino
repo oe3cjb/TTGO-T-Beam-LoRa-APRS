@@ -658,8 +658,6 @@ void setup(){
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
-  Serial.begin(115200);
-  Serial.println('boot');
 }
 
 // +---------------------------------------------------------------------+//
