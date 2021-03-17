@@ -261,7 +261,28 @@ void prepareAPRSFrame(){
   #endif
 }
 
+#ifdef BUZZER
+/**
+ * Buzzer sound playback
+ * @param melody - must be an array. Consisting of an even number of values. frequency and duration
+ * @param array_size - number of elements in the array
+ */
+void buzzer(int* melody, int array_size){
+  for(int i=0; i<array_size; i+=2){
+      ledcWriteTone(0, *melody);
+      melody++;
+      delay(*melody);
+      melody++;
+  }
+  ledcWriteTone(0,0); // turn off buzzer
+}
+#endif
+
 void sendpacket(){
+  #ifdef BUZZER
+    int melody[] = {1000, 50, 800, 100};
+    buzzer(melody, sizeof(melody)/sizeof(int));
+  #endif
   batt_read();
   prepareAPRSFrame();
   loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
@@ -417,6 +438,12 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
+  #ifdef BUZZER
+    ledcSetup(0,1E5,12);
+    ledcAttachPin(BUZZER,0);
+    ledcWriteTone(0,0);  // turn off buzzer on start
+  #endif
+
   #ifdef DIGI_PATH
     relay_path = DIGI_PATH;
   #else
@@ -760,6 +787,10 @@ void loop() {
       #ifdef ENABLE_LED_SIGNALING
         axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
       #endif
+    #endif
+    #ifdef BUZZER
+      int melody[] = {300, 50, 500, 100};
+      buzzer(melody, sizeof(melody)/sizeof(int));
     #endif
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
