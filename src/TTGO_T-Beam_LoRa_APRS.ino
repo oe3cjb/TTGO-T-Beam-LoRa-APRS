@@ -50,7 +50,7 @@
 #elif T_BEAM_V0_7
    #define BUTTON  39      //pin number for Button on TTGO T-Beam
 #else LORA32_21
-  #define BUTTON 15        //pin number for BUTTO
+  #define BUTTON 2        //pin number for BUTTO
 #endif
 
 // Variables for APRS packaging
