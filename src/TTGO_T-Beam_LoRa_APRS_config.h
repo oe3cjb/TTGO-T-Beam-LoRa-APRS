@@ -7,7 +7,7 @@
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 #define KISS_PROTOCOL                                   // If enabled send and receive data in SIMPLE KISS format to serial, bluetooth and tcp port
-#define CALLSIGN "NOCALL-0"                             // this option is available via WWW //   enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
+#define CALLSIGN "SQ5WPR-11"                             // this option is available via WWW //   enter your callsign here - less then 6 letter callsigns please add "spaces" so total length is 6 (without SSID)
 #define DIGI_PATH "ECHO"                                // this option is available via WWW //   one hope, please use simple ECHO alias
 #define FIXED_BEACON_EN                                 // this option is available via WWW //   allows cyclic sending of a bicon when GPS is turned off
 #define LATIDUDE_PRESET "0000.00N"                      // this option is available via WWW //   please in APRS notation: DDMM.mmN or DDMM.mmS (used for manual or fixed beacon sending)
@@ -24,13 +24,14 @@
 #define ENABLE_OLED                                     // this option is available via WWW //   enable oled
 #define ENABLE_LED_SIGNALING                            // enable red and blue led signalling
 //#define ENABLE_TNC_SELF_TELEMETRY                     //    
-//#define LOCAL_KISS_ECHO                               // echoing KISS frame back
+// #define LOCAL_KISS_ECHO                               // echoing KISS frame back
 //#define KISS_DEBUG                                    //
 #define NETWORK_TNC_PORT 8001                           // Set KISS TCP Port
 //#define ENABLE_WIFI_CLIENT_DEBUG                      //
 #define MAX_TIME_TO_NEXT_TX 360000L                     // TRANSMIT INTERVAL set here MAXIMUM time in ms(!) for smart beaconing - minimum time is always 1 min = 60 secs = 60000L !!!
 #define FIX_BEACON_INTERVAL 1800000L                    // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default
 //#define TNC_SELF_TELEMETRY_INTERVAL (5 * 60 * 1000)   //
+#define BUZZER 15                                     // enter your buzzer pin gpio
 
 #ifdef T_BEAM_V1_0
     #define ENABLE_WIFI                                 // enable WiFi conection do not turn off
