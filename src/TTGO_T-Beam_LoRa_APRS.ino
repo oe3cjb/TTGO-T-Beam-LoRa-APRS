@@ -208,9 +208,9 @@ void prepareAPRSFrame(){
   outString += Tcall;
 
   if (relay_path) {
-    outString += ">APLM0," + relay_path + ":!";
+    outString += ">APLS01," + relay_path + ":!";
   } else {
-    outString += ">APLM0:!";
+    outString += ">APLS01:!";
   }
 
   if(gps_state && gps.location.isValid()) {
@@ -426,7 +426,7 @@ void sendTelemetryFrame() {
     String telemetryEquations = String(":") + Tcall + ":EQNS.0,5.1,3000,0,10,0,0,10,0,0,28,3000,0,10,0";
     String telemetryData = String("T#MIC") + String(b_volt) + ","+ String(b_in_c) + ","+ String(b_out_c) + ","+ String(ac_volt) + ","+ String(ac_c) + ",00000000";
     String telemetryBase = "";
-    telemetryBase += Tcall + ">APLM0" + ":";
+    telemetryBase += Tcall + ">APLS01" + ":";
     sendToTNC(telemetryBase + telemetryParamsNames);
     sendToTNC(telemetryBase + telemetryUnitNames);
     sendToTNC(telemetryBase + telemetryEquations);
