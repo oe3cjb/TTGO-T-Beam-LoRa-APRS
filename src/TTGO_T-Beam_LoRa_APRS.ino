@@ -30,49 +30,51 @@
 #endif
 #include "version.h"
 
-// I2C LINES
-
+// IO config
 #ifdef T_BEAM_V1_0
   #define I2C_SDA 21
   #define I2C_SCL 22
+  const byte TXLED  = 4;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON  38      //pin number for Button on TTGO T-Beam
 #elif T_BEAM_V0_7
   #define I2C_SDA 21
   #define I2C_SCL 22
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON  39      //pin number for Button on TTGO T-Beam
 #elif LORA32_1
   #define I2C_SDA 4
   #define I2C_SCL 15
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON 2        //pin number for BUTTO
 #elif LORA32_2
   #define I2C_SDA 21
   #define I2C_SCL 22
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON 2        //pin number for BUTTO
 #elif LORA32_21
   #define I2C_SDA 21
   #define I2C_SCL 22 
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON 2        //pin number for BUTTO
 #elif HELTEC_WIFI_KIT32
   #define I2C_SDA 4
   #define I2C_SCL 15 
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
+  #define BUTTON 2        //pin number for BUTTO
 #elif HELTEC_WIFI_KIT32_V2
   #define I2C_SDA 4
-  #define I2C_SCL 15        
-#endif
-
-// DISPLAY address
-#define SSD1306_ADDRESS 0x3C
-
-// LED for signalling
-#ifdef T_BEAM_V1_0
-   const byte TXLED  = 4;      //pin number for LED on TX Tracker
-#else
-   const byte TXLED  = 14;      //pin number for LED on TX Tracker
- #endif
-
-// Button of TTGO T-Beam
-#ifdef T_BEAM_V1_0
-   #define BUTTON  38      //pin number for Button on TTGO T-Beam
-#elif T_BEAM_V0_7
-   #define BUTTON  39      //pin number for Button on TTGO T-Beam
-#else LORA32_21
+  #define I2C_SCL 15    
+  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2        //pin number for BUTTO
 #endif
+
 
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
@@ -627,6 +629,7 @@ void setup(){
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
       for(;;);                                                             // Don't proceed, loop forever
   }
+
   #ifdef ENABLE_PREFERENCES
     if (clear_preferences == 2){
       writedisplaytext("LoRa-APRS","","","Factory reset","","");
