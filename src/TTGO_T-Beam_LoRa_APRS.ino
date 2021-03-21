@@ -31,8 +31,31 @@
 #include "version.h"
 
 // I2C LINES
-#define I2C_SDA 21
-#define I2C_SCL 22
+
+#ifdef T_BEAM_V1_0
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+#elif T_BEAM_V0_7
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+#elif LORA32_1
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+#elif LORA32_2
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+#elif LORA32_21
+  #define I2C_SDA 21
+  #define I2C_SCL 22 
+#elif HELTEC_WIFI_KIT32
+  #define I2C_SDA 4
+  #define I2C_SCL 15 
+#elif HELTEC_WIFI_KIT32_V2
+  #define I2C_SDA 4
+  #define I2C_SCL 15        
+#endif
+
+
 
 // DISPLAY address
 #define SSD1306_ADDRESS 0x3C
