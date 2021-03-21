@@ -34,47 +34,53 @@
 #ifdef T_BEAM_V1_0
   #define I2C_SDA 21
   #define I2C_SCL 22
-  const byte TXLED  = 4;      //pin number for LED on TX Tracker
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
-  #define BUTTON  38      //pin number for Button on TTGO T-Beam
+  #define BUTTON  38                //pin number for Button on TTGO T-Beam
+  #define BUZZER 15                 // enter your buzzer pin gpio
 #elif T_BEAM_V0_7
   #define I2C_SDA 21
   #define I2C_SCL 22
-  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  const byte TXLED  = 14;           //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
-  #define BUTTON  39      //pin number for Button on TTGO T-Beam
+  #define BUTTON  39                //pin number for Button on TTGO T-Beam
+  #define BUZZER 15                 // enter your buzzer pin gpio
 #elif LORA32_1
   #define I2C_SDA 4
   #define I2C_SCL 15
-  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  const byte TXLED  = 14;           //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
-  #define BUTTON 2        //pin number for BUTTO
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
 #elif LORA32_2
   #define I2C_SDA 21
   #define I2C_SCL 22
-  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  const byte TXLED  = 14;           //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
-  #define BUTTON 2        //pin number for BUTTO
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
 #elif LORA32_21
   #define I2C_SDA 21
   #define I2C_SCL 22 
-  const byte TXLED  = 14;      //pin number for LED on TX Tracker
+  const byte TXLED  = 14;           //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
-  #define BUTTON 2        //pin number for BUTTO
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
 #elif HELTEC_WIFI_KIT32
   #define I2C_SDA 4
   #define I2C_SCL 15 
   const byte TXLED  = 14;      //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2        //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
 #elif HELTEC_WIFI_KIT32_V2
   #define I2C_SDA 4
   #define I2C_SCL 15    
   const byte TXLED  = 14;      //pin number for LED on TX Tracker
   #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2        //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
 #endif
-
 
 // Variables for APRS packaging
 String Tcall;                //your Call Sign for normal position reports
@@ -169,7 +175,6 @@ uint8_t txPower = TXdbmW;
 #ifdef ENABLE_WIFI
   tWebServerCfg webServerCfg;
 #endif
-
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
