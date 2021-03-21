@@ -39,8 +39,8 @@
   #define I2C_SDA 21
   #define I2C_SCL 22
 #elif LORA32_1
-  #define I2C_SDA 21
-  #define I2C_SCL 22
+  #define I2C_SDA 4
+  #define I2C_SCL 15
 #elif LORA32_2
   #define I2C_SDA 21
   #define I2C_SCL 22
@@ -54,8 +54,6 @@
   #define I2C_SDA 4
   #define I2C_SCL 15        
 #endif
-
-
 
 // DISPLAY address
 #define SSD1306_ADDRESS 0x3C
