@@ -29,7 +29,6 @@
 #define FIX_BEACON_INTERVAL 1800000L                    // Fixed beacon interwal (when GPS is disabled and FIXED_BEACON_EN is enabled) 30min default
 //#define TNC_SELF_TELEMETRY_INTERVAL (5 * 60 * 1000)   //
 
-
 #ifdef T_BEAM_V1_0
     #define ENABLE_WIFI                                 // enable WiFi conection do not turn off
     #define ENABLE_BLUETOOTH                            // if enabled here this option is available via WWW //   bluetooth KISS interface enabl
