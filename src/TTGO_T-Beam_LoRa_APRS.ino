@@ -30,11 +30,12 @@
   #include "taskWebServer.h"
 #endif
 
+#define SSD1306_ADDRESS 0x3C
+
 // IO config
 #ifdef T_BEAM_V1_0
   #define I2C_SDA 21
-  #define I2C_SCL 22  
-  #define SSD1306_ADDRESS 0x3C
+  #define I2C_SCL 22    
   #define BUTTON  38                //pin number for Button on TTGO T-Beam
   #define BUZZER 15                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
@@ -42,47 +43,36 @@
 #ifdef T_BEAM_V0_7
   #define I2C_SDA 21
   #define I2C_SCL 22
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON  39                //pin number for Button on TTGO T-Beam
   #define BUZZER 15                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef LORA32_21
+#elif LORA32_21
   #define I2C_SDA 4
   #define I2C_SCL 15
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2                  //pin number for BUTTO
   #define BUZZER 13                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef LORA32_2
+#elif LORA32_2
   #define I2C_SDA 21
   #define I2C_SCL 22
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2                  //pin number for BUTTO
   #define BUZZER 13                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef LORA32_1
+#elif LORA32_1
   #define I2C_SDA 21
   #define I2C_SCL 22 
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2                  //pin number for BUTTO
   #define BUZZER 13                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef HELTEC_V1
+#elif HELTEC_V1
   #define I2C_SDA 4
   #define I2C_SCL 15 
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2                  //pin number for BUTTO
   #define BUZZER 13                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef HELTEC_V2
+#elif HELTEC_V2
   #define I2C_SDA 4
   #define I2C_SCL 15    
-  #define SSD1306_ADDRESS 0x3C
   #define BUTTON 2                  //pin number for BUTTO
   #define BUZZER 13                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
@@ -228,11 +218,11 @@ void prepareAPRSFrame(){
 
   Tcourse=gps.course.deg();
   Tspeed=gps.speed.knots();
-  if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
-  if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
-  if(Tlat < 0) { Tlat= -Tlat; }
+  //if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
+  //if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
+  //if(Tlat < 0) { Tlat= -Tlat; }
 
-  if(Tlon < 0) { Tlon= -Tlon; }
+  //if(Tlon < 0) { Tlon= -Tlon; }
     aprs_lat = 900000000 - Tlat * 10000000;
     aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
     aprs_lon = 900000000 + Tlon * 10000000 / 2;
