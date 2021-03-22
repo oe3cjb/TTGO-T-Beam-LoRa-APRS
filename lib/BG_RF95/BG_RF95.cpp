@@ -23,6 +23,8 @@ PROGMEM static const BG_RF95::ModemConfig MODEM_CONFIG_TABLE[] =
     { 0x48,   0x94,    0x00}, // Bw31_25Cr48Sf512
     { 0x78,   0xc4,    0x00}, // Bw125Cr48Sf4096
     { 0x72,   0xc7,	   0x8},	// BG 125 cr45 sf12
+    { 0x72,   0xb4,    0x00}, // Bw125Cr45Sf2048
+    { 0x88,   0xc4,    0x00}, // Bw250Cr48Sf4096
 };
 
 BG_RF95::BG_RF95(uint8_t slaveSelectPin, uint8_t interruptPin, RHGenericSPI& spi)
@@ -112,7 +114,7 @@ bool BG_RF95::init()
 //    setModemConfig(Bw125Cr48Sf4096); // slow and reliable?
     setPreambleLength(8); // Default is 8
     // An innocuous ISM frequency, same as RF22's
-    setFrequency(433.800);
+    setFrequency(433.850);
     // Lowish power
     setTxPower(20);
 

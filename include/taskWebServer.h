@@ -38,6 +38,20 @@ static const char *const PREF_APRS_FIXED_BEACON_PRESET = "aprs_fixed_beac";
 static const char *const PREF_APRS_FIXED_BEACON_PRESET_INIT = "aprs_fix_b_init";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET = "aprs_fb_interv";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT = "aprs_fb_in_init";
+static const char *const PREF_APRS_GPS_EN = "gps_enabled";
+static const char *const PREF_APRS_GPS_EN_INIT = "gps_state_init";
+static const char *const PREF_APRS_SHOW_CMT = "show_cmt";
+static const char *const PREF_APRS_SHOW_CMT_INIT = "show_cmt_init";
+static const char *const PREF_DEV_BT_EN = "bt_enabled";
+static const char *const PREF_DEV_BT_EN_INIT = "bt_enabled_init";
+static const char *const PREF_DEV_OL_EN = "oled_enabled";
+static const char *const PREF_DEV_OL_EN_INIT = "ol_enabled_init";
+static const char *const PREF_DEV_SHOW_RX_TIME = "sh_rxtime";
+static const char *const PREF_DEV_SHOW_RX_TIME_INIT = "sh_rxtime_init";
+static const char *const PREF_DEV_AUTO_SHUT = "shutdown_act";
+static const char *const PREF_DEV_AUTO_SHUT_INIT = "shutdown_actini";
+static const char *const PREF_DEV_AUTO_SHUT_PRESET = "shutdown_dt";
+static const char *const PREF_DEV_AUTO_SHUT_PRESET_INIT = "shutdown_dtini";
 
 typedef struct {
   String callsign;

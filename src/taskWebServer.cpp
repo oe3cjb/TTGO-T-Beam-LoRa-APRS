@@ -118,6 +118,13 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_BATTERY);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
+  jsonData += jsonLineFromPreferenceBool(PREF_APRS_GPS_EN);
+  jsonData += jsonLineFromPreferenceBool(PREF_DEV_OL_EN);
+  jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_CMT);
+  jsonData += jsonLineFromPreferenceBool(PREF_DEV_BT_EN);
+  jsonData += jsonLineFromPreferenceInt(PREF_DEV_SHOW_RX_TIME);
+  jsonData += jsonLineFromPreferenceBool(PREF_DEV_AUTO_SHUT);
+  jsonData += jsonLineFromPreferenceInt(PREF_DEV_AUTO_SHUT_PRESET);
   jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
   jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
   jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
@@ -151,14 +158,29 @@ void handle_SaveAPRSCfg() {
   if (server.hasArg(PREF_APRS_LONGITUDE_PRESET)){
     preferences.putString(PREF_APRS_LONGITUDE_PRESET, server.arg(PREF_APRS_LONGITUDE_PRESET));
   }
+
   preferences.putBool(PREF_APRS_SHOW_BATTERY, server.hasArg(PREF_APRS_SHOW_BATTERY));
   preferences.putBool(PREF_APRS_SHOW_ALTITUDE, server.hasArg(PREF_APRS_SHOW_ALTITUDE));
   preferences.putBool(PREF_APRS_FIXED_BEACON_PRESET, server.hasArg(PREF_APRS_FIXED_BEACON_PRESET));
-
+  preferences.putBool(PREF_APRS_GPS_EN, server.hasArg(PREF_APRS_GPS_EN));
+  preferences.putBool(PREF_APRS_SHOW_CMT, server.hasArg(PREF_APRS_SHOW_CMT));
 
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
+}
 
+void handle_saveDeviceCfg(){
+  preferences.putBool(PREF_DEV_BT_EN, server.hasArg(PREF_DEV_BT_EN));
+  preferences.putBool(PREF_DEV_OL_EN, server.hasArg(PREF_DEV_OL_EN));
+  if (server.hasArg(PREF_DEV_SHOW_RX_TIME)){
+    preferences.putInt(PREF_DEV_SHOW_RX_TIME, server.arg(PREF_DEV_SHOW_RX_TIME).toInt());
+  }
+  preferences.putBool(PREF_DEV_AUTO_SHUT, server.hasArg(PREF_DEV_AUTO_SHUT));
+  if (server.hasArg(PREF_DEV_AUTO_SHUT_PRESET)){
+    preferences.putInt(PREF_DEV_AUTO_SHUT_PRESET, server.arg(PREF_DEV_AUTO_SHUT_PRESET).toInt());
+  } 
+  server.sendHeader("Location", "/");
+  server.send(302,"text/html", "");
 }
 
 [[noreturn]] void taskWebServer(void *parameter) {
@@ -174,6 +196,7 @@ void handle_SaveAPRSCfg() {
   server.on("/reboot", handle_Reboot);
   server.on("/cfg", handle_Cfg);
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
+  server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
   server.on("/update", HTTP_POST, []() {
     server.sendHeader("Connection", "close");

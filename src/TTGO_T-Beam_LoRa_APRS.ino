@@ -22,41 +22,64 @@
 #include <gfxfont.h>
 #include <axp20x.h>
 #include "taskGPS.h"
+#include "version.h"
 #ifdef KISS_PROTOCOL
   #include "taskTNC.h"
 #endif
 #ifdef ENABLE_WIFI
   #include "taskWebServer.h"
 #endif
-#include "version.h"
 
-// I2C LINES
-#define I2C_SDA 21
-#define I2C_SCL 22
-
-// DISPLAY address
 #define SSD1306_ADDRESS 0x3C
 
-// LED for signalling
+// IO config
 #ifdef T_BEAM_V1_0
-   const byte TXLED  = 4;      //pin number for LED on TX Tracker
-#else
-   const byte TXLED  = 14;      //pin number for LED on TX Tracker
- #endif
-
-// Button of TTGO T-Beam
-#ifdef T_BEAM_V1_0
-   #define BUTTON  38      //pin number for Button on TTGO T-Beam
-#else
-   #define BUTTON  39      //pin number for Button on TTGO T-Beam
+  #define I2C_SDA 21
+  #define I2C_SCL 22    
+  #define BUTTON  38                //pin number for Button on TTGO T-Beam
+  #define BUZZER 15                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#endif
+#ifdef T_BEAM_V0_7
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+  #define BUTTON  39                //pin number for Button on TTGO T-Beam
+  #define BUZZER 15                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#elif LORA32_21
+  #define I2C_SDA 4
+  #define I2C_SCL 15
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#elif LORA32_2
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#elif LORA32_1
+  #define I2C_SDA 21
+  #define I2C_SCL 22 
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#elif HELTEC_V1
+  #define I2C_SDA 4
+  #define I2C_SCL 15 
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
+#elif HELTEC_V2
+  #define I2C_SDA 4
+  #define I2C_SCL 15    
+  #define BUTTON 2                  //pin number for BUTTO
+  #define BUZZER 13                 // enter your buzzer pin gpio
+  const byte TXLED  = 4;            //pin number for LED on TX Tracker
 #endif
 
-// Pins for LoRa module
-const byte lora_PReset = 23; //pin where LoRa device reset line is connected
-const byte lora_PNSS = 18;   //pin number where the NSS line for the LoRa device is connected.
-
 // Variables for APRS packaging
-String Tcall;                //your Call Sign for normal position reports
+String Tcall;                       //your Call Sign for normal position reports
 String aprsSymbolTable = APRS_SYMBOL_TABLE;
 String aprsSymbol = APRS_SYMBOL;
 String relay_path;
@@ -67,6 +90,8 @@ boolean gps_state = true;
 boolean key_up = true;
 boolean t_lock = false;
 boolean fixed_beacon_enabled = false;
+boolean show_cmt = true;
+
 #ifdef SHOW_ALT
   boolean showAltitude = true;
 #else
@@ -76,6 +101,16 @@ boolean fixed_beacon_enabled = false;
   boolean showBattery = true;
 #else
   boolean showBattery = false;
+#endif
+#ifdef ENABLE_BLUETOOTH
+  boolean enable_bluetooth = true;
+#else
+  boolean enable_bluetooth = false;
+#endif
+#ifdef ENABLE_OLED
+  boolean enabled_oled = true;
+#else
+  boolean enabled_oled = false;
 #endif
 
 // Variables and Constants
@@ -107,6 +142,7 @@ byte  lora_TXPacketL;        //length of packet to send, includes source, destin
 
 unsigned long lastTX = 0L;
 float BattVolts;
+float InpVolts;
 
 // variables for smart beaconing
 float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
@@ -120,6 +156,12 @@ ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
 ulong showRXTime = SHOW_RX_TIME;
 ulong time_delay = 0;
+ulong shutdown_delay = 0;
+ulong shutdown_delay_time = 10000;
+ulong shutdown_countdown_timer = 0;
+boolean shutdown_active =true;
+boolean shutdown_countdown_timer_enable = false;
+boolean shutdown_usb_status_bef = false;
 #define ANGLE 60                      // angle to send packet at smart beaconing
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
@@ -129,7 +171,6 @@ uint8_t txPower = TXdbmW;
 #ifdef ENABLE_WIFI
   tWebServerCfg webServerCfg;
 #endif
-
 
 static const adc_atten_t atten = ADC_ATTEN_DB_6;
 static const adc_unit_t unit = ADC_UNIT_1;
@@ -141,7 +182,7 @@ static const adc_unit_t unit = ADC_UNIT_1;
 uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 
 // Singleton instance of the radio driver
-BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
+  BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
 
 // initialize OLED display
 #define OLED_RESET 16         // not used
@@ -177,11 +218,11 @@ void prepareAPRSFrame(){
 
   Tcourse=gps.course.deg();
   Tspeed=gps.speed.knots();
-  if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
-  if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
-  if(Tlat < 0) { Tlat= -Tlat; }
+  //if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
+  //if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
+  //if(Tlat < 0) { Tlat= -Tlat; }
 
-  if(Tlon < 0) { Tlon= -Tlon; }
+  //if(Tlon < 0) { Tlon= -Tlon; }
     aprs_lat = 900000000 - Tlat * 10000000;
     aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
     aprs_lon = 900000000 + Tlon * 10000000 / 2;
@@ -191,9 +232,9 @@ void prepareAPRSFrame(){
   outString += Tcall;
 
   if (relay_path) {
-    outString += ">APLM0," + relay_path + ":!";
+    outString += ">APLS01," + relay_path + ":!";
   } else {
-    outString += ">APLM0:!";
+    outString += ">APLS01:!";
   }
 
   if(gps_state && gps.location.isValid()) {
@@ -227,8 +268,10 @@ void prepareAPRSFrame(){
     outString += aprsLonPreset;
     outString += aprsSymbol;
   }
-  outString += aprsComment;
-
+  if(show_cmt){
+    outString += aprsComment;
+  }
+  
   if (showBattery) {
     outString += " Batt=";
     outString += String(BattVolts, 2);
@@ -242,7 +285,28 @@ void prepareAPRSFrame(){
   #endif
 }
 
+#ifdef BUZZER
+/**
+ * Buzzer sound playback
+ * @param melody - must be an array. Consisting of an even number of values. frequency and duration
+ * @param array_size - number of elements in the array
+ */
+void buzzer(int* melody, int array_size){
+  for(int i=0; i<array_size; i+=2){
+      ledcWriteTone(0, *melody);
+      melody++;
+      delay(*melody);
+      melody++;
+  }
+  ledcWriteTone(0,0); // turn off buzzer
+}
+#endif
+
 void sendpacket(){
+  #ifdef BUZZER
+    int melody[] = {1000, 50, 800, 100};
+    buzzer(melody, sizeof(melody)/sizeof(int));
+  #endif
   batt_read();
   prepareAPRSFrame();
   loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
@@ -255,7 +319,9 @@ void sendpacket(){
  * @param message
  */
 void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
-  digitalWrite(TXLED, LOW);
+  #ifdef ENABLE_LED_SIGNALING
+    digitalWrite(TXLED, LOW);
+  #endif
   lastTX = millis();
 
   int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
@@ -265,12 +331,15 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, messageSize);
   rf95.waitPacketSent();
-  digitalWrite(TXLED, HIGH);
+  #ifdef ENABLE_LED_SIGNALING
+    digitalWrite(TXLED, HIGH);
+  #endif
 }
 
 void batt_read(){
 #ifdef T_BEAM_V1_0
   BattVolts = axp.getBattVoltage()/1000;
+  InpVolts = axp.getVbusVoltage()/1000;
 #else
   BattVolts = analogRead(35)*7.221/4096;
 #endif
@@ -280,7 +349,9 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   batt_read();
   if (BattVolts < 3.5 && BattVolts > 3.2){
     #ifdef T_BEAM_V1_0
+      # ifdef ENABLE_LED_SIGNALING
       axp.setChgLEDMode(AXP20X_LED_BLINK_4HZ);
+      #endif
     #endif
   }
   display.clearDisplay();
@@ -299,6 +370,13 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line4);
   display.setCursor(0,56);
   display.println(Line5);
+  if (enabled_oled){
+    //axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
+    display.dim(true);
+  }else{
+    //axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
+    display.dim(false);
+  }   
   display.display();
   time_to_refresh = millis() + showRXTime;
 }
@@ -307,9 +385,18 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
 String getSatAndBatInfo() {
   String line5;
   if(gps_state == true){
-    line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+    if(InpVolts > 4){
+      line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V *";
+    }else{
+      line5 = "SAT: " + String(gps.satellites.value()) + "  BAT: " + String(BattVolts, 1) + "V";
+    }
   }else{
-    line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+    if(InpVolts > 4){
+      line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V *";
+    }else{
+      line5 = "SAT: X  BAT: " + String(BattVolts, 1) + "V";
+    }
+    
   }
   #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
     if (SerialBT.hasClient()){
@@ -363,7 +450,7 @@ void sendTelemetryFrame() {
     String telemetryEquations = String(":") + Tcall + ":EQNS.0,5.1,3000,0,10,0,0,10,0,0,28,3000,0,10,0";
     String telemetryData = String("T#MIC") + String(b_volt) + ","+ String(b_in_c) + ","+ String(b_out_c) + ","+ String(ac_volt) + ","+ String(ac_c) + ",00000000";
     String telemetryBase = "";
-    telemetryBase += Tcall + ">APLM0" + ":";
+    telemetryBase += Tcall + ">APLS01" + ":";
     sendToTNC(telemetryBase + telemetryParamsNames);
     sendToTNC(telemetryBase + telemetryUnitNames);
     sendToTNC(telemetryBase + telemetryEquations);
@@ -375,6 +462,12 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 
 void setup(){
+  #ifdef BUZZER
+    ledcSetup(0,1E5,12);
+    ledcAttachPin(BUZZER,0);
+    ledcWriteTone(0,0);  // turn off buzzer on start
+  #endif
+
   #ifdef DIGI_PATH
     relay_path = DIGI_PATH;
   #else
@@ -422,6 +515,12 @@ void setup(){
     }
     showAltitude = preferences.getBool(PREF_APRS_SHOW_ALTITUDE);
 
+    if (!preferences.getBool(PREF_APRS_GPS_EN_INIT)){
+      preferences.putBool(PREF_APRS_GPS_EN_INIT, true);
+      preferences.putBool(PREF_APRS_GPS_EN, gps_state);
+    }
+    gps_state = preferences.getBool(PREF_APRS_GPS_EN);    
+
     if (!preferences.getBool(PREF_APRS_SHOW_BATTERY_INIT)){
       preferences.putBool(PREF_APRS_SHOW_BATTERY_INIT, true);
       preferences.putBool(PREF_APRS_SHOW_BATTERY, showBattery);
@@ -446,18 +545,55 @@ void setup(){
     }
     fixed_beacon_enabled = preferences.getBool(PREF_APRS_FIXED_BEACON_PRESET);
 
+
     if (!preferences.getBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT)){
       preferences.putBool(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT, true);
       preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
     }
     fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_DEV_SHOW_RX_TIME_INIT)){
+      preferences.putBool(PREF_DEV_SHOW_RX_TIME_INIT, true);
+      preferences.putInt(PREF_DEV_SHOW_RX_TIME, showRXTime/1000);
+    }
+    showRXTime = preferences.getInt(PREF_DEV_SHOW_RX_TIME) * 1000;
+    
+    if (!preferences.getBool(PREF_DEV_AUTO_SHUT_PRESET_INIT)){
+      preferences.putBool(PREF_DEV_AUTO_SHUT_PRESET_INIT, true);
+      preferences.putInt(PREF_DEV_AUTO_SHUT_PRESET, shutdown_delay_time/1000);
+    }
+    shutdown_delay_time = preferences.getInt(PREF_DEV_AUTO_SHUT_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_DEV_AUTO_SHUT_INIT)){
+      preferences.putBool(PREF_DEV_AUTO_SHUT_INIT, true);
+      preferences.putBool(PREF_DEV_AUTO_SHUT, shutdown_active);
+    }
+    shutdown_active = preferences.getBool(PREF_DEV_AUTO_SHUT);          
+
     if (clear_preferences){
       delay(1000);
       if(digitalRead(BUTTON)==LOW){
         clear_preferences = 2;
       }
-
     }
+
+    if (!preferences.getBool(PREF_APRS_SHOW_CMT_INIT)){
+      preferences.putBool(PREF_APRS_SHOW_CMT_INIT, true);
+      preferences.putBool(PREF_APRS_SHOW_CMT, show_cmt);
+    }
+    show_cmt = preferences.getBool(PREF_APRS_SHOW_CMT);
+
+    if (!preferences.getBool(PREF_DEV_BT_EN_INIT)){
+      preferences.putBool(PREF_DEV_BT_EN_INIT, true);
+      preferences.putBool(PREF_DEV_BT_EN, enable_bluetooth);
+    }
+    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);    
+
+    if (!preferences.getBool(PREF_DEV_OL_EN_INIT)){
+      preferences.putBool(PREF_DEV_OL_EN_INIT, true);
+      preferences.putBool(PREF_DEV_OL_EN,enabled_oled);
+    }
+    enabled_oled  = preferences.getBool(PREF_DEV_OL_EN); 
   #endif
 
   for (int i=0;i<ANGLE_AVGS;i++) {                                        // set average_course to "0"
@@ -465,7 +601,13 @@ void setup(){
   }
 
   pinMode(TXLED, OUTPUT);
-  pinMode(BUTTON, INPUT);
+  #ifdef T_BEAM_V1_0
+    pinMode(BUTTON, INPUT);
+  #elif T_BEAM_V0_7
+    pinMode(BUTTON, INPUT);
+  #else
+    pinMode(BUTTON, INPUT_PULLUP);
+  #endif
   digitalWrite(TXLED, LOW);                                               // turn blue LED off
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
@@ -473,35 +615,39 @@ void setup(){
   #ifdef T_BEAM_V1_0
     if (!axp.begin(Wire, AXP192_SLAVE_ADDRESS)) {
     }
-    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);
+    axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // LoRa
     axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
     axp.setDCDC1Voltage(3300);
     // Enable ADC to measure battery current, USB voltage etc.
     axp.adc1Enable(0xfe, true);
     axp.adc2Enable(0x80, true);
+    axp.setChgLEDMode(AXP20X_LED_OFF);
+    axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // oled do not turn off     
   #endif
 
   if(!display.begin(SSD1306_SWITCHCAPVCC, SSD1306_ADDRESS)) {
       for(;;);                                                             // Don't proceed, loop forever
   }
+
   #ifdef ENABLE_PREFERENCES
     if (clear_preferences == 2){
       writedisplaytext("LoRa-APRS","","","Factory reset","","");
       delay(1000);
-      if(digitalRead(BUTTON)==LOW){
-        clear_preferences = 3;
-        preferences.clear();
-        preferences.end();
-        writedisplaytext("LoRa-APRS","","Factory reset","Done!","","");
-        delay(2000);
-        ESP.restart();
-      } else {
-        writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
-        delay(2000);
-      }
+      //#ifdef T_BEAM_V1_0
+        if(digitalRead(BUTTON)==LOW){
+          clear_preferences = 3;
+          preferences.clear();
+          preferences.end();
+          writedisplaytext("LoRa-APRS","","Factory reset","Done!","","");
+          delay(2000);
+          ESP.restart();
+        } else {
+          writedisplaytext("LoRa-APRS","","Factory reset","Cancel","","");
+          delay(2000);
+        }
+      //#endif
     }
   #endif
   writedisplaytext("LoRa-APRS","","Init:","Display OK!","","");
@@ -541,16 +687,21 @@ void setup(){
     xTaskCreatePinnedToCore(taskTNC, "taskTNC", 10000, nullptr, 1, nullptr, xPortGetCoreID());
   #endif
 
-  #if defined(ENABLE_BLUETOOTH) && defined(KISS_PROTOCOL)
-    #ifdef BLUETOOTH_PIN
-      SerialBT.setPin(BLUETOOTH_PIN);
-    #endif
-    SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
-    writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+  #if defined(KISS_PROTOCOL)
+    if (enable_bluetooth){
+      #ifdef BLUETOOTH_PIN
+        SerialBT.setPin(BLUETOOTH_PIN);
+      #endif
+      #ifdef ENABLE_BLUETOOTH
+        SerialBT.begin(String("TTGO LORA APRS ") + Tcall);
+        writedisplaytext("LoRa-APRS","","Init:","BT OK!","","");
+      #endif
+    }
   #endif
+
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
-    xTaskCreate(taskWebServer, "taskWebServer", 40000, (void*)(&webServerCfg), 1, nullptr);
+    xTaskCreate(taskWebServer, "taskWebServer", 42000, (void*)(&webServerCfg), 1, nullptr);
     writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","");
   #endif
 
@@ -559,9 +710,6 @@ void setup(){
   time_to_refresh = millis() + showRXTime;
   displayInvalidGPS();
   digitalWrite(TXLED, HIGH);
-  #ifdef T_BEAM_V1_0
-    axp.setChgLEDMode(AXP20X_LED_OFF);
-  #endif
 }
 
 // +---------------------------------------------------------------------+//
@@ -597,6 +745,8 @@ void loop() {
         #endif
         writedisplaytext("((GPSOFF))","","","","","");
         next_fixed_beacon = millis() + fix_beacon_interval;
+        preferences.putBool(PREF_APRS_GPS_EN_INIT, false);
+        preferences.putBool(PREF_APRS_GPS_EN, false);        
 
       }else{
         gps_state = true;
@@ -604,6 +754,8 @@ void loop() {
           axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
         #endif
         writedisplaytext("((GPS ON))","","","","","");                // GPS ON
+        preferences.putBool(PREF_APRS_GPS_EN_INIT, true);
+        preferences.putBool(PREF_APRS_GPS_EN, true);  
       }
   }
   
@@ -620,6 +772,29 @@ void loop() {
     }
   }
 
+  
+
+  #ifdef T_BEAM_V1_0
+    if(shutdown_active){
+      if(InpVolts> 4){
+        shutdown_usb_status_bef = true;
+        shutdown_countdown_timer_enable = false;
+      }
+
+      if(InpVolts < 4 && shutdown_usb_status_bef == true){
+        shutdown_usb_status_bef = false;
+        shutdown_countdown_timer_enable = true;
+        shutdown_countdown_timer = millis() + shutdown_delay_time;
+      }
+
+      if(shutdown_countdown_timer_enable){
+        if(millis() >= shutdown_countdown_timer){
+          axp.shutdown();
+        }
+      }
+    }
+  #endif
+
   #ifdef KISS_PROTOCOL
     String *TNC2DataFrame = nullptr;
     if (tncToSendQueue) {
@@ -634,7 +809,13 @@ void loop() {
 
   if (rf95.waitAvailableTimeout(100)) {
     #ifdef T_BEAM_V1_0
-      axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+      #ifdef ENABLE_LED_SIGNALING
+        axp.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+      #endif
+    #endif
+    #ifdef BUZZER
+      int melody[] = {300, 50, 500, 100};
+      buzzer(melody, sizeof(melody)/sizeof(int));
     #endif
     #ifdef SHOW_RX_PACKET                                                 // only show RX packets when activitated in config
       loraReceivedLength = sizeof(lora_RXBUFF);                           // reset max length before receiving!
@@ -652,7 +833,9 @@ void loop() {
       }
     #endif
     #ifdef T_BEAM_V1_0
-      axp.setChgLEDMode(AXP20X_LED_OFF);
+      #ifdef ENABLE_LED_SIGNALING
+        axp.setChgLEDMode(AXP20X_LED_OFF);
+      #endif
     #endif
   }
 
