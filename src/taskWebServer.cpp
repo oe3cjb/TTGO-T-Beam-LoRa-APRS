@@ -75,15 +75,15 @@ void handle_ScanWifi() {
 }
 
 void handle_SaveWifiCfg() {
-  if (!server.hasArg("wifi_ssid") || !server.hasArg("wifi_password")){
+  if (!server.hasArg(PREF_WIFI_SSID) || !server.hasArg(PREF_WIFI_PASSWORD)){
     server.send(500, "text/plain", "Invalid request");
   }
-  if (!server.arg("wifi_ssid").length() || !server.arg("wifi_password").length()){
+  if (!server.arg(PREF_WIFI_SSID).length()){
     server.send(403, "text/plain", "Empty SSID or Password");
   }
 
-  preferences.putString("wifi_ssid", server.arg("wifi_ssid"));
-  preferences.putString("wifi_password", server.arg("wifi_password"));
+  preferences.putString(PREF_WIFI_SSID, server.arg(PREF_WIFI_SSID));
+  preferences.putString(PREF_WIFI_PASSWORD, server.arg(PREF_WIFI_PASSWORD));
 
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
@@ -105,8 +105,8 @@ void handle_Restore() {
 
 void handle_Cfg() {
   String jsonData = "{";
-  jsonData += R"("wifi_ssid":")" + jsonEscape(preferences.getString("wifi_ssid")) + R"(",)";
-  jsonData += R"("wifi_password":")" + jsonEscape((preferences.getString("wifi_password").isEmpty() ? String("") : "*")) + R"(",)";
+  jsonData += String("\"") + PREF_WIFI_PASSWORD + "\": \"" + jsonEscape((preferences.getString(PREF_WIFI_PASSWORD).isEmpty() ? String("") : "*")) + R"(",)";
+  jsonData += jsonLineFromPreferenceString(PREF_WIFI_SSID);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_CALLSIGN);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_RELAY_PATH);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_SYMBOL_TABLE);
@@ -202,10 +202,10 @@ void handle_saveDeviceCfg(){
 
   String wifi_password = preferences.getString("wifi_password");
   String wifi_ssid = preferences.getString("wifi_ssid");
-  if (!wifi_password.length() || !wifi_ssid.length()){
+  if (!wifi_ssid.length()){
     WiFi.softAP(apSSID.c_str(), apPassword.c_str());
   } else {
-    WiFi.begin(wifi_ssid.c_str(), wifi_password.c_str());
+    WiFi.begin(wifi_ssid.c_str(), wifi_password.length() ? wifi_password.c_str() : nullptr);
     Serial.println("Connecting to " + wifi_ssid);
     while (WiFi.status() != WL_CONNECTED) {
       Serial.print("Not connected: ");
