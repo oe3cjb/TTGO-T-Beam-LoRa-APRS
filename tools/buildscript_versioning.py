@@ -1,6 +1,6 @@
 FILENAME_BUILDNO = '.pio/versioning'
 FILENAME_VERSION_H = 'include/version.h'
-version = 'v0.2.'
+version = 'v0.3.'
 
 import datetime
 
