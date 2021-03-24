@@ -198,10 +198,34 @@ void handle_saveDeviceCfg(){
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
   server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      /* flashing firmware to ESP*/
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    }
+  });
   server.onNotFound(handle_NotFound);
 
-  String wifi_password = preferences.getString("wifi_password");
-  String wifi_ssid = preferences.getString("wifi_ssid");
+  String wifi_password = preferences.getString(PREF_WIFI_PASSWORD);
+  String wifi_ssid = preferences.getString(PREF_WIFI_SSID);
   if (!wifi_ssid.length()){
     WiFi.softAP(apSSID.c_str(), apPassword.c_str());
   } else {
@@ -212,6 +236,7 @@ void handle_saveDeviceCfg(){
       Serial.println((int)WiFi.status());
       vTaskDelay(500/portTICK_PERIOD_MS);
     }
+    Serial.println("Connected. IP: " + WiFi.localIP().toString());
   }
 
   server.begin();
