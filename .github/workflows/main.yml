@@ -54,7 +54,7 @@ jobs:
         draft: true
         prerelease: true
     - name: Upload ttgo-t-beam-v1.0.bin
-      id: upload-release-asset-ttgo-t-beam-v1.0.bin
+      id: upload-release-asset-ttgo-t-beam-v1_0_bin
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
