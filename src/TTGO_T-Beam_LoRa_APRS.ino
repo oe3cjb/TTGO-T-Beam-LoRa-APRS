@@ -23,6 +23,7 @@
 #include <axp20x.h>
 #include "taskGPS.h"
 #include "version.h"
+
 #ifdef KISS_PROTOCOL
   #include "taskTNC.h"
 #endif
@@ -30,6 +31,7 @@
   #include "taskWebServer.h"
 #endif
 
+// oled address
 #define SSD1306_ADDRESS 0x3C
 
 // IO config
@@ -39,8 +41,7 @@
   #define BUTTON  38                //pin number for Button on TTGO T-Beam
   #define BUZZER 15                 // enter your buzzer pin gpio
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
-#endif
-#ifdef T_BEAM_V0_7
+#elif T_BEAM_V0_7
   #define I2C_SDA 21
   #define I2C_SCL 22
   #define BUTTON  39                //pin number for Button on TTGO T-Beam
@@ -114,9 +115,9 @@ boolean show_cmt = true;
 #endif
 
 // Variables and Constants
-String loraReceivedFrameString = "";     //data on buff is copied to this string
+String loraReceivedFrameString = "";      //data on buff is copied to this string
 String Outputstring = "";
-String outString="";         //The new Output String with GPS Conversion RAW
+String outString="";                      //The new Output String with GPS Conversion RAW
 String LongShown="";
 String LatShown="";
 String LongFixed="";
@@ -166,6 +167,7 @@ boolean shutdown_usb_status_bef = false;
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
+
 uint8_t txPower = TXdbmW;
 
 #ifdef ENABLE_WIFI
@@ -182,7 +184,7 @@ static const adc_unit_t unit = ADC_UNIT_1;
 uint8_t loraReceivedLength = sizeof(lora_RXBUFF);
 
 // Singleton instance of the radio driver
-  BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
+BG_RF95 rf95(18, 26);        // TTGO T-Beam has NSS @ Pin 18 and Interrupt IO @ Pin26
 
 // initialize OLED display
 #define OLED_RESET 16         // not used
@@ -202,42 +204,33 @@ char *ax25_base91enc(char *s, uint8_t n, uint32_t v){
 }
 
 void prepareAPRSFrame(){
-  String Ns, Ew, helper;
+  String helper;
+  String Altx;
+  String Speedx, Coursex;
   char helper_base91[] = {"0000\0"};
   double Tlat=52.0000, Tlon=20.0000;
-  uint32_t aprs_lat, aprs_lon;
   double Tspeed=0, Tcourse=0;
-  String Speedx, Coursex;
+  uint32_t aprs_lat, aprs_lon;
   int i;
-
-  String Altx;
   int Talt;
-
   Tlat=gps.location.lat();
   Tlon=gps.location.lng();
-
   Tcourse=gps.course.deg();
   Tspeed=gps.speed.knots();
-  //if(Tlat<0) { Ns = "S"; } else { Ns = "N"; }
-  //if(Tlon<0) { Ew = "W"; } else { Ew = "E"; }
-  //if(Tlat < 0) { Tlat= -Tlat; }
-
-  //if(Tlon < 0) { Tlon= -Tlon; }
-    aprs_lat = 900000000 - Tlat * 10000000;
-    aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
-    aprs_lon = 900000000 + Tlon * 10000000 / 2;
-    aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
-
+  aprs_lat = 900000000 - Tlat * 10000000;
+  aprs_lat = aprs_lat / 26 - aprs_lat / 2710 + aprs_lat / 15384615;
+  aprs_lon = 900000000 + Tlon * 10000000 / 2;
+  aprs_lon = aprs_lon / 26 - aprs_lon / 2710 + aprs_lon / 15384615;
   outString = "";
   outString += Tcall;
 
-  if (relay_path) {
+  if (relay_path){
     outString += ">APLS01," + relay_path + ":!";
-  } else {
+  }else{
     outString += ">APLS01:!";
   }
 
-  if(gps_state && gps.location.isValid()) {
+  if(gps_state && gps.location.isValid()){
     outString += aprsSymbolTable;
     ax25_base91enc(helper_base91, 4, aprs_lat);
     for (i = 0; i < 4; i++) {
@@ -253,26 +246,28 @@ void prepareAPRSFrame(){
     ax25_base91enc(helper_base91, 1, (uint32_t) (log1p(Tspeed) / 0.07696));
     outString += helper_base91[0];
     outString += "H";
-    if (showAltitude) {
+
+    if (showAltitude){
       Talt = gps.altitude.meters() * 3.28d;
       Altx = Talt;
       outString += "/A=";
-      for (i = 0; i < (6 - Altx.length()); ++i) {
+      for (i = 0; i < (6 - Altx.length()); ++i){
         outString += "0";
       }
       outString += Talt;
     }
-  }else{
+  }else{  //fixed position not compresed
     outString += aprsLatPreset;
     outString += aprsSymbolTable;
     outString += aprsLonPreset;
     outString += aprsSymbol;
   }
+
   if(show_cmt){
     outString += aprsComment;
   }
-  
-  if (showBattery) {
+
+  if(showBattery){
     outString += " Batt=";
     outString += String(BattVolts, 2);
     outString += ("V");
@@ -280,8 +275,6 @@ void prepareAPRSFrame(){
 
   #ifdef KISS_PROTOCOL
     sendToTNC(outString);
-  #else
-    Serial.println(outString);
   #endif
 }
 
@@ -381,7 +374,6 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   time_to_refresh = millis() + showRXTime;
 }
 
-
 String getSatAndBatInfo() {
   String line5;
   if(gps_state == true){
@@ -460,7 +452,6 @@ void sendTelemetryFrame() {
 #endif
 
 // + SETUP --------------------------------------------------------------+//
-
 void setup(){
   #ifdef BUZZER
     ledcSetup(0,1E5,12);
@@ -715,7 +706,6 @@ void setup(){
 // +---------------------------------------------------------------------+//
 // + MAINLOOP -----------------------------------------------------------+//
 // +---------------------------------------------------------------------+//
-
 void loop() {
   if(digitalRead(BUTTON)==LOW && key_up == true){
     key_up = false;
@@ -771,8 +761,6 @@ void loop() {
       sendpacket();
     }
   }
-
-  
 
   #ifdef T_BEAM_V1_0
     if(shutdown_active){
