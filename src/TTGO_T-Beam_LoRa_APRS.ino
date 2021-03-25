@@ -578,7 +578,7 @@ void setup(){
       preferences.putBool(PREF_DEV_BT_EN_INIT, true);
       preferences.putBool(PREF_DEV_BT_EN, enable_bluetooth);
     }
-    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);    
+    enable_bluetooth = preferences.getBool(PREF_DEV_BT_EN);
 
     if (!preferences.getBool(PREF_DEV_OL_EN_INIT)){
       preferences.putBool(PREF_DEV_OL_EN_INIT, true);

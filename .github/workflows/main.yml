@@ -48,13 +48,14 @@ jobs:
           pip install --upgrade platformio
       - name: Run PlatformIO
         run: pio run
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
+          tag_name: ${{ github.ref }}-${{ steps.date.outputs.date }}
           release_name: Release ${{ github.ref }} ${{ steps.date.outputs.date }}
           draft: false
           prerelease: true
