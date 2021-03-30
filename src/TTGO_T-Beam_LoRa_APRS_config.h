@@ -36,6 +36,7 @@
 // SET temperature sensor type
 // #define DS18B20    // use this if you use DS18B20, default is DHT22
 // #define USE_BME280 // use this if you use BME280,m default is DHT22
+// #define HEIGTH_PRESET 234    // if you use BME280, the heigth of your location above mean sea level in meters
 
 // USER DATA - USE THESE LINES TO MODIFY YOUR PREFERENCES
 // IF NOT CHANGED you have to go through the configuration routine at first boot up of the TTGO T-Beam
