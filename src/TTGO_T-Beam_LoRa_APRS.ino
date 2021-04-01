@@ -4,7 +4,7 @@
 // TTGO T-Beam v1.0 only
 //
 // licensed under CC BY-NC-SA
-// test
+
 
 // Includes
 #include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
