@@ -35,6 +35,12 @@
 // oled address
 #define SSD1306_ADDRESS 0x3C
 
+// SPI config
+#define SPI_sck 5
+#define SPI_miso 19
+#define SPI_mosi 27
+#define SPI_ss 18
+
 // IO config
 #ifdef T_BEAM_V1_0
   #define I2C_SDA 21
@@ -454,6 +460,8 @@ void sendTelemetryFrame() {
 
 // + SETUP --------------------------------------------------------------+//
 void setup(){
+  SPI.begin(SPI_sck,SPI_miso,SPI_mosi,SPI_ss);    //DO2JMG Heltec Patch
+  
   #ifdef BUZZER
     ledcSetup(0,1E5,12);
     ledcAttachPin(BUZZER,0);
