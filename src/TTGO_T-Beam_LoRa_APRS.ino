@@ -741,7 +741,7 @@ void loop() {
       if(gps_state == true){
         gps_state = false;
         #ifdef T_BEAM_V1_0
-          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                    // GPS OFF
+          axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                 // GPS OFF
         #endif
         writedisplaytext("((GPSOFF))","","","","","");
         next_fixed_beacon = millis() + fix_beacon_interval;
