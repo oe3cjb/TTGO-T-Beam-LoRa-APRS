@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "TTGO_T-Beam_LoRa_APRS_config.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>

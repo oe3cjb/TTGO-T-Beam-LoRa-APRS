@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "TTGO_T-Beam_LoRa_APRS_config.h"
 #include <KISS_TO_TNC2.h>
 
 #if defined(ENABLE_BLUETOOTH)

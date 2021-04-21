@@ -4,10 +4,8 @@
 // TTGO T-Beam v1.0 only
 //
 // licensed under CC BY-NC-SA
-
-
 // Includes
-#include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
+//#include <TTGO_T-Beam_LoRa_APRS_config.h> // to config user parameters
 #include <Arduino.h>
 #include <SPI.h>
 #include <BG_RF95.h>         // library from OE1ACM
@@ -326,7 +324,11 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
 
   int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
   message.toCharArray((char*)lora_TXBUFF, messageSize + 1, 0);
-  rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
+  #ifdef SPEED_1200
+    rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
+  #else
+    rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
+  #endif
   rf95.setFrequency(lora_FREQ);
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, messageSize);
@@ -681,7 +683,11 @@ void setup(){
   batt_read();
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"");
   rf95.setFrequency(433.775);
-  rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096); // hard coded because of double definition
+  #ifdef SPEED_1200
+    rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
+  #else
+    rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
+  #endif
   rf95.setTxPower(txPower);
   delay(250);
   #ifdef KISS_PROTOCOL

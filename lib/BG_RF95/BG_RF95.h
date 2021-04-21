@@ -543,10 +543,9 @@ public:
     typedef enum
     {
 	Bw125Cr45Sf128 = 0,	   ///< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-	Bw500Cr45Sf128,	           ///< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Fast+short range
-	Bw31_25Cr48Sf512,	   ///< Bw = 31.25 kHz, Cr = 4/8, Sf = 512chips/symbol, CRC on. Slow+long range
 	Bw125Cr48Sf4096,           ///< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on. Slow+long range
 	Bw125Cr45Sf4096,           ///< APRS 
+    Bw125Cr47Sf512,          /// 1200 bps
     Bw125Cr45Sf2048,       ///<Bw = 125 kHz Cr = 4/5, Sf= 2048 chips/symbol, CRC on.
     Bw250Cr48Sf4096,          ///< Bw = 250 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on.
     } ModemConfigChoice;

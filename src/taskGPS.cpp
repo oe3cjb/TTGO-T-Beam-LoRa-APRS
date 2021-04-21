@@ -1,5 +1,4 @@
 #include <taskGPS.h>
-#include "TTGO_T-Beam_LoRa_APRS_config.h"
 #include <SparkFun_Ublox_Arduino_Library.h>
 
 SFE_UBLOX_GPS myGPS;
