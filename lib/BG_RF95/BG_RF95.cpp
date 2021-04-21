@@ -19,10 +19,8 @@ PROGMEM static const BG_RF95::ModemConfig MODEM_CONFIG_TABLE[] =
 {
     //  1d,     1e,      26
     { 0x72,   0x74,    0x00}, // Bw125Cr45Sf128 (the chip default)
-    { 0x92,   0x74,    0x00}, // Bw500Cr45Sf128
-    { 0x48,   0x94,    0x00}, // Bw31_25Cr48Sf512
     { 0x78,   0xc4,    0x00}, // Bw125Cr48Sf4096
-    { 0x72,   0xc7,	   0x8},	// BG 125 cr45 sf12
+    { 0x76,   0x94,    0x04}, // Bw125Cr47Sf512
     { 0x72,   0xb4,    0x00}, // Bw125Cr45Sf2048
     { 0x88,   0xc4,    0x00}, // Bw250Cr48Sf4096
 };
