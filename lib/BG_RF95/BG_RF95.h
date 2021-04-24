@@ -461,7 +461,7 @@
 /// -1 to +14 (for modules that use RFO transmitter pin)
 /// The default is 13. Eg:
 /// \code
-/// driver.setTxPower(10); // use PA_BOOST transmitter pin
+/// driver.setTxPower(23); // use PA_BOOST transmitter pin
 /// driver.setTxPower(10, true); // use PA_RFO pin transmitter pin
 /// \endcode
 ///
