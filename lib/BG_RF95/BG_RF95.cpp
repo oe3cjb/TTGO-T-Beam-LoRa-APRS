@@ -114,7 +114,7 @@ bool BG_RF95::init()
     // An innocuous ISM frequency, same as RF22's
     setFrequency(433.850);
     // Lowish power
-    setTxPower(20);
+    setTxPower(23);
 
     return true;
 }
@@ -390,7 +390,7 @@ void BG_RF95::setTxPower(int8_t power, bool useRFO)
     // for the transmitter output
     if (useRFO)
     {
-	if (power > 14)  power = 14;
+	if (power > 19)  power = 19;
 	if (power < -1)  power = -1;
 	spiWrite(BG_RF95_REG_09_PA_CONFIG, BG_RF95_MAX_POWER | (power + 1));
     } else {
@@ -405,7 +405,7 @@ void BG_RF95::setTxPower(int8_t power, bool useRFO)
 		spiWrite(BG_RF95_REG_0B_OCP, ( BG_RF95_OCP_ON | BG_RF95_OCP_TRIM ) );   // Trim max current tp 240mA
 	    	spiWrite(BG_RF95_REG_4D_PA_DAC, BG_RF95_PA_DAC_ENABLE);
 	    //power -= 3;
-		power = 20;  // and set PA_DAC_ENABLE
+		power = 23;  // and set PA_DAC_ENABLE
 
 	} else {
 	    spiWrite(BG_RF95_REG_4D_PA_DAC, BG_RF95_PA_DAC_DISABLE);
