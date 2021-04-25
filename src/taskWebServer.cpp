@@ -1,4 +1,6 @@
 #include "taskWebServer.h"
+#include "preference_storage.h"
+#include "syslog_log.h"
 /**
  * @see board_build.embed_txtfiles in platformio.ini
  */
@@ -13,9 +15,16 @@ extern const char web_js_js_end[] asm("_binary_data_embed_js_js_out_end");
 String apSSID = "";
 String apPassword = "xxxxxxxxxx";
 WebServer server(80);
-Preferences preferences;
 #ifdef KISS_PROTOCOL
   WiFiServer tncServer(NETWORK_TNC_PORT);
+#endif
+
+#ifdef ENABLE_SYSLOG
+  // A UDP instance to let us send and receive packets over UDP
+  WiFiUDP udpClient;
+
+  // Create a new empty syslog instance
+  Syslog syslog(udpClient, SYSLOG_PROTO_IETF);
 #endif
 
 void sendCacheHeader() { server.sendHeader("Cache-Control", "max-age=3600"); }
@@ -199,25 +208,31 @@ void handle_saveDeviceCfg(){
   server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
   server.on("/update", HTTP_POST, []() {
+    syslog_log(LOG_WARNING, String("Update finished. Status: ") + (Update.hasError() ? "Ok" : "Error"));
     server.sendHeader("Connection", "close");
     server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    delay(500);
     ESP.restart();
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("Update: %s\n", upload.filename.c_str());
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        syslog_log(LOG_ERR, String("Update begin error: ") + Update.errorString());
         Update.printError(Serial);
       }
     } else if (upload.status == UPLOAD_FILE_WRITE) {
       /* flashing firmware to ESP*/
       if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        syslog_log(LOG_ERR, String("Update error: ") + Update.errorString());
         Update.printError(Serial);
       }
     } else if (upload.status == UPLOAD_FILE_END) {
       if (Update.end(true)) { //true to set the size to the current progress
         Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        syslog_log(LOG_WARNING, String("Update Success: ") + String((int)upload.totalSize));
       } else {
+        syslog_log(LOG_ERR, String("Update error: ") + Update.errorString());
         Update.printError(Serial);
       }
     }
@@ -237,6 +252,14 @@ void handle_saveDeviceCfg(){
       vTaskDelay(500/portTICK_PERIOD_MS);
     }
     Serial.println("Connected. IP: " + WiFi.localIP().toString());
+    #ifdef ENABLE_SYSLOG
+      syslog.server(SYSLOG_IP, 514);
+      syslog.deviceHostname(webServerCfg->callsign.c_str());
+      syslog.appName("TTGO");
+      syslog.defaultPriority(LOG_KERN);
+      syslog_log(LOG_INFO, "Connected. IP: " + WiFi.localIP().toString());
+    #endif
+
   }
 
   server.begin();

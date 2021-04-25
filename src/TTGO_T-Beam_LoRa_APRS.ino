@@ -22,6 +22,8 @@
 #include <axp20x.h>
 #include "taskGPS.h"
 #include "version.h"
+#include "preference_storage.h"
+#include "syslog_log.h"
 
 #ifdef KISS_PROTOCOL
   #include "taskTNC.h"
@@ -744,15 +746,17 @@ void loop() {
 
   if(digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false){
     t_lock = true;
-      if(gps_state == true){
+      if(gps_state){
         gps_state = false;
         #ifdef T_BEAM_V1_0
           axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                 // GPS OFF
         #endif
         writedisplaytext("((GPSOFF))","","","","","");
         next_fixed_beacon = millis() + fix_beacon_interval;
-        preferences.putBool(PREF_APRS_GPS_EN_INIT, false);
-        preferences.putBool(PREF_APRS_GPS_EN, false);        
+        #ifdef ENABLE_PREFERENCES
+          preferences.putBool(PREF_APRS_GPS_EN, false);
+        #endif
+
 
       }else{
         gps_state = true;
@@ -760,8 +764,9 @@ void loop() {
           axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);
         #endif
         writedisplaytext("((GPS ON))","","","","","");                // GPS ON
-        preferences.putBool(PREF_APRS_GPS_EN_INIT, true);
-        preferences.putBool(PREF_APRS_GPS_EN, true);  
+        #ifdef ENABLE_PREFERENCES
+          preferences.putBool(PREF_APRS_GPS_EN, true);
+        #endif
       }
   }
   
@@ -834,6 +839,7 @@ void loop() {
         #ifdef KISS_PROTOCOL
           sendToTNC(loraReceivedFrameString);
         #endif
+        syslog_log(LOG_INFO, String("Received LoRa: '") + loraReceivedFrameString + "', RSSI:" + rf95.lastRssi() + ", SNR: "  + rf95.lastSNR());
       }
     #endif
     #ifdef T_BEAM_V1_0
