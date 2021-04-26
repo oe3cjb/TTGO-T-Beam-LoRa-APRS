@@ -423,7 +423,29 @@ void sendToTNC(const String& TNC2FormatedFrame) {
     auto *buffer = new String();
     buffer->concat(TNC2FormatedFrame);
     if (xQueueSend(tncReceivedQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS){
+      // remove buffer on error
       delete buffer;
+    }
+  }
+}
+#endif
+#if defined(ENABLE_WIFI)
+/**
+ *
+ * @param TNC2FormatedFrame
+ */
+void sendToWebList(const String& TNC2FormatedFrame, const int RSSI, const int SNR) {
+  if (webListReceivedQueue){
+    auto *receivedPacketData = new tReceivedPacketData();
+    receivedPacketData->packet = new String();
+    receivedPacketData->packet->concat(TNC2FormatedFrame);
+    receivedPacketData->RSSI = RSSI;
+    receivedPacketData->SNR = SNR;
+
+    if (xQueueSend(webListReceivedQueue, &receivedPacketData, (1000 / portTICK_PERIOD_MS)) != pdPASS){
+      // remove buffer on error
+      delete receivedPacketData->packet;
+      delete receivedPacketData;
     }
   }
 }
@@ -838,6 +860,9 @@ void loop() {
         writedisplaytext("  ((RX))", "", loraReceivedFrameString, "", "", "");
         #ifdef KISS_PROTOCOL
           sendToTNC(loraReceivedFrameString);
+        #endif
+        #ifdef ENABLE_WIFI
+          sendToWebList(loraReceivedFrameString, rf95.lastRssi(), rf95.lastSNR());
         #endif
         syslog_log(LOG_INFO, String("Received LoRa: '") + loraReceivedFrameString + "', RSSI:" + rf95.lastRssi() + ", SNR: "  + rf95.lastSNR());
       }

@@ -39,6 +39,29 @@ window.onload = function () {
     };
     xhttp.open("GET", "/cfg", true);
     xhttp.send();
+    var xhttpFramesList = new XMLHttpRequest();
+    xhttpFramesList.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        const response = JSON.parse(this.responseText);
+        let tbody = document.getElementById('receivedFrames');
+        tbody.innerHTML = '';
+        for (const frameInfo of response['received']) {
+            let tr = document.createElement('tr');
+            let td_p = document.createElement('td');
+            td_p.innerHTML = frameInfo['packet'];
+            tr.appendChild(td_p);
+            let td_r = document.createElement('td');
+            td_r.innerHTML = frameInfo['rssi'];
+            tr.appendChild(td_r);
+            let td_s = document.createElement('td');
+            td_s.innerHTML = frameInfo['snr'];
+            tr.appendChild(td_s);
+            tbody.appendChild(tr);
+        }
+      }
+    };
+    xhttpFramesList.open("GET", "/received_list", true);
+    xhttpFramesList.send();
 };
 
 function onFileChange(obj){
