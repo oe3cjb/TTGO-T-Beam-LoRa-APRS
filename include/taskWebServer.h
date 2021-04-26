@@ -16,6 +16,7 @@ typedef struct {
 } tWebServerCfg;
 
 typedef struct {
+  struct tm rxTime;
   String *packet;
   int RSSI;
   int SNR;

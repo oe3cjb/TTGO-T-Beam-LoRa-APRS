@@ -2,6 +2,7 @@
 #include "taskWebServer.h"
 #include "preference_storage.h"
 #include "syslog_log.h"
+#include <time.h>
 /**
  * @see board_build.embed_txtfiles in platformio.ini
  */
@@ -154,6 +155,9 @@ void handle_ReceivedList() {
   auto count = receivedPackets.size();
   for (auto element: receivedPackets){
     jsonData += "{";
+    char buf[64];
+    strftime(buf, 64, "%Y.%m.%d %H:%M:%S", &element->rxTime);
+    jsonData += jsonLineFromString("time", buf);
     jsonData += jsonLineFromString("packet", element->packet->c_str());
     jsonData += jsonLineFromInt("rssi", element->RSSI);
     jsonData += jsonLineFromInt("snr", element->SNR, true);
@@ -285,7 +289,17 @@ void handle_saveDeviceCfg(){
       syslog.defaultPriority(LOG_KERN);
       syslog_log(LOG_INFO, "Connected. IP: " + WiFi.localIP().toString());
     #endif
-
+    configTime(0, 0, "pool.ntp.org");
+    #ifdef ENABLE_SYSLOG
+      struct tm timeinfo{};
+      if(!getLocalTime(&timeinfo)){
+        syslog_log(LOG_WARNING, "Failed to obtain time");
+      } else {
+        char buf[64];
+        strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+        syslog_log(LOG_INFO, String("Time: ") + String(buf));
+      }
+    #endif
   }
 
   server.begin();
@@ -313,6 +327,7 @@ void handle_saveDeviceCfg(){
       receivedPacketToQueue->packet->concat(*receivedPacketData->packet);
       receivedPacketToQueue->RSSI = receivedPacketData->RSSI;
       receivedPacketToQueue->SNR = receivedPacketData->SNR;
+      receivedPacketToQueue->rxTime = receivedPacketData->rxTime;
       receivedPackets.push_back(receivedPacketToQueue);
       if (receivedPackets.size() > MAX_RECEIVED_LIST_SIZE){
         auto *packetDataToDelete = receivedPackets.front();

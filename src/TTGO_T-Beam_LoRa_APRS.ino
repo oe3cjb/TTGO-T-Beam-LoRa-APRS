@@ -441,6 +441,7 @@ void sendToWebList(const String& TNC2FormatedFrame, const int RSSI, const int SN
     receivedPacketData->packet->concat(TNC2FormatedFrame);
     receivedPacketData->RSSI = RSSI;
     receivedPacketData->SNR = SNR;
+    getLocalTime(&receivedPacketData->rxTime);
 
     if (xQueueSend(webListReceivedQueue, &receivedPacketData, (1000 / portTICK_PERIOD_MS)) != pdPASS){
       // remove buffer on error

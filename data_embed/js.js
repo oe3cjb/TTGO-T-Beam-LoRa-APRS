@@ -47,6 +47,9 @@ window.onload = function () {
         tbody.innerHTML = '';
         for (const frameInfo of response['received']) {
             let tr = document.createElement('tr');
+            let td_t = document.createElement('td');
+            td_t.innerHTML = frameInfo['time'];
+            tr.appendChild(td_t);
             let td_p = document.createElement('td');
             td_p.innerHTML = frameInfo['packet'];
             tr.appendChild(td_p);
