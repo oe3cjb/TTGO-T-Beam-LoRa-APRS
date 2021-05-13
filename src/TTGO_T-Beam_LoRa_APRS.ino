@@ -98,6 +98,8 @@ uint8_t hum_temp_ctr, hum_temp_ctr_max = 3;
 float hum=0;                 //Stores humidity value
 float temp=99.99;            //Stores temperature value
 float tempf=99.99;           //Stores temperature value
+float pressure=0;            //Stores pressure value in hPa
+int pressure_offset=0;       //Stores offset for pressure correction
 
 //other global Variables
 String Textzeile1, Textzeile2;
@@ -467,9 +469,11 @@ void setup()
     temp = sensors.getTempCByIndex(0); // get temp from 1st (!) sensor only
   #else
     #ifdef USE_BME280
+      pressure_offset = calc_pressure_offset(HEIGTH_PRESET);
       bme.takeForcedMeasurement();
       temp = bme.readTemperature();  // bme Temperatur auslesen
       hum = bme.readHumidity();
+      pressure = bme.readPressure()/100 + pressure_offset;
     #else
       temp = dht.getTemperature();
       hum = dht.getHumidity();
@@ -567,6 +571,7 @@ void loop() {
       #ifdef USE_BME280
         bme.takeForcedMeasurement();
         hum = bme.readHumidity();
+        pressure = bme.readPressure()/100 + pressure_offset;
       #else
         hum = dht.getHumidity();
       #endif
@@ -830,6 +835,9 @@ void recalcGPS(){
     Tlat=gps.location.lat();
     Tlon=gps.location.lng();
     Talt=gps.altitude.meters() * 3.28;
+    #ifdef USE_BME280
+      pressure_offset = calc_pressure_offset(Talt/3.28);
+    #endif
     Altx = Talt;
     lenalt = Altx.length();
     Altx = "";
@@ -869,6 +877,7 @@ switch(tracker_mode) {
         bme.takeForcedMeasurement();
         tempf = bme.readTemperature()*9/5+32;
         hum = bme.readHumidity();
+        pressure = bme.readPressure()/100 + pressure_offset;
       #else
         hum = dht.getHumidity();
         tempf = dht.getTemperature()*9/5+32;
@@ -902,7 +911,15 @@ switch(tracker_mode) {
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b.....";
+    #ifdef USE_BME280
+      outString += "b";
+      if(pressure<1000) {outString += "0"; }
+      helper = String(pressure*10,0);
+      helper.trim();
+      outString += helper;
+    #else
+      outString += "b.....";
+    #endif
     outString += MY_COMMENT;
     break;
   case WX_TRACKER:
@@ -916,6 +933,7 @@ switch(tracker_mode) {
           bme.takeForcedMeasurement();
           tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
           hum = bme.readHumidity();
+          pressure = bme.readPressure()/100 + pressure_offset;
         #else
           hum = dht.getHumidity();
           tempf = dht.getTemperature()*9/5+32;
@@ -978,7 +996,15 @@ switch(tracker_mode) {
       helper = String(hum,0);
       helper.trim();
       outString += helper;
-      outString += "b.....";
+      #ifdef USE_BME280
+        outString += "b";
+        if(pressure<1000) {outString += "0"; }
+        helper = String(pressure*10,0);
+        helper.trim();
+        outString += helper;
+      #else
+        outString += "b.....";
+      #endif
       outString += MY_COMMENT;
       wx = !wx;
     } else {
@@ -1044,6 +1070,7 @@ case WX_MOVE:
         bme.takeForcedMeasurement();
         tempf = bme.readTemperature()*9/5+32;  // bme Temperatur auslesen
         hum = bme.readHumidity();
+        pressure = bme.readPressure()/100 + pressure_offset;
       #else
         hum = dht.getHumidity();
         tempf = dht.getTemperature()*9/5+32;
@@ -1108,7 +1135,15 @@ case WX_MOVE:
     helper = String(hum,0);
     helper.trim();
     outString += helper;
-    outString += "b.....";
+    #ifdef USE_BME280
+      outString += "b";
+      if(pressure<1000) {outString += "0"; }
+      helper = String(pressure*10,0);
+      helper.trim();
+      outString += helper;
+    #else
+      outString += "b.....";
+    #endif
     outString += MY_COMMENT;
     break;
   case TRACKER:
@@ -1546,7 +1581,7 @@ void setup_data(void) {
   prefs.end();
   writedisplaytext("  SETUP", "ALL DONE","", "stored in NVS", "", "", 2000);
 }
-
+///////////////////////////////////////////////////////////////////////////////////////
 void blinker(int counter) {
   for (int i = 0; i < (counter-1); i++) {
     digitalWrite(TXLED, HIGH);  // turn blue LED ON
@@ -1558,3 +1593,16 @@ void blinker(int counter) {
   smartDelay(150);
   digitalWrite(TXLED, LOW);  // turn blue LED OFF
 }
+///////////////////////////////////////////////////////////////////////////////////////
+int calc_pressure_offset(int height) {
+  //
+  // A very simple method to calculate the offset for correcting the measured air pressure
+  // to the pressure at mean sea level (MSL). It is simplificated to "For each 8m change in height
+  // the pressure is changing by 1hPa."
+  // The exact method is described at
+  // https://de.wikipedia.org/wiki/Barometrische_H%C3%B6henformel#Internationale_H%C3%B6henformel
+  //
+  int offset = round(height / 8);
+  return(offset);
+}
+///////////////////////////////////////////////////////////////////////////////////////
