@@ -274,12 +274,17 @@ void handle_saveDeviceCfg(){
   if (!wifi_ssid.length()){
     WiFi.softAP(apSSID.c_str(), apPassword.c_str());
   } else {
+    int retryWifi = 0;
     WiFi.begin(wifi_ssid.c_str(), wifi_password.length() ? wifi_password.c_str() : nullptr);
     Serial.println("Connecting to " + wifi_ssid);
     while (WiFi.status() != WL_CONNECTED) {
       Serial.print("Not connected: ");
       Serial.println((int)WiFi.status());
       vTaskDelay(500/portTICK_PERIOD_MS);
+      retryWifi += 1;
+      if (retryWifi > 60) {
+        WiFi.softAP(apSSID.c_str(), apPassword.c_str());
+      }
     }
     Serial.println("Connected. IP: " + WiFi.localIP().toString());
     #ifdef ENABLE_SYSLOG
