@@ -1,6 +1,8 @@
+#include <list>
 #include "taskWebServer.h"
 #include "preference_storage.h"
 #include "syslog_log.h"
+#include <time.h>
 /**
  * @see board_build.embed_txtfiles in platformio.ini
  */
@@ -11,6 +13,9 @@ extern const char web_style_css_end[] asm("_binary_data_embed_style_css_out_end"
 extern const char web_js_js[] asm("_binary_data_embed_js_js_out_start");
 extern const char web_js_js_end[] asm("_binary_data_embed_js_js_out_end");
 
+QueueHandle_t webListReceivedQueue = nullptr;
+std::list <tReceivedPacketData*> receivedPackets;
+const int MAX_RECEIVED_LIST_SIZE = 50;
 
 String apSSID = "";
 String apPassword = "xxxxxxxxxx";
@@ -46,7 +51,10 @@ String jsonLineFromPreferenceInt(const char *preferenceName, bool last=false){
   return String("\"") + preferenceName + "\":" + (preferences.getInt(preferenceName)) + (last ?  + R"()" :  + R"(,)");
 }
 String jsonLineFromString(const char *name, const char *value, bool last=false){
-  return String("\"") + name + "\":" + jsonEscape(value) + (last ?  + R"()" :  + R"(,)");
+  return String("\"") + name + "\":\"" + jsonEscape(value) + "\"" + (last ?  + R"()" :  + R"(,)");
+}
+String jsonLineFromInt(const char *name, const int value, bool last=false){
+  return String("\"") + name + "\":" + String(value) + (last ?  + R"()" :  + R"(,)");
 }
 
 void handle_NotFound(){
@@ -134,11 +142,32 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceInt(PREF_DEV_SHOW_RX_TIME);
   jsonData += jsonLineFromPreferenceBool(PREF_DEV_AUTO_SHUT);
   jsonData += jsonLineFromPreferenceInt(PREF_DEV_AUTO_SHUT_PRESET);
-  jsonData += jsonLineFromString("FreeHeap", String(ESP.getFreeHeap()).c_str());
-  jsonData += jsonLineFromString("HeapSize", String(ESP.getHeapSize()).c_str());
-  jsonData += jsonLineFromString("FreeSketchSpace", String(ESP.getFreeSketchSpace()).c_str(), true);
+  jsonData += jsonLineFromInt("FreeHeap", ESP.getFreeHeap());
+  jsonData += jsonLineFromInt("HeapSize", ESP.getHeapSize());
+  jsonData += jsonLineFromInt("FreeSketchSpace", ESP.getFreeSketchSpace(), true);
 
   jsonData += "}";
+  server.send(200,"application/json", jsonData);
+}
+
+void handle_ReceivedList() {
+  String jsonData = "{\"received\": [";
+  auto count = receivedPackets.size();
+  for (auto element: receivedPackets){
+    jsonData += "{";
+    char buf[64];
+    strftime(buf, 64, "%Y.%m.%d %H:%M:%S", &element->rxTime);
+    jsonData += jsonLineFromString("time", buf);
+    jsonData += jsonLineFromString("packet", element->packet->c_str());
+    jsonData += jsonLineFromInt("rssi", element->RSSI);
+    jsonData += jsonLineFromInt("snr", element->SNR, true);
+    jsonData += "}";
+    count--;
+    if (count){
+      jsonData += ",";
+    }
+  }
+  jsonData += "]}";
   server.send(200,"application/json", jsonData);
 }
 
@@ -204,6 +233,7 @@ void handle_saveDeviceCfg(){
   server.on("/save_wifi_cfg", handle_SaveWifiCfg);
   server.on("/reboot", handle_Reboot);
   server.on("/cfg", handle_Cfg);
+  server.on("/received_list", handle_ReceivedList);
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
   server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
@@ -244,12 +274,17 @@ void handle_saveDeviceCfg(){
   if (!wifi_ssid.length()){
     WiFi.softAP(apSSID.c_str(), apPassword.c_str());
   } else {
+    int retryWifi = 0;
     WiFi.begin(wifi_ssid.c_str(), wifi_password.length() ? wifi_password.c_str() : nullptr);
     Serial.println("Connecting to " + wifi_ssid);
     while (WiFi.status() != WL_CONNECTED) {
       Serial.print("Not connected: ");
       Serial.println((int)WiFi.status());
       vTaskDelay(500/portTICK_PERIOD_MS);
+      retryWifi += 1;
+      if (retryWifi > 60) {
+        WiFi.softAP(apSSID.c_str(), apPassword.c_str());
+      }
     }
     Serial.println("Connected. IP: " + WiFi.localIP().toString());
     #ifdef ENABLE_SYSLOG
@@ -259,7 +294,17 @@ void handle_saveDeviceCfg(){
       syslog.defaultPriority(LOG_KERN);
       syslog_log(LOG_INFO, "Connected. IP: " + WiFi.localIP().toString());
     #endif
-
+    configTime(0, 0, "pool.ntp.org");
+    #ifdef ENABLE_SYSLOG
+      struct tm timeinfo{};
+      if(!getLocalTime(&timeinfo)){
+        syslog_log(LOG_WARNING, "Failed to obtain time");
+      } else {
+        char buf[64];
+        strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", &timeinfo);
+        syslog_log(LOG_INFO, String("Time: ") + String(buf));
+      }
+    #endif
   }
 
   server.begin();
@@ -274,8 +319,31 @@ void handle_saveDeviceCfg(){
     #endif
   }
 
+  webListReceivedQueue = xQueueCreate(4,sizeof(tReceivedPacketData *));
+
+
+  tReceivedPacketData *receivedPacketData = nullptr;
+
   while (true){
     server.handleClient();
+    if (xQueueReceive(webListReceivedQueue, &receivedPacketData, (1 / portTICK_PERIOD_MS)) == pdPASS) {
+      auto *receivedPacketToQueue = new tReceivedPacketData();
+      receivedPacketToQueue->packet = new String();
+      receivedPacketToQueue->packet->concat(*receivedPacketData->packet);
+      receivedPacketToQueue->RSSI = receivedPacketData->RSSI;
+      receivedPacketToQueue->SNR = receivedPacketData->SNR;
+      receivedPacketToQueue->rxTime = receivedPacketData->rxTime;
+      receivedPackets.push_back(receivedPacketToQueue);
+      if (receivedPackets.size() > MAX_RECEIVED_LIST_SIZE){
+        auto *packetDataToDelete = receivedPackets.front();
+        delete packetDataToDelete->packet;
+        delete packetDataToDelete;
+        receivedPackets.pop_front();
+      }
+      delete receivedPacketData->packet;
+      delete receivedPacketData;
+    }
+
     vTaskDelay(5/portTICK_PERIOD_MS);
   }
 }

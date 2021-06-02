@@ -15,5 +15,15 @@ typedef struct {
   String callsign;
 } tWebServerCfg;
 
+typedef struct {
+  struct tm rxTime;
+  String *packet;
+  int RSSI;
+  int SNR;
+} tReceivedPacketData;
+
+
+extern QueueHandle_t webListReceivedQueue;
+
 [[noreturn]] void taskWebServer(void *parameter);
 #endif
