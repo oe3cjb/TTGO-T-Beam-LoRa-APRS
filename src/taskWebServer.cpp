@@ -36,8 +36,14 @@ void sendCacheHeader() { server.sendHeader("Cache-Control", "max-age=3600"); }
 void sendGzipHeader() { server.sendHeader("Content-Encoding", "gzip"); }
 
 String jsonEscape(String s){
-  s.replace("\"", "\\\"");
-  s.replace("\\", "\\\\");
+    s.replace("\\", "\\\\");
+    s.replace("\"", "\\\"");
+    s.replace("\n", "\\n");
+    s.replace("\r", "\\r");
+    s.replace("\b", "\\b");
+    s.replace("\f", "\\f");
+    s.replace("\n", "\\n");
+    s.replace("\t", "\\t");
   return s;
 }
 
