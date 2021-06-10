@@ -3,6 +3,8 @@
 #include "preference_storage.h"
 #include "syslog_log.h"
 #include <time.h>
+#include <ArduinoJson.h>
+
 /**
  * @see board_build.embed_txtfiles in platformio.ini
  */
@@ -15,7 +17,7 @@ extern const char web_js_js_end[] asm("_binary_data_embed_js_js_out_end");
 
 QueueHandle_t webListReceivedQueue = nullptr;
 std::list <tReceivedPacketData*> receivedPackets;
-const int MAX_RECEIVED_LIST_SIZE = 50;
+const int MAX_RECEIVED_LIST_SIZE = 10;
 
 String apSSID = "";
 String apPassword = "xxxxxxxxxx";
@@ -151,24 +153,21 @@ void handle_Cfg() {
 }
 
 void handle_ReceivedList() {
-  String jsonData = "{\"received\": [";
-  auto count = receivedPackets.size();
+  DynamicJsonDocument doc(MAX_RECEIVED_LIST_SIZE * 500);
+  JsonObject root = doc.to<JsonObject>();
+  auto received = root.createNestedArray("received");
   for (auto element: receivedPackets){
-    jsonData += "{";
     char buf[64];
     strftime(buf, 64, "%Y.%m.%d %H:%M:%S", &element->rxTime);
-    jsonData += jsonLineFromString("time", buf);
-    jsonData += jsonLineFromString("packet", element->packet->c_str());
-    jsonData += jsonLineFromInt("rssi", element->RSSI);
-    jsonData += jsonLineFromInt("snr", element->SNR, true);
-    jsonData += "}";
-    count--;
-    if (count){
-      jsonData += ",";
-    }
+    auto packet_data = received.createNestedObject();
+    packet_data["time"] = String(buf);
+    packet_data["packet"] = element->packet->c_str();
+    packet_data["rssi"] = element->RSSI;
+    packet_data["snr"] = element->SNR / 10.0f;
+    received.add(packet_data);
   }
-  jsonData += "]}";
-  server.send(200,"application/json", jsonData);
+
+  server.send(200,"application/json", doc.as<String>());
 }
 
 void handle_SaveAPRSCfg() {
