@@ -246,6 +246,7 @@ void handle_saveDeviceCfg(){
   }, []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
+      rf95.sleep(); // disable rf95 before update
       Serial.printf("Update: %s\n", upload.filename.c_str());
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         syslog_log(LOG_ERR, String("Update begin error: ") + Update.errorString());
