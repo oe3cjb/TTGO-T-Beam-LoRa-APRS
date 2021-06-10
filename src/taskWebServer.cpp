@@ -280,13 +280,23 @@ void handle_saveDeviceCfg(){
     while (WiFi.status() != WL_CONNECTED) {
       Serial.print("Not connected: ");
       Serial.println((int)WiFi.status());
+      Serial.print("Retry: ");
+      Serial.println(retryWifi);
       vTaskDelay(500/portTICK_PERIOD_MS);
       retryWifi += 1;
       if (retryWifi > 60) {
         WiFi.softAP(apSSID.c_str(), apPassword.c_str());
+        Serial.println("Unable to connect to to wifi. Starting AP");
+        break;
       }
     }
-    Serial.println("Connected. IP: " + WiFi.localIP().toString());
+
+    if (WiFi.getMode() == wifi_mode_t::WIFI_MODE_AP){
+      Serial.println("Running AP. IP: " + WiFi.softAPIP().toString());
+    } else {
+      Serial.println("Connected. IP: " + WiFi.localIP().toString());
+    }
+
     #ifdef ENABLE_SYSLOG
       syslog.server(SYSLOG_IP, 514);
       syslog.deviceHostname(webServerCfg->callsign.c_str());
