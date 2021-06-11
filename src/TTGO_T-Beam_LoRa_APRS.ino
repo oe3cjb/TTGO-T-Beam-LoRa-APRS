@@ -733,7 +733,7 @@ void setup(){
 
   #ifdef ENABLE_WIFI
     webServerCfg = {.callsign = Tcall};
-    xTaskCreate(taskWebServer, "taskWebServer", 42000, (void*)(&webServerCfg), 1, nullptr);
+    xTaskCreate(taskWebServer, "taskWebServer", 12000, (void*)(&webServerCfg), 1, nullptr);
     writedisplaytext("LoRa-APRS","","Init:","WiFi task started","   =:-)   ","");
   #endif
 

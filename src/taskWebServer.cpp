@@ -168,7 +168,6 @@ void handle_ReceivedList() {
     packet_data["packet"] = element->packet->c_str();
     packet_data["rssi"] = element->RSSI;
     packet_data["snr"] = element->SNR / 10.0f;
-    received.add(packet_data);
   }
 
   server.send(200,"application/json", doc.as<String>());
