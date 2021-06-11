@@ -25,6 +25,7 @@ WebServer server(80);
 #ifdef KISS_PROTOCOL
   WiFiServer tncServer(NETWORK_TNC_PORT);
 #endif
+WiFiServer gpsServer(NETWORK_GPS_PORT);
 
 #ifdef ENABLE_SYSLOG
   // A UDP instance to let us send and receive packets over UDP
@@ -324,6 +325,7 @@ void handle_saveDeviceCfg(){
   #ifdef KISS_PROTOCOL
     tncServer.begin();
   #endif
+  gpsServer.begin();
   if (MDNS.begin(webServerCfg->callsign.c_str())) {
     MDNS.setInstanceName(webServerCfg->callsign + " TTGO LoRa APRS TNC " + TXFREQ + "MHz");
     MDNS.addService("http", "tcp", 80);

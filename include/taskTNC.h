@@ -7,6 +7,7 @@
 #endif
 #if defined(ENABLE_WIFI)
   #include "taskWebServer.h"
+  #include "wifi_clients.h"
 #endif
 extern QueueHandle_t tncToSendQueue;
 extern QueueHandle_t tncReceivedQueue;
