@@ -2,6 +2,7 @@
 #include "taskWebServer.h"
 #include "preference_storage.h"
 #include "syslog_log.h"
+#include "PSRAMJsonDocument.h"
 #include <time.h>
 #include <ArduinoJson.h>
 
@@ -17,7 +18,7 @@ extern const char web_js_js_end[] asm("_binary_data_embed_js_js_out_end");
 
 QueueHandle_t webListReceivedQueue = nullptr;
 std::list <tReceivedPacketData*> receivedPackets;
-const int MAX_RECEIVED_LIST_SIZE = 10;
+const int MAX_RECEIVED_LIST_SIZE = 50;
 
 String apSSID = "";
 String apPassword = "xxxxxxxxxx";
@@ -129,11 +130,10 @@ void handle_Reboot() {
 void handle_Shutdown() {
 
   #ifdef T_BEAM_V1_0
-    server.sendHeader("Location", "/");
-    server.send(302,"text/html", "");
+    server.send(200,"text/html", "Shutdown");
     axp.shutdown();
   #else
-    server.send(302,"text/html", "Not supported");
+    server.send(404,"text/html", "Not supported");
   #endif
 }
 
@@ -169,14 +169,16 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceInt(PREF_DEV_AUTO_SHUT_PRESET);
   jsonData += jsonLineFromInt("FreeHeap", ESP.getFreeHeap());
   jsonData += jsonLineFromInt("HeapSize", ESP.getHeapSize());
-  jsonData += jsonLineFromInt("FreeSketchSpace", ESP.getFreeSketchSpace(), true);
+  jsonData += jsonLineFromInt("FreeSketchSpace", ESP.getFreeSketchSpace());
+  jsonData += jsonLineFromInt("PSRAMSize", ESP.getPsramSize());
+  jsonData += jsonLineFromInt("PSRAMFree", ESP.getFreePsram(), true);
 
   jsonData += "}";
   server.send(200,"application/json", jsonData);
 }
 
 void handle_ReceivedList() {
-  DynamicJsonDocument doc(MAX_RECEIVED_LIST_SIZE * 500);
+  PSRAMJsonDocument doc(MAX_RECEIVED_LIST_SIZE * 1000);
   JsonObject root = doc.to<JsonObject>();
   auto received = root.createNestedArray("received");
   for (auto element: receivedPackets){
