@@ -35,6 +35,12 @@ WiFiServer gpsServer(NETWORK_GPS_PORT);
   Syslog syslog(udpClient, SYSLOG_PROTO_IETF);
 #endif
 
+#ifdef T_BEAM_V1_0
+  #include <axp20x.h>
+  extern AXP20X_Class axp;
+#endif
+
+
 void sendCacheHeader() { server.sendHeader("Cache-Control", "max-age=3600"); }
 void sendGzipHeader() { server.sendHeader("Content-Encoding", "gzip"); }
 
@@ -116,7 +122,19 @@ void handle_SaveWifiCfg() {
 void handle_Reboot() {
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
+  server.close();
   ESP.restart();
+}
+
+void handle_Shutdown() {
+
+  #ifdef T_BEAM_V1_0
+    server.sendHeader("Location", "/");
+    server.send(302,"text/html", "");
+    axp.shutdown();
+  #else
+    server.send(302,"text/html", "Not supported");
+  #endif
 }
 
 void handle_Restore() {
@@ -235,6 +253,7 @@ void handle_saveDeviceCfg(){
   server.on("/scan_wifi", handle_ScanWifi);
   server.on("/save_wifi_cfg", handle_SaveWifiCfg);
   server.on("/reboot", handle_Reboot);
+  server.on("/shutdown", handle_Shutdown);
   server.on("/cfg", handle_Cfg);
   server.on("/received_list", handle_ReceivedList);
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
