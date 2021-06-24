@@ -183,15 +183,15 @@
 
 // BG_RF95_REG_1D_MODEM_CONFIG1                       0x1d
 #define BG_RF95_BW                                    0xc0
-#define BG_RF95_BW_125KHZ                             0x70
-#define BG_RF95_BW_250KHZ                             0x80
-#define BG_RF95_BW_500KHZ                             0x90
+#define BG_RF95_BW_125KHZ                             0x00
+#define BG_RF95_BW_250KHZ                             0x40
+#define BG_RF95_BW_500KHZ                             0x80
 #define BG_RF95_BW_RESERVED                           0xc0
 #define BG_RF95_CODING_RATE                           0x38
-#define BG_RF95_CODING_RATE_4_5                       0x02
-#define BG_RF95_CODING_RATE_4_6                       0x04
-#define BG_RF95_CODING_RATE_4_7                       0x06
-#define BG_RF95_CODING_RATE_4_8                       0x08
+#define BG_RF95_CODING_RATE_4_5                       0x00
+#define BG_RF95_CODING_RATE_4_6                       0x08
+#define BG_RF95_CODING_RATE_4_7                       0x10
+#define BG_RF95_CODING_RATE_4_8                       0x18
 #define BG_RF95_IMPLICIT_HEADER_MODE_ON               0x04
 #define BG_RF95_RX_PAYLOAD_CRC_ON                     0x02
 #define BG_RF95_LOW_DATA_RATE_OPTIMIZE                0x01
@@ -461,7 +461,7 @@
 /// -1 to +14 (for modules that use RFO transmitter pin)
 /// The default is 13. Eg:
 /// \code
-/// driver.setTxPower(23); // use PA_BOOST transmitter pin
+/// driver.setTxPower(10); // use PA_BOOST transmitter pin
 /// driver.setTxPower(10, true); // use PA_RFO pin transmitter pin
 /// \endcode
 ///
@@ -542,12 +542,13 @@ public:
     /// you may need to change the RHReliableDatagram timeout for reliable operations.
     typedef enum
     {
-	Bw125Cr45Sf128 = 0,	   ///< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-	Bw125Cr48Sf4096,           ///< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on. Slow+long range
-	Bw125Cr45Sf4096,           ///< APRS 
-    Bw125Cr47Sf512,          /// 1200 bps
-    Bw125Cr45Sf2048,       ///<Bw = 125 kHz Cr = 4/5, Sf= 2048 chips/symbol, CRC on.
-    Bw250Cr48Sf4096,          ///< Bw = 250 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on.
+	Bw125Cr45Sf128 = 0,	            ///< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
+	Bw500Cr45Sf128,	                ///< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Fast+short range
+	Bw31_25Cr48Sf512,	            ///< Bw = 31.25 kHz, Cr = 4/8, Sf = 512chips/symbol, CRC on. Slow+long range
+	Bw125Cr48Sf4096,                ///< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on. Slow+long range
+	Bw125Cr45Sf4096,                ///< APRS 
+    Bw125Cr45Sf2048,                ///< M0IGA Messup speed / 698baud (not 1200)
+    Bw125Cr47Sf512,                 ///< corrected 1200 baud
     } ModemConfigChoice;
 
     /// Constructor. You can have multiple instances, but each instance must have its own

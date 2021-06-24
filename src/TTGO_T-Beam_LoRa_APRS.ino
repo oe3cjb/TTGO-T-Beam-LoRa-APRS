@@ -707,12 +707,12 @@ void setup(){
   #endif
   batt_read();
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"");
-  rf95.setFrequency(433.775);
   #ifdef SPEED_1200
     rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
   #else
     rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
   #endif
+  rf95.setFrequency(433.775);
   rf95.setTxPower(txPower);
   delay(250);
   #ifdef KISS_PROTOCOL
