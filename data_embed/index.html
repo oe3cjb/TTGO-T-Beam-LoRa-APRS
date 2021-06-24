@@ -185,12 +185,17 @@
         </div>
         <article>
             <div class="grid-container quarters">
-                <form action="/reboot" method="post">
+                <form action="/shutdown" method="post" onsubmit="return confirmAction('shutdown');">
+                    <div>
+                        <input class="button-primary" type="submit" value="Shutdown">
+                    </div>
+                </form>
+                <form action="/reboot" method="post" onsubmit="return confirmAction('reboot');">
                     <div>
                         <input class="button-primary" type="submit" value="Reboot">
                     </div>
                 </form>
-                <form action="/restore" method="post">
+                <form action="/restore" method="post" onsubmit="return confirmAction('do factory reset');">
                     <div>
                         <input class="button-primary" type="submit" value="Factory reset">
                     </div>

@@ -12,6 +12,7 @@ extern BG_RF95 rf95;
 #ifdef KISS_PROTOCOL
   extern WiFiServer tncServer;
 #endif
+extern WiFiServer gpsServer;
 typedef struct {
   String callsign;
 } tWebServerCfg;
