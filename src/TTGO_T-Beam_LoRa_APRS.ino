@@ -410,7 +410,13 @@ String getSatAndBatInfo() {
 }
 
 void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
+  char *nextTxInfo;
+  if (!gps_state){
+    nextTxInfo = (char*)"(TX) GPS DISABLED";
+  } else {
+    nextTxInfo = (char*)"(TX) at valid GPS";
+  }
+  writedisplaytext(" " + Tcall, nextTxInfo, "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
 }
 
 #if defined(KISS_PROTOCOL)
