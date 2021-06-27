@@ -410,7 +410,13 @@ String getSatAndBatInfo() {
 }
 
 void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
+  char *nextTxInfo;
+  if (!gps_state){
+    nextTxInfo = (char*)"(TX) GPS DISABLED";
+  } else {
+    nextTxInfo = (char*)"(TX) at valid GPS";
+  }
+  writedisplaytext(" " + Tcall, nextTxInfo, "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
 }
 
 #if defined(KISS_PROTOCOL)
@@ -644,7 +650,11 @@ void setup(){
     }
     axp.setLowTemp(0xFF);                                                 //SP6VWX Set low charging temperature
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // LoRa
-    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+    if (gps_state){
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+    } else {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                           // switch off GPS
+    }
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     axp.setDCDC1Voltage(3300);
