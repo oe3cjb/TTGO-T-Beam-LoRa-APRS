@@ -153,17 +153,15 @@ float BattVolts;
 float InpVolts;
 
 // variables for smart beaconing
-ulong SB_min_interval = 60000L;
-ulong SB_max_interval = 360000L;
-ulong SB_min_speed = 0;
-ulong SB_max_speed = 30;
+ulong sb_min_interval = 60000L;
+ulong sb_max_interval = 360000L;
+float sb_min_speed = 0;
+float sb_max_speed = 30;
 
-float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=SB_max_speed, min_speed=SB_min_speed;
+float average_speed[5] = {0,0,0,0,0}, average_speed_final=0;
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
 
-ulong min_time_to_nextTX=SB_min_interval;      // minimum time period between TX = 60000ms = 60secs = 1min
-ulong max_time_to_nextTX= SB_max_interval;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
 
 ulong time_to_refresh = 0;
@@ -596,28 +594,28 @@ void setup(){
 
     if (!preferences.getBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT)){
       preferences.putBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT, true);
-      preferences.putInt(PREF_APRS_SB_MIN_INTERVAL_PRESET, SB_min_interval/1000);
+      preferences.putInt(PREF_APRS_SB_MIN_INTERVAL_PRESET, sb_min_interval/1000);
     }
-    SB_min_interval = preferences.getInt(PREF_APRS_SB_MIN_INTERVAL_PRESET) * 1000;
+    sb_min_interval = preferences.getInt(PREF_APRS_SB_MIN_INTERVAL_PRESET) * 1000;
 
     if (!preferences.getBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT)){
       preferences.putBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT, true);
-      preferences.putInt(PREF_APRS_SB_MAX_INTERVAL_PRESET, SB_max_interval/1000);
+      preferences.putInt(PREF_APRS_SB_MAX_INTERVAL_PRESET, sb_max_interval/1000);
     }
-    SB_max_interval = preferences.getInt(PREF_APRS_SB_MAX_INTERVAL_PRESET) * 1000;
+    sb_max_interval = preferences.getInt(PREF_APRS_SB_MAX_INTERVAL_PRESET) * 1000;
 
 
     if (!preferences.getBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT)){
       preferences.putBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT, true);
-      preferences.putInt(PREF_APRS_SB_MIN_SPEED_PRESET, SB_min_speed);
+      preferences.putInt(PREF_APRS_SB_MIN_SPEED_PRESET, sb_min_speed);
     }
-    SB_min_speed = preferences.getInt(PREF_APRS_SB_MIN_SPEED_PRESET);
+    sb_min_speed = preferences.getInt(PREF_APRS_SB_MIN_SPEED_PRESET);
 
     if (!preferences.getBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT)){
       preferences.putBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT, true);
-      preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, SB_max_speed);
+      preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, sb_max_speed);
     }
-    SB_max_speed = preferences.getInt(PREF_APRS_SB_MAX_SPEED_PRESET);
+    sb_max_speed = preferences.getInt(PREF_APRS_SB_MAX_SPEED_PRESET);
 
 // 
 
@@ -740,8 +738,8 @@ void setup(){
     for(;;); // Don't proceed, loop forever
   }
 
-  if (max_time_to_nextTX < nextTX){
-    max_time_to_nextTX=nextTX;
+  if (sb_max_interval < nextTX){
+    sb_max_interval=nextTX;
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","");
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","");
@@ -929,9 +927,9 @@ void loop() {
     point_avg_speed=0;
   }
   average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
-  nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
-  if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
-  if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
+  nextTX = (sb_max_interval-sb_min_interval)/(sb_max_speed-sb_min_speed)*(sb_max_speed-average_speed_final)+sb_min_interval;
+  if (nextTX < sb_min_interval) {nextTX=sb_min_interval;}
+  if (nextTX > sb_max_interval) {nextTX=sb_max_interval;}
   average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
   ++point_avg_course;
   if (point_avg_course>(ANGLE_AVGS-1)) {
@@ -949,7 +947,7 @@ void loop() {
     if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
       if (abs(new_course-old_course-360)>=ANGLE) {
         nextTX = 0;
-        // lastTX = min_time_to_nextTX
+        // lastTX = sb_min_interval
       }
     } else {
       if ((old_course > (360-ANGLE)) && (new_course < ANGLE)) {
@@ -964,7 +962,7 @@ void loop() {
     }
     old_course = new_course;
   }
-  if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
+  if ((millis()<sb_max_interval)&&(lastTX == 0)) {
     nextTX = 0;
   }
   if ( (lastTX+nextTX) <= millis()  ) {
