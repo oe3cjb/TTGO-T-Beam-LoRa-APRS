@@ -29,6 +29,16 @@ static const char *const PREF_APRS_FIXED_BEACON_PRESET = "aprs_fixed_beac";
 static const char *const PREF_APRS_FIXED_BEACON_PRESET_INIT = "aprs_fix_b_init";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET = "aprs_fb_interv";
 static const char *const PREF_APRS_FIXED_BEACON_INTERVAL_PRESET_INIT = "aprs_fb_in_init";
+// SMART BEACONING
+static const char *const PREF_APRS_SB_MIN_INTERVAL_PRESET = "sb_min_interv";
+static const char *const PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT = "sb_min_interv_i";
+static const char *const PREF_APRS_SB_MAX_INTERVAL_PRESET = "sb_max_interv";
+static const char *const PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT = "sb_max_interv_i";
+static const char *const PREF_APRS_SB_MIN_SPEED_PRESET = "sb_min_speed";
+static const char *const PREF_APRS_SB_MIN_SPEED_PRESET_INIT = "sb_min_speed_i";
+static const char *const PREF_APRS_SB_MAX_SPEED_PRESET = "sb_max_speed";
+static const char *const PREF_APRS_SB_MAX_SPEED_PRESET_INIT = "sb_max_speed_i";
+//
 static const char *const PREF_APRS_GPS_EN = "gps_enabled";
 static const char *const PREF_APRS_GPS_EN_INIT = "gps_state_init";
 static const char *const PREF_APRS_SHOW_CMT = "show_cmt";

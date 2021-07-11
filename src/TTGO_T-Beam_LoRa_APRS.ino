@@ -153,12 +153,19 @@ float BattVolts;
 float InpVolts;
 
 // variables for smart beaconing
-float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
+ulong SB_min_interval = 60000L;
+ulong SB_max_interval = 360000L;
+ulong SB_min_speed = 0;
+ulong SB_max_speed = 30;
+
+float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=SB_max_speed, min_speed=SB_min_speed;
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
-ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
-ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
+
+ulong min_time_to_nextTX=SB_min_interval;      // minimum time period between TX = 60000ms = 60secs = 1min
+ulong max_time_to_nextTX= SB_max_interval;
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
+
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
@@ -584,6 +591,35 @@ void setup(){
       preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, fix_beacon_interval/1000);
     }
     fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET) * 1000;
+
+// + SMART BEACONING
+
+    if (!preferences.getBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MIN_INTERVAL_PRESET, SB_min_interval/1000);
+    }
+    SB_min_interval = preferences.getInt(PREF_APRS_SB_MIN_INTERVAL_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MAX_INTERVAL_PRESET, SB_max_interval/1000);
+    }
+    SB_max_interval = preferences.getInt(PREF_APRS_SB_MAX_INTERVAL_PRESET) * 1000;
+
+
+    if (!preferences.getBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MIN_SPEED_PRESET, SB_min_speed);
+    }
+    SB_min_speed = preferences.getInt(PREF_APRS_SB_MIN_SPEED_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, SB_max_speed);
+    }
+    SB_max_speed = preferences.getInt(PREF_APRS_SB_MAX_SPEED_PRESET);
+
+// 
 
     if (!preferences.getBool(PREF_DEV_SHOW_RX_TIME_INIT)){
       preferences.putBool(PREF_DEV_SHOW_RX_TIME_INIT, true);

@@ -138,6 +138,10 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceString(PREF_APRS_LATITUDE_PRESET);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_LONGITUDE_PRESET);
   jsonData += jsonLineFromPreferenceInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET);
+  jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MIN_INTERVAL_PRESET);
+  jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MAX_INTERVAL_PRESET);
+  jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MIN_SPEED_PRESET);
+  jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MAX_SPEED_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_BATTERY);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
@@ -191,10 +195,23 @@ void handle_SaveAPRSCfg() {
   }
   if (server.hasArg(PREF_APRS_LATITUDE_PRESET)){
     preferences.putString(PREF_APRS_LATITUDE_PRESET, server.arg(PREF_APRS_LATITUDE_PRESET));
-  }
+  } 
   if (server.hasArg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET)){
     preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, server.arg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET).toInt());
   }
+  if (server.hasArg(PREF_APRS_SB_MIN_INTERVAL_PRESET)){
+    preferences.putInt(PREF_APRS_SB_MIN_INTERVAL_PRESET, server.arg(PREF_APRS_SB_MIN_INTERVAL_PRESET).toInt());
+  }
+  if (server.hasArg(PREF_APRS_SB_MAX_INTERVAL_PRESET)){
+    preferences.putInt(PREF_APRS_SB_MAX_INTERVAL_PRESET, server.arg(PREF_APRS_SB_MAX_INTERVAL_PRESET).toInt());
+  }
+  if (server.hasArg(PREF_APRS_SB_MIN_SPEED_PRESET)){
+    preferences.putInt(PREF_APRS_SB_MIN_SPEED_PRESET, server.arg(PREF_APRS_SB_MIN_SPEED_PRESET).toInt());
+  }
+  if (server.hasArg(PREF_APRS_SB_MAX_SPEED_PRESET)){
+    preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, server.arg(PREF_APRS_SB_MAX_SPEED_PRESET).toInt());
+  }
+
   if (server.hasArg(PREF_APRS_LONGITUDE_PRESET)){
     preferences.putString(PREF_APRS_LONGITUDE_PRESET, server.arg(PREF_APRS_LONGITUDE_PRESET));
   }
