@@ -12,3 +12,4 @@ cmake-build-*
 /include/version.h
 /data_embed/*.out
 /src/TTGO_T-Beam_LoRa_APRS.ino.cpp
+workspace.code-workspace
