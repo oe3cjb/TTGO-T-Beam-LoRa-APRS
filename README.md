@@ -54,5 +54,5 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 
 ## Default WiFi Password:
 
-Default WiFi Password is: xxxxxxxxxx
-that is, 10 times x
+* Default WiFi Password is: xxxxxxxxxx
+* that is, 10 times x
