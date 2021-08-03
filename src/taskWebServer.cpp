@@ -56,6 +56,9 @@ String jsonLineFromPreferenceBool(const char *preferenceName, bool last=false){
 String jsonLineFromPreferenceInt(const char *preferenceName, bool last=false){
   return String("\"") + preferenceName + "\":" + (preferences.getInt(preferenceName)) + (last ?  + R"()" :  + R"(,)");
 }
+String jsonLineFromPreferenceDouble(const char *preferenceName, bool last=false){
+    return String("\"") + preferenceName + "\":" + String(preferences.getDouble(preferenceName),3) + (last ?  + R"()" :  + R"(,)");
+}
 String jsonLineFromString(const char *name, const char *value, bool last=false){
   return String("\"") + name + "\":\"" + jsonEscape(value) + "\"" + (last ?  + R"()" :  + R"(,)");
 }
@@ -130,6 +133,8 @@ void handle_Cfg() {
   String jsonData = "{";
   jsonData += String("\"") + PREF_WIFI_PASSWORD + "\": \"" + jsonEscape((preferences.getString(PREF_WIFI_PASSWORD).isEmpty() ? String("") : "*")) + R"(",)";
   jsonData += jsonLineFromPreferenceString(PREF_WIFI_SSID);
+  jsonData += jsonLineFromPreferenceDouble(PREF_LORA_FREQ_PRESET);
+  jsonData += jsonLineFromPreferenceInt(PREF_LORA_SPEED_PRESET);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_CALLSIGN);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_RELAY_PATH);
   jsonData += jsonLineFromPreferenceString(PREF_APRS_SYMBOL_TABLE);
@@ -178,6 +183,15 @@ void handle_ReceivedList() {
 }
 
 void handle_SaveAPRSCfg() {
+  // LoRa settings
+  if (server.hasArg(PREF_LORA_FREQ_PRESET)){
+    preferences.putDouble(PREF_LORA_FREQ_PRESET, server.arg(PREF_LORA_FREQ_PRESET).toDouble());
+    Serial.printf("FREQ saved:\t%f\n", server.arg(PREF_LORA_FREQ_PRESET).toDouble());
+  }
+  if (server.hasArg(PREF_LORA_SPEED_PRESET)){
+    preferences.putInt(PREF_LORA_SPEED_PRESET, server.arg(PREF_LORA_SPEED_PRESET).toInt());
+  }
+  // APRS station settings
   if (server.hasArg(PREF_APRS_CALLSIGN) && !server.arg(PREF_APRS_CALLSIGN).isEmpty()){
     preferences.putString(PREF_APRS_CALLSIGN, server.arg(PREF_APRS_CALLSIGN));
   }
@@ -195,7 +209,8 @@ void handle_SaveAPRSCfg() {
   }
   if (server.hasArg(PREF_APRS_LATITUDE_PRESET)){
     preferences.putString(PREF_APRS_LATITUDE_PRESET, server.arg(PREF_APRS_LATITUDE_PRESET));
-  } 
+  }
+  // Smart Beaconing settings 
   if (server.hasArg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET)){
     preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, server.arg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET).toInt());
   }

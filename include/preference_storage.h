@@ -10,6 +10,12 @@ extern Preferences preferences;
 // MAX 15 chars for preferenece key!!!
 static const char *const PREF_WIFI_SSID = "wifi_ssid";
 static const char *const PREF_WIFI_PASSWORD = "wifi_password";
+// LoRa settings
+static const char *const PREF_LORA_FREQ_PRESET_INIT = "lora_freq_i";
+static const char *const PREF_LORA_FREQ_PRESET = "lora_freq";
+static const char *const PREF_LORA_SPEED_PRESET_INIT = "lora_speed_i";
+static const char *const PREF_LORA_SPEED_PRESET = "lora_speed";
+// Station settings
 static const char *const PREF_APRS_CALLSIGN = "aprs_callsign";
 static const char *const PREF_APRS_RELAY_PATH = "aprs_relay_path";
 static const char *const PREF_APRS_RELAY_PATH_INIT = "aprs_relay_init";

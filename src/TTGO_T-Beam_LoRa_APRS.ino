@@ -86,6 +86,10 @@
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
 #endif
 
+// Variables for LoRa settings
+ulong lora_speed = 1200;
+double lora_freq = 433.775;
+
 // Variables for APRS packaging
 String Tcall;                       //your Call Sign for normal position reports
 String aprsSymbolTable = APRS_SYMBOL_TABLE;
@@ -314,7 +318,7 @@ void sendpacket(){
   #endif
   batt_read();
   prepareAPRSFrame();
-  loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
+  loraSend(txPower, lora_freq, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
 }
 
 /**
@@ -331,11 +335,12 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
 
   int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
   message.toCharArray((char*)lora_TXBUFF, messageSize + 1, 0);
-  #ifdef SPEED_1200
+  if(lora_speed==1200){
     rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
-  #else
+  }
+  else{
     rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
-  #endif
+  }
   rf95.setFrequency(lora_FREQ);
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, messageSize);
@@ -499,7 +504,8 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 void setup(){
   SPI.begin(SPI_sck,SPI_miso,SPI_mosi,SPI_ss);    //DO2JMG Heltec Patch
-  
+  Serial.begin(115200);
+
   #ifdef BUZZER
     ledcSetup(0,1E5,12);
     ledcAttachPin(BUZZER,0);
@@ -523,6 +529,23 @@ void setup(){
     }
 
     preferences.begin("cfg", false);
+    
+    // LoRa transmission settings
+
+    if (!preferences.getBool(PREF_LORA_FREQ_PRESET_INIT)){
+      preferences.putBool(PREF_LORA_FREQ_PRESET_INIT, true);
+      preferences.putDouble(PREF_LORA_FREQ_PRESET, lora_freq);
+    }
+    lora_freq = preferences.getDouble(PREF_LORA_FREQ_PRESET);
+    
+    if (!preferences.getBool(PREF_LORA_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_LORA_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_LORA_SPEED_PRESET, lora_speed);
+    }
+    lora_speed = preferences.getInt(PREF_LORA_SPEED_PRESET);
+
+    // APRS station settings
+
     aprsSymbolTable = preferences.getString(PREF_APRS_SYMBOL_TABLE);
     if (aprsSymbolTable.isEmpty()){
       preferences.putString(PREF_APRS_SYMBOL_TABLE, APRS_SYMBOL_TABLE);
@@ -676,7 +699,7 @@ void setup(){
     pinMode(BUTTON, INPUT_PULLUP);
   #endif
   digitalWrite(TXLED, LOW);                                               // turn blue LED off
-  Serial.begin(115200);
+  
   Wire.begin(I2C_SDA, I2C_SCL);
 
   #ifdef T_BEAM_V1_0
@@ -751,12 +774,16 @@ void setup(){
   #endif
   batt_read();
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"");
-  #ifdef SPEED_1200
+  
+  if(lora_speed==1200)
     rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
-  #else
+  else
     rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
-  #endif
-  rf95.setFrequency(433.775);
+
+  Serial.printf("LoRa Speed:\t%d\n", lora_speed);
+  
+  rf95.setFrequency(lora_freq);
+  Serial.printf("LoRa FREQ:\t%f\n", lora_freq);
   rf95.setTxPower(txPower);
   delay(250);
   #ifdef KISS_PROTOCOL
@@ -877,7 +904,7 @@ void loop() {
       if (xQueueReceive(tncToSendQueue, &TNC2DataFrame, (1 / portTICK_PERIOD_MS)) == pdPASS) {
         writedisplaytext("((KISSTX))","","","","","");
         time_to_refresh = millis() + showRXTime;
-        loraSend(txPower, TXFREQ, *TNC2DataFrame);
+        loraSend(txPower, lora_freq, *TNC2DataFrame);
         delete TNC2DataFrame;
       }
     }
