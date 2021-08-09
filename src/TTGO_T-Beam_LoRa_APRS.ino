@@ -921,6 +921,12 @@ switch(tracker_mode) {
       outString += "b.....";
     #endif
     outString += MY_COMMENT;
+    #ifdef HW_COMMENT
+      outString += (" --");
+      outString += " Batt=";
+      outString += String(BattVolts,2);
+      outString += ("V");
+    #endif
     break;
   case WX_TRACKER:
     if (wx) {
