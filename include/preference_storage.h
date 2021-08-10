@@ -44,6 +44,9 @@ static const char *const PREF_APRS_SB_MIN_SPEED_PRESET = "sb_min_speed";
 static const char *const PREF_APRS_SB_MIN_SPEED_PRESET_INIT = "sb_min_speed_i";
 static const char *const PREF_APRS_SB_MAX_SPEED_PRESET = "sb_max_speed";
 static const char *const PREF_APRS_SB_MAX_SPEED_PRESET_INIT = "sb_max_speed_i";
+static const char *const PREF_APRS_SB_ANGLE_PRESET = "sb_angle";
+static const char *const PREF_APRS_SB_ANGLE_PRESET_INIT = "sb_angle_i";
+
 //
 static const char *const PREF_APRS_GPS_EN = "gps_enabled";
 static const char *const PREF_APRS_GPS_EN_INIT = "gps_state_init";

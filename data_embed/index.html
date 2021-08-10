@@ -125,7 +125,7 @@
                 <div class="grid-container quarters">
                     <div>
                         <label for="sb_min_interv">Min interval [s]</label>
-                        <input name="sb_min_interv" id="sb_min_interv" type="number" min="60" title="Minimal time for Smart Beaconing"> 
+                        <input name="sb_min_interv" id="sb_min_interv" type="number" min="10" title="Minimal time for Smart Beaconing"> 
                     </div>
                     <div>
                         <label for="sb_max_interv">Max interval [s]</label>
@@ -138,6 +138,10 @@
                     <div>
                         <label for="sb_max_speed">Max speed [km/h]</label>
                         <input name="sb_max_speed" id="sb_max_speed" type="number" min="1" title="Maximal speed for Smart Beaconing"> 
+                    </div>
+                    <div>
+                        <label for="sb_angle">Course change [degrees]</label>
+                        <input name="sb_angle" id="sb_angle" type="number" min="1" max="360" title="Angle of course change to speed up beacon transmission"> 
                     </div>
                 </div>
                 <div class="grid-container quarters">

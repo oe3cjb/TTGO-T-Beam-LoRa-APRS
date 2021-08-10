@@ -147,6 +147,7 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MAX_INTERVAL_PRESET);
   jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MIN_SPEED_PRESET);
   jsonData += jsonLineFromPreferenceInt(PREF_APRS_SB_MAX_SPEED_PRESET);
+  jsonData += jsonLineFromPreferenceDouble(PREF_APRS_SB_ANGLE_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_BATTERY);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_FIXED_BEACON_PRESET);
   jsonData += jsonLineFromPreferenceBool(PREF_APRS_SHOW_ALTITUDE);
@@ -210,6 +211,10 @@ void handle_SaveAPRSCfg() {
   if (server.hasArg(PREF_APRS_LATITUDE_PRESET)){
     preferences.putString(PREF_APRS_LATITUDE_PRESET, server.arg(PREF_APRS_LATITUDE_PRESET));
   }
+  if (server.hasArg(PREF_APRS_LONGITUDE_PRESET)){
+    preferences.putString(PREF_APRS_LONGITUDE_PRESET, server.arg(PREF_APRS_LONGITUDE_PRESET));
+  }
+
   // Smart Beaconing settings 
   if (server.hasArg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET)){
     preferences.putInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET, server.arg(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET).toInt());
@@ -226,9 +231,8 @@ void handle_SaveAPRSCfg() {
   if (server.hasArg(PREF_APRS_SB_MAX_SPEED_PRESET)){
     preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, server.arg(PREF_APRS_SB_MAX_SPEED_PRESET).toInt());
   }
-
-  if (server.hasArg(PREF_APRS_LONGITUDE_PRESET)){
-    preferences.putString(PREF_APRS_LONGITUDE_PRESET, server.arg(PREF_APRS_LONGITUDE_PRESET));
+  if (server.hasArg(PREF_APRS_SB_ANGLE_PRESET)){
+    preferences.putDouble(PREF_APRS_SB_ANGLE_PRESET, server.arg(PREF_APRS_SB_ANGLE_PRESET).toDouble());
   }
 
   preferences.putBool(PREF_APRS_SHOW_BATTERY, server.hasArg(PREF_APRS_SHOW_BATTERY));

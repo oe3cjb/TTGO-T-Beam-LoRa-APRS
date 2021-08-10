@@ -161,6 +161,7 @@ ulong sb_min_interval = 60000L;
 ulong sb_max_interval = 360000L;
 float sb_min_speed = 0;
 float sb_max_speed = 30;
+float sb_angle = 30;                      // angle to send packet at smart beaconing
 
 float average_speed[5] = {0,0,0,0,0}, average_speed_final=0;
 float old_course = 0, new_course = 0;
@@ -179,7 +180,7 @@ ulong shutdown_countdown_timer = 0;
 boolean shutdown_active =true;
 boolean shutdown_countdown_timer_enable = false;
 boolean shutdown_usb_status_bef = false;
-#define ANGLE 60                      // angle to send packet at smart beaconing
+
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
@@ -640,6 +641,11 @@ void setup(){
     }
     sb_max_speed = preferences.getInt(PREF_APRS_SB_MAX_SPEED_PRESET);
 
+    if (!preferences.getBool(PREF_APRS_SB_ANGLE_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_ANGLE_PRESET_INIT, true);
+      preferences.putDouble(PREF_APRS_SB_ANGLE_PRESET, sb_angle);
+    }
+    sb_angle = preferences.getDouble(PREF_APRS_SB_ANGLE_PRESET);
 // 
 
     if (!preferences.getBool(PREF_DEV_SHOW_RX_TIME_INIT)){
@@ -971,19 +977,18 @@ void loop() {
     if (new_course < 0) {
         new_course=360+new_course;
       }
-    if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
-      if (abs(new_course-old_course-360)>=ANGLE) {
-        nextTX = 0;
-        // lastTX = sb_min_interval
+    if ((old_course < sb_angle) && (new_course > (360-sb_angle))) {
+      if (abs(new_course-old_course-360)>=sb_angle) {
+        nextTX = 1; // give one second for turn to finish and then TX
       }
     } else {
-      if ((old_course > (360-ANGLE)) && (new_course < ANGLE)) {
-        if (abs(new_course-old_course+360)>=ANGLE) {
-          nextTX = 0;
+      if ((old_course > (360-sb_angle)) && (new_course < sb_angle)) {
+        if (abs(new_course-old_course+360)>=sb_angle) {
+          nextTX = 1;
         }
       } else {
-        if (abs(new_course-old_course)>=ANGLE) {
-          nextTX = 0;
+        if (abs(new_course-old_course)>=sb_angle) {
+          nextTX = 1;
         }
       }
     }
