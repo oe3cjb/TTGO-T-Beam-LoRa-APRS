@@ -51,3 +51,8 @@ After connection with APRX based DIGI it can be used as KISS-TNC
 * Select/Press Flash ESP.
 * Once complete, “Done! Flashing is complete!” will be shown.
 * any subsequent updates can be done via WWW
+
+## Default WiFi Password:
+
+* Default WiFi Password is: xxxxxxxxxx
+* that is, 10 times x

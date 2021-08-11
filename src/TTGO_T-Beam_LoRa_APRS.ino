@@ -86,6 +86,10 @@
   const byte TXLED  = 4;            //pin number for LED on TX Tracker
 #endif
 
+// Variables for LoRa settings
+ulong lora_speed = 1200;
+double lora_freq = 433.775;
+
 // Variables for APRS packaging
 String Tcall;                       //your Call Sign for normal position reports
 String aprsSymbolTable = APRS_SYMBOL_TABLE;
@@ -153,12 +157,18 @@ float BattVolts;
 float InpVolts;
 
 // variables for smart beaconing
-float average_speed[5] = {0,0,0,0,0}, average_speed_final=0, max_speed=30, min_speed=0;
+ulong sb_min_interval = 60000L;
+ulong sb_max_interval = 360000L;
+float sb_min_speed = 0;
+float sb_max_speed = 30;
+float sb_angle = 30;                      // angle to send packet at smart beaconing
+
+float average_speed[5] = {0,0,0,0,0}, average_speed_final=0;
 float old_course = 0, new_course = 0;
 int point_avg_speed = 0, point_avg_course = 0;
-ulong min_time_to_nextTX=60000L;      // minimum time period between TX = 60000ms = 60secs = 1min
-ulong max_time_to_nextTX= MAX_TIME_TO_NEXT_TX;
+
 ulong nextTX=60000L;                  // preset time period between TX = 60000ms = 60secs = 1min
+
 ulong time_to_refresh = 0;
 ulong next_fixed_beacon = 0;
 ulong fix_beacon_interval = FIX_BEACON_INTERVAL;
@@ -170,7 +180,7 @@ ulong shutdown_countdown_timer = 0;
 boolean shutdown_active =true;
 boolean shutdown_countdown_timer_enable = false;
 boolean shutdown_usb_status_bef = false;
-#define ANGLE 60                      // angle to send packet at smart beaconing
+
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
@@ -309,7 +319,7 @@ void sendpacket(){
   #endif
   batt_read();
   prepareAPRSFrame();
-  loraSend(txPower, TXFREQ, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
+  loraSend(txPower, lora_freq, outString);  //send the packet, data is in TXbuff from lora_TXStart to lora_TXEnd
 }
 
 /**
@@ -326,11 +336,12 @@ void loraSend(byte lora_LTXPower, float lora_FREQ, const String &message) {
 
   int messageSize = min(message.length(), sizeof(lora_TXBUFF) - 1);
   message.toCharArray((char*)lora_TXBUFF, messageSize + 1, 0);
-  #ifdef SPEED_1200
+  if(lora_speed==1200){
     rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
-  #else
+  }
+  else{
     rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
-  #endif
+  }
   rf95.setFrequency(lora_FREQ);
   rf95.setTxPower(lora_LTXPower);
   rf95.sendAPRS(lora_TXBUFF, messageSize);
@@ -410,7 +421,13 @@ String getSatAndBatInfo() {
 }
 
 void displayInvalidGPS() {
-  writedisplaytext(" " + Tcall, "(TX) at valid GPS", "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
+  char *nextTxInfo;
+  if (!gps_state){
+    nextTxInfo = (char*)"(TX) GPS DISABLED";
+  } else {
+    nextTxInfo = (char*)"(TX) at valid GPS";
+  }
+  writedisplaytext(" " + Tcall, nextTxInfo, "LAT: not valid", "LON: not valid", "SPD: ---  CRS: ---", getSatAndBatInfo());
 }
 
 #if defined(KISS_PROTOCOL)
@@ -488,7 +505,8 @@ void sendTelemetryFrame() {
 // + SETUP --------------------------------------------------------------+//
 void setup(){
   SPI.begin(SPI_sck,SPI_miso,SPI_mosi,SPI_ss);    //DO2JMG Heltec Patch
-  
+  Serial.begin(115200);
+
   #ifdef BUZZER
     ledcSetup(0,1E5,12);
     ledcAttachPin(BUZZER,0);
@@ -512,6 +530,23 @@ void setup(){
     }
 
     preferences.begin("cfg", false);
+    
+    // LoRa transmission settings
+
+    if (!preferences.getBool(PREF_LORA_FREQ_PRESET_INIT)){
+      preferences.putBool(PREF_LORA_FREQ_PRESET_INIT, true);
+      preferences.putDouble(PREF_LORA_FREQ_PRESET, lora_freq);
+    }
+    lora_freq = preferences.getDouble(PREF_LORA_FREQ_PRESET);
+    
+    if (!preferences.getBool(PREF_LORA_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_LORA_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_LORA_SPEED_PRESET, lora_speed);
+    }
+    lora_speed = preferences.getInt(PREF_LORA_SPEED_PRESET);
+
+    // APRS station settings
+
     aprsSymbolTable = preferences.getString(PREF_APRS_SYMBOL_TABLE);
     if (aprsSymbolTable.isEmpty()){
       preferences.putString(PREF_APRS_SYMBOL_TABLE, APRS_SYMBOL_TABLE);
@@ -579,6 +614,40 @@ void setup(){
     }
     fix_beacon_interval = preferences.getInt(PREF_APRS_FIXED_BEACON_INTERVAL_PRESET) * 1000;
 
+// + SMART BEACONING
+
+    if (!preferences.getBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MIN_INTERVAL_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MIN_INTERVAL_PRESET, sb_min_interval/1000);
+    }
+    sb_min_interval = preferences.getInt(PREF_APRS_SB_MIN_INTERVAL_PRESET) * 1000;
+
+    if (!preferences.getBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MAX_INTERVAL_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MAX_INTERVAL_PRESET, sb_max_interval/1000);
+    }
+    sb_max_interval = preferences.getInt(PREF_APRS_SB_MAX_INTERVAL_PRESET) * 1000;
+
+
+    if (!preferences.getBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MIN_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MIN_SPEED_PRESET, sb_min_speed);
+    }
+    sb_min_speed = preferences.getInt(PREF_APRS_SB_MIN_SPEED_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_MAX_SPEED_PRESET_INIT, true);
+      preferences.putInt(PREF_APRS_SB_MAX_SPEED_PRESET, sb_max_speed);
+    }
+    sb_max_speed = preferences.getInt(PREF_APRS_SB_MAX_SPEED_PRESET);
+
+    if (!preferences.getBool(PREF_APRS_SB_ANGLE_PRESET_INIT)){
+      preferences.putBool(PREF_APRS_SB_ANGLE_PRESET_INIT, true);
+      preferences.putDouble(PREF_APRS_SB_ANGLE_PRESET, sb_angle);
+    }
+    sb_angle = preferences.getDouble(PREF_APRS_SB_ANGLE_PRESET);
+// 
+
     if (!preferences.getBool(PREF_DEV_SHOW_RX_TIME_INIT)){
       preferences.putBool(PREF_DEV_SHOW_RX_TIME_INIT, true);
       preferences.putInt(PREF_DEV_SHOW_RX_TIME, showRXTime/1000);
@@ -636,7 +705,7 @@ void setup(){
     pinMode(BUTTON, INPUT_PULLUP);
   #endif
   digitalWrite(TXLED, LOW);                                               // turn blue LED off
-  Serial.begin(115200);
+  
   Wire.begin(I2C_SDA, I2C_SCL);
 
   #ifdef T_BEAM_V1_0
@@ -644,7 +713,11 @@ void setup(){
     }
     axp.setLowTemp(0xFF);                                                 //SP6VWX Set low charging temperature
     axp.setPowerOutPut(AXP192_LDO2, AXP202_ON);                           // LoRa
-    axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+    if (gps_state){
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_ON);                           // switch on GPS
+    } else {
+      axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF);                           // switch off GPS
+    }
     axp.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     axp.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     axp.setDCDC1Voltage(3300);
@@ -694,8 +767,8 @@ void setup(){
     for(;;); // Don't proceed, loop forever
   }
 
-  if (max_time_to_nextTX < nextTX){
-    max_time_to_nextTX=nextTX;
+  if (sb_max_interval < nextTX){
+    sb_max_interval=nextTX;
   }
   writedisplaytext("LoRa-APRS","","Init:","RF95 OK!","","");
   writedisplaytext(" "+Tcall,"","Init:","Waiting for GPS","","");
@@ -707,12 +780,16 @@ void setup(){
   #endif
   batt_read();
   writedisplaytext("LoRa-APRS","","Init:","ADC OK!","BAT: "+String(BattVolts,1),"");
-  #ifdef SPEED_1200
+  
+  if(lora_speed==1200)
     rf95.setModemConfig(BG_RF95::Bw125Cr47Sf512);
-  #else
+  else
     rf95.setModemConfig(BG_RF95::Bw125Cr45Sf4096);
-  #endif
-  rf95.setFrequency(433.775);
+
+  Serial.printf("LoRa Speed:\t%d\n", lora_speed);
+  
+  rf95.setFrequency(lora_freq);
+  Serial.printf("LoRa FREQ:\t%f\n", lora_freq);
   rf95.setTxPower(txPower);
   delay(250);
   #ifdef KISS_PROTOCOL
@@ -833,7 +910,7 @@ void loop() {
       if (xQueueReceive(tncToSendQueue, &TNC2DataFrame, (1 / portTICK_PERIOD_MS)) == pdPASS) {
         writedisplaytext("((KISSTX))","","","","","");
         time_to_refresh = millis() + showRXTime;
-        loraSend(txPower, TXFREQ, *TNC2DataFrame);
+        loraSend(txPower, lora_freq, *TNC2DataFrame);
         delete TNC2DataFrame;
       }
     }
@@ -883,9 +960,9 @@ void loop() {
     point_avg_speed=0;
   }
   average_speed_final = (average_speed[0]+average_speed[1]+average_speed[2]+average_speed[3]+average_speed[4])/5;
-  nextTX = (max_time_to_nextTX-min_time_to_nextTX)/(max_speed-min_speed)*(max_speed-average_speed_final)+min_time_to_nextTX;
-  if (nextTX < min_time_to_nextTX) {nextTX=min_time_to_nextTX;}
-  if (nextTX > max_time_to_nextTX) {nextTX=max_time_to_nextTX;}
+  nextTX = (sb_max_interval-sb_min_interval)/(sb_max_speed-sb_min_speed)*(sb_max_speed-average_speed_final)+sb_min_interval;
+  if (nextTX < sb_min_interval) {nextTX=sb_min_interval;}
+  if (nextTX > sb_max_interval) {nextTX=sb_max_interval;}
   average_course[point_avg_course] = gps.course.deg();   // calculate smart beaconing course
   ++point_avg_course;
   if (point_avg_course>(ANGLE_AVGS-1)) {
@@ -900,25 +977,24 @@ void loop() {
     if (new_course < 0) {
         new_course=360+new_course;
       }
-    if ((old_course < ANGLE) && (new_course > (360-ANGLE))) {
-      if (abs(new_course-old_course-360)>=ANGLE) {
-        nextTX = 0;
-        // lastTX = min_time_to_nextTX
+    if ((old_course < sb_angle) && (new_course > (360-sb_angle))) {
+      if (abs(new_course-old_course-360)>=sb_angle) {
+        nextTX = 1; // give one second for turn to finish and then TX
       }
     } else {
-      if ((old_course > (360-ANGLE)) && (new_course < ANGLE)) {
-        if (abs(new_course-old_course+360)>=ANGLE) {
-          nextTX = 0;
+      if ((old_course > (360-sb_angle)) && (new_course < sb_angle)) {
+        if (abs(new_course-old_course+360)>=sb_angle) {
+          nextTX = 1;
         }
       } else {
-        if (abs(new_course-old_course)>=ANGLE) {
-          nextTX = 0;
+        if (abs(new_course-old_course)>=sb_angle) {
+          nextTX = 1;
         }
       }
     }
     old_course = new_course;
   }
-  if ((millis()<max_time_to_nextTX)&&(lastTX == 0)) {
+  if ((millis()<sb_max_interval)&&(lastTX == 0)) {
     nextTX = 0;
   }
   if ( (lastTX+nextTX) <= millis()  ) {
