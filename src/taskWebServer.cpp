@@ -298,7 +298,7 @@ void handle_saveDeviceCfg(){
   server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
   server.on("/update", HTTP_POST, []() {
-    syslog_log(LOG_WARNING, String("Update finished. Status: ") + (Update.hasError() ? "Ok" : "Error"));
+    syslog_log(LOG_WARNING, String("Update finished. Status: ") + (!Update.hasError() ? "Ok" : "Error"));
     server.sendHeader("Connection", "close");
     server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
     delay(500);
