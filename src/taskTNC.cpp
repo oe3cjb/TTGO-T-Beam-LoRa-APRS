@@ -33,28 +33,31 @@ void handleKISSData(char character, int bufferIndex) {
   }
   inTNCData->concat(character);
   if (character == (char) FEND && inTNCData->length() > 3) {
-    const String &TNC2DataFrame = decode_kiss(*inTNCData);
+    bool isDataFrame = false;
+    const String &TNC2DataFrame = decode_kiss(*inTNCData, isDataFrame);
 
-    #ifdef LOCAL_KISS_ECHO
+    if (isDataFrame) {
+      #ifdef LOCAL_KISS_ECHO
       Serial.print(inTNCData);
-      #ifdef ENABLE_BLUETOOTH
+        #ifdef ENABLE_BLUETOOTH
         if (SerialBT.hasClient()) {
           SerialBT.print(inTNCData);
         }
-      #endif
-      #ifdef ENABLE_WIFI
+        #endif
+          #ifdef ENABLE_WIFI
         iterateWifiClients([](WiFiClient *client, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();
           }
         }, &inTNCData, clients, MAX_WIFI_CLIENTS);
+          #endif
       #endif
-    #endif
-    auto *buffer = new String();
-    buffer->concat(TNC2DataFrame);
-    if (xQueueSend(tncToSendQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS){
-      delete buffer;
+      auto *buffer = new String();
+      buffer->concat(TNC2DataFrame);
+      if (xQueueSend(tncToSendQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS) {
+        delete buffer;
+      }
     }
     inTNCData->clear();
   }
