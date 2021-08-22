@@ -1,7 +1,15 @@
 #include <taskGPS.h>
 #include <SparkFun_Ublox_Arduino_Library.h>
+#include <taskWebServer.h>
+
 
 SFE_UBLOX_GPS myGPS;
+
+#ifdef ENABLE_WIFI
+  #include "wifi_clients.h"
+  #define MAX_GPS_WIFI_CLIENTS 6
+  WiFiClient * gps_clients[MAX_GPS_WIFI_CLIENTS];
+#endif
 
 // Pins for GPS
 #ifdef T_BEAM_V1_0
@@ -14,7 +22,7 @@ HardwareSerial gpsSerial(1);        // TTGO has HW serial
 TinyGPSPlus gps;             // The TinyGPS++ object
 bool gpsInitialized = false;
 
-void taskGPS(void *parameter) {
+[[noreturn]] void taskGPS(void *parameter) {
   if (!gpsInitialized){
     gpsSerial.begin(GPSBaud, SERIAL_8N1, TXPin, RXPin);        //Startup HW serial for GPS
 
@@ -35,9 +43,29 @@ void taskGPS(void *parameter) {
     }
   }
 
+  String gpsDataBuffer = "              ";
   for (;;) {
+    check_for_new_clients(&gpsServer, gps_clients, MAX_GPS_WIFI_CLIENTS);
     while (gpsSerial.available() > 0) {
-      gps.encode(gpsSerial.read());
+      char gpsChar = (char)gpsSerial.read();
+      gps.encode(gpsChar);
+      #ifdef ENABLE_WIFI
+        if (gpsChar == '$') {
+          gpsDataBuffer = String(gpsChar);
+        } else {
+          gpsDataBuffer += String(gpsChar);
+
+          if (gpsChar == '\n') {
+            iterateWifiClients([](WiFiClient *client, int clientIdx, const String *data){
+              if (client->connected()){
+                client->print(*data);
+                client->flush();
+              }
+            }, &gpsDataBuffer, gps_clients, MAX_GPS_WIFI_CLIENTS);
+            gpsDataBuffer = "";
+          }
+        }
+      #endif
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }

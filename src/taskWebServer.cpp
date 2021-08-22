@@ -2,6 +2,7 @@
 #include "taskWebServer.h"
 #include "preference_storage.h"
 #include "syslog_log.h"
+#include "PSRAMJsonDocument.h"
 #include <time.h>
 #include <ArduinoJson.h>
 
@@ -17,7 +18,7 @@ extern const char web_js_js_end[] asm("_binary_data_embed_js_js_out_end");
 
 QueueHandle_t webListReceivedQueue = nullptr;
 std::list <tReceivedPacketData*> receivedPackets;
-const int MAX_RECEIVED_LIST_SIZE = 10;
+const int MAX_RECEIVED_LIST_SIZE = 50;
 
 String apSSID = "";
 String apPassword = "xxxxxxxxxx";
@@ -25,6 +26,7 @@ WebServer server(80);
 #ifdef KISS_PROTOCOL
   WiFiServer tncServer(NETWORK_TNC_PORT);
 #endif
+WiFiServer gpsServer(NETWORK_GPS_PORT);
 
 #ifdef ENABLE_SYSLOG
   // A UDP instance to let us send and receive packets over UDP
@@ -33,6 +35,12 @@ WebServer server(80);
   // Create a new empty syslog instance
   Syslog syslog(udpClient, SYSLOG_PROTO_IETF);
 #endif
+
+#ifdef T_BEAM_V1_0
+  #include <axp20x.h>
+  extern AXP20X_Class axp;
+#endif
+
 
 void sendCacheHeader() { server.sendHeader("Cache-Control", "max-age=3600"); }
 void sendGzipHeader() { server.sendHeader("Content-Encoding", "gzip"); }
@@ -118,7 +126,18 @@ void handle_SaveWifiCfg() {
 void handle_Reboot() {
   server.sendHeader("Location", "/");
   server.send(302,"text/html", "");
+  server.close();
   ESP.restart();
+}
+
+void handle_Shutdown() {
+
+  #ifdef T_BEAM_V1_0
+    server.send(200,"text/html", "Shutdown");
+    axp.shutdown();
+  #else
+    server.send(404,"text/html", "Not supported");
+  #endif
 }
 
 void handle_Restore() {
@@ -160,14 +179,16 @@ void handle_Cfg() {
   jsonData += jsonLineFromPreferenceInt(PREF_DEV_AUTO_SHUT_PRESET);
   jsonData += jsonLineFromInt("FreeHeap", ESP.getFreeHeap());
   jsonData += jsonLineFromInt("HeapSize", ESP.getHeapSize());
-  jsonData += jsonLineFromInt("FreeSketchSpace", ESP.getFreeSketchSpace(), true);
+  jsonData += jsonLineFromInt("FreeSketchSpace", ESP.getFreeSketchSpace());
+  jsonData += jsonLineFromInt("PSRAMSize", ESP.getPsramSize());
+  jsonData += jsonLineFromInt("PSRAMFree", ESP.getFreePsram(), true);
 
   jsonData += "}";
   server.send(200,"application/json", jsonData);
 }
 
 void handle_ReceivedList() {
-  DynamicJsonDocument doc(MAX_RECEIVED_LIST_SIZE * 500);
+  PSRAMJsonDocument doc(MAX_RECEIVED_LIST_SIZE * 1000);
   JsonObject root = doc.to<JsonObject>();
   auto received = root.createNestedArray("received");
   for (auto element: receivedPackets){
@@ -270,13 +291,14 @@ void handle_saveDeviceCfg(){
   server.on("/scan_wifi", handle_ScanWifi);
   server.on("/save_wifi_cfg", handle_SaveWifiCfg);
   server.on("/reboot", handle_Reboot);
+  server.on("/shutdown", handle_Shutdown);
   server.on("/cfg", handle_Cfg);
   server.on("/received_list", handle_ReceivedList);
   server.on("/save_aprs_cfg", handle_SaveAPRSCfg);
   server.on("/save_device_cfg", handle_saveDeviceCfg);
   server.on("/restore", handle_Restore);
   server.on("/update", HTTP_POST, []() {
-    syslog_log(LOG_WARNING, String("Update finished. Status: ") + (Update.hasError() ? "Ok" : "Error"));
+    syslog_log(LOG_WARNING, String("Update finished. Status: ") + (!Update.hasError() ? "Ok" : "Error"));
     server.sendHeader("Connection", "close");
     server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
     delay(500);
@@ -360,6 +382,7 @@ void handle_saveDeviceCfg(){
   #ifdef KISS_PROTOCOL
     tncServer.begin();
   #endif
+  gpsServer.begin();
   if (MDNS.begin(webServerCfg->callsign.c_str())) {
     MDNS.setInstanceName(webServerCfg->callsign + " TTGO LoRa APRS TNC " + TXFREQ + "MHz");
     MDNS.addService("http", "tcp", 80);

@@ -9,25 +9,6 @@ QueueHandle_t tncReceivedQueue = nullptr;
 #ifdef ENABLE_WIFI
   #define MAX_WIFI_CLIENTS 6
   WiFiClient * clients[MAX_WIFI_CLIENTS];
-
-  typedef void (*f_connectedClientCallback_t) (WiFiClient *, int, const String *);
-  
-  void iterateWifiClients(f_connectedClientCallback_t callback, const String *data){
-    for (int i=0; i<MAX_WIFI_CLIENTS; i++) {
-      auto client = clients[i];
-      if (client != nullptr) {
-        if (client->connected()) {
-          callback(client, i, data);
-        } else {
-          #ifdef ENABLE_WIFI_CLIENT_DEBUG
-            Serial.println(String("Disconnected client ") + client->remoteIP().toString() + ":" + client->remotePort());
-          #endif
-          delete client;
-          clients[i] = nullptr;
-        }
-      }
-    }
-  }
 #endif
 #ifdef ENABLE_WIFI
   #define IN_TNC_BUFFERS (2+MAX_WIFI_CLIENTS)
@@ -52,28 +33,31 @@ void handleKISSData(char character, int bufferIndex) {
   }
   inTNCData->concat(character);
   if (character == (char) FEND && inTNCData->length() > 3) {
-    const String &TNC2DataFrame = decode_kiss(*inTNCData);
+    bool isDataFrame = false;
+    const String &TNC2DataFrame = decode_kiss(*inTNCData, isDataFrame);
 
-    #ifdef LOCAL_KISS_ECHO
+    if (isDataFrame) {
+      #ifdef LOCAL_KISS_ECHO
       Serial.print(inTNCData);
-      #ifdef ENABLE_BLUETOOTH
+        #ifdef ENABLE_BLUETOOTH
         if (SerialBT.hasClient()) {
           SerialBT.print(inTNCData);
         }
-      #endif
-      #ifdef ENABLE_WIFI
+        #endif
+          #ifdef ENABLE_WIFI
         iterateWifiClients([](WiFiClient *client, const String *data){
           if (client->connected()){
             client->print(*data);
             client->flush();
           }
-        }, &inTNCData);
+        }, &inTNCData, clients, MAX_WIFI_CLIENTS);
+          #endif
       #endif
-    #endif
-    auto *buffer = new String();
-    buffer->concat(TNC2DataFrame);
-    if (xQueueSend(tncToSendQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS){
-      delete buffer;
+      auto *buffer = new String();
+      buffer->concat(TNC2DataFrame);
+      if (xQueueSend(tncToSendQueue, &buffer, (1000 / portTICK_PERIOD_MS)) != pdPASS) {
+        delete buffer;
+      }
     }
     inTNCData->clear();
   }
@@ -103,45 +87,14 @@ void handleKISSData(char character, int bufferIndex) {
       }
     #endif
     #ifdef ENABLE_WIFI
-      WiFiClient new_client = tncServer.available();
-      if (new_client.connected()){
-        bool new_client_handled = false;
-        for (int i=0; i < MAX_WIFI_CLIENTS; i++) {
-          auto client = clients[i];
-          if (client == nullptr) {
-            client = new WiFiClient(new_client);
-            clients[i] = client;
-            new_client_handled = true;
-            #ifdef ENABLE_WIFI_CLIENT_DEBUG
-              Serial.println(String("New client #") +String(i) + ": " + client->remoteIP().toString() + ":" + client->remotePort());
-            #endif
-            break;
-          }
-        }
-        #ifdef ENABLE_WIFI_CLIENT_DEBUG
-          for (int i = 0; i < MAX_WIFI_CLIENTS; ++i) {
-            auto client = clients[i];
+      check_for_new_clients(&tncServer, clients, MAX_WIFI_CLIENTS);
 
-            if (client != nullptr){
-              Serial.println(String("Client #") +String(i) + ": " + client->remoteIP().toString() + ":" + client->remotePort());
-            }
-          }
-        #endif
-
-
-        if (!new_client_handled){
-          #ifdef ENABLE_WIFI_CLIENT_DEBUG
-            Serial.println(String("Refusing client "));
-          #endif
-          new_client.stop();
-        }
-      }
       iterateWifiClients([](WiFiClient * client, int clientIdx, const String * unused){
         while (client->available() > 0) {
           char character = client->read();
           handleKISSData(character, 2+clientIdx);
         }
-      }, nullptr);
+      }, nullptr, clients, MAX_WIFI_CLIENTS);
 
     #endif
     if (xQueueReceive(tncReceivedQueue, &loraReceivedFrameString, (1 / portTICK_PERIOD_MS)) == pdPASS) {
@@ -158,7 +111,7 @@ void handleKISSData(char character, int bufferIndex) {
             client->print(*data);
             client->flush();
           }
-        }, &kissEncoded);
+        }, &kissEncoded, clients, MAX_WIFI_CLIENTS);
       #endif
 
       delete loraReceivedFrameString;

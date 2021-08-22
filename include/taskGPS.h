@@ -2,4 +2,5 @@
 #include <TinyGPS++.h>
 
 extern TinyGPSPlus gps;
-void taskGPS(void *parameter);
+
+[[noreturn]] void taskGPS(void *parameter);

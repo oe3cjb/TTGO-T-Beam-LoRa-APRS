@@ -8,6 +8,6 @@
 #define IS_LAST_ADDRESS_POSITION_MASK 0b1
 
 String encode_kiss(const String& tnc2FormattedFrame);
-String decode_kiss(const String& kissFormattedFrame);
+String decode_kiss(const String &inputKISSTNCFrame, bool &dataFrame);
 
 String encapsulateKISS(const String &ax25Frame, uint8_t TNCCmd);
