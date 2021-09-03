@@ -116,5 +116,5 @@ function updateFileUpload(event) {
 }
 
 function confirmAction(actionName) {
-    return window.confirm('Are you shure want to ' + actionName);
+    return window.confirm('Are you sure you want to ' + actionName + '?');
 }
