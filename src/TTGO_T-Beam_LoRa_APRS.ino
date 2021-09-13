@@ -181,6 +181,12 @@ boolean shutdown_active =true;
 boolean shutdown_countdown_timer_enable = false;
 boolean shutdown_usb_status_bef = false;
 
+// Variables added by LucaFRL
+ulong oled_timeout = 20000;
+bool tempOled = true;
+ulong oled_timer = millis();
+//-------------------------------
+
 #define ANGLE_AVGS 3                  // angle averaging - x times
 float average_course[ANGLE_AVGS];
 float avg_c_y, avg_c_x;
@@ -356,7 +362,7 @@ void batt_read(){
   BattVolts = axp.getBattVoltage()/1000;
   InpVolts = axp.getVbusVoltage()/1000;
 #else
-  BattVolts = analogRead(35)*7.221/4096;
+  BattVolts = analogRead(35)*7.221/8192;
 #endif
 }
 
@@ -387,10 +393,10 @@ void writedisplaytext(String HeaderTxt, String Line1, String Line2, String Line3
   display.println(Line5);
   if (enabled_oled){
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_ON);                          // enable oled
-    display.dim(true);
+    //display.dim(true);
   }else{
     //axp.setPowerOutPut(AXP192_DCDC1, AXP202_OFF);                          // disable oled
-    display.dim(false);
+    //display.dim(false);
   }   
   display.display();
   time_to_refresh = millis() + showRXTime;
@@ -821,6 +827,11 @@ void setup(){
   digitalWrite(TXLED, HIGH);
 }
 
+void enableOled() {
+  tempOled = true;
+  oled_timer = millis() + oled_timeout;
+}
+
 // +---------------------------------------------------------------------+//
 // + MAINLOOP -----------------------------------------------------------+//
 // +---------------------------------------------------------------------+//
@@ -832,19 +843,36 @@ void loop() {
       delay(300);
       time_delay = millis() + 1500;
       if(digitalRead(BUTTON)==HIGH){
-        if(gps_state == true && gps.location.isValid()){
-            writedisplaytext("((MAN TX))","","","","","");
-            sendpacket();
-        }else{
-            writedisplaytext("((FIX TX))","","","","","");
-            sendpacket();
+        if (!tempOled) {
+        // turn ON OLED temporary
+        enableOled();
+        //----------------------------
+        } else {
+          if(gps_state == true && gps.location.isValid()){
+              writedisplaytext("((MAN TX))","","","","","");
+              sendpacket();
+          }else{
+              writedisplaytext("((FIX TX))","","","","","");
+              sendpacket();
+          }
         }
         key_up = true;
       }
     }
   }
 
+  // Only wake up OLED when necessary
+  display.dim(!tempOled);
+
+  if (tempOled && millis()>= oled_timer) {
+    tempOled = false;
+  }
+  //------------------------------------
+
   if(digitalRead(BUTTON)==LOW && key_up == false && millis() >= time_delay && t_lock == false){
+    // enable OLED
+    enableOled();
+    //---------------
     t_lock = true;
       if(gps_state){
         gps_state = false;
@@ -877,6 +905,9 @@ void loop() {
 
   if (fixed_beacon_enabled) {
     if (millis() >= next_fixed_beacon && !gps_state) {
+      // enable OLED
+      enableOled();
+      //---------------
       next_fixed_beacon = millis() + fix_beacon_interval;
       writedisplaytext("((AUT TX))", "", "", "", "", "");
       sendpacket();
@@ -932,6 +963,9 @@ void loop() {
         loraReceivedFrameString = "";
         //int rssi = rf95.lastSNR();
         //Serial.println(rssi);
+        // enable OLED
+        enableOled();
+        //---------------
         for (int i=0 ; i < loraReceivedLength ; i++) {
           loraReceivedFrameString += (char) lora_RXBUFF[i];
         }
@@ -999,6 +1033,9 @@ void loop() {
   }
   if ( (lastTX+nextTX) <= millis()  ) {
     if (gps.location.age() < 2000) {
+      // enable OLED
+      enableOled();
+      //---------------
       writedisplaytext(" ((TX))","","LAT: "+LatShown,"LON: "+LongShown,"SPD: "+String(gps.speed.kmph(),1)+"  CRS: "+String(gps.course.deg(),1),getSatAndBatInfo());
       sendpacket();
     } else {
