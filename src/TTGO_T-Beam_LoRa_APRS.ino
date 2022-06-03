@@ -1031,6 +1031,17 @@ switch(tracker_mode) {
         outString += String(Lon,2);
         outString += Ew;
         outString += TxSymbol;
+        if(Tcourse<100) {outString += "0"; }
+        if(Tcourse<10) {outString += "0"; }
+        Coursex = String(Tcourse,0);
+        Coursex.replace(" ","");
+        outString += Coursex;
+        outString += "/";
+        if(Tspeed<100) {outString += "0"; }
+        if(Tspeed<10) {outString += "0"; }
+        Speedx = String(Tspeed,0);
+        Speedx.replace(" ","");
+        outString += Speedx;
       #else
         for (i=0; i<Tcall.length();++i){  // remove unneeded "spaces" from callsign field
           if (Tcall.charAt(i) != ' ') {
