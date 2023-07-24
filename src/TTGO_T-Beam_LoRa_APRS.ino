@@ -908,9 +908,14 @@ switch(tracker_mode) {
     outString += helper;
     outString += "r...p...P...h";
     if(hum<10) {outString += "0"; }
-    helper = String(hum,0);
-    helper.trim();
-    outString += helper;
+    if(hum<100) {
+      helper = String(hum,0);
+      helper.trim();
+      outString += helper;
+    } else {
+      // if humidity = 100% then send it as "00" as defined in APRS spec
+      outString += "00";
+    }
     #ifdef USE_BME280
       outString += "b";
       if(pressure<1000) {outString += "0"; }
@@ -999,9 +1004,14 @@ switch(tracker_mode) {
       outString += helper;
       outString += "r...p...P...h";
       if(hum<10) {outString += "0"; }
-      helper = String(hum,0);
-      helper.trim();
-      outString += helper;
+      if(hum<100) {
+        helper = String(hum,0);
+        helper.trim();
+        outString += helper;
+      } else {
+        // if humidity = 100% then send it as "00" as defined in APRS spec
+        outString += "00";
+      }
       #ifdef USE_BME280
         outString += "b";
         if(pressure<1000) {outString += "0"; }
@@ -1149,9 +1159,14 @@ case WX_MOVE:
     outString += helper;
     outString += "r...p...P...h";
     if(hum<10) {outString += "0"; }
-    helper = String(hum,0);
-    helper.trim();
-    outString += helper;
+    if(hum<100) {
+      helper = String(hum,0);
+      helper.trim();
+      outString += helper;
+    } else {
+      // if humidity = 100% then send it as "00" as defined in APRS spec
+      outString += "00";
+    }
     #ifdef USE_BME280
       outString += "b";
       if(pressure<1000) {outString += "0"; }
